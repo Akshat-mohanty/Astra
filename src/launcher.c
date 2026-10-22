@@ -239,14 +239,12 @@ int main(int argc, char *argv[]) {
         "--start-maximized",
         win_size_arg,
         "--window-position=0,0",
-        /* PWA mode: hides toolbar, shows tab strip via DesktopPWAsTabStrip */
+        /* PWA mode: hides toolbar completely */
         "--app=http://127.0.0.1:4545",
-        "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations",
-        /* suppress trending searches dropdown */
+        /* Tab strip in app-mode windows; new tabs open to app's new_tab_url */
+        "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations,DesktopPWAsTabStripSettings",
+        /* suppress chrome labs / trending searches clutter */
         "--disable-features=ChromeLabs,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching",
-        /* load the Astra extension so chrome://newtab (new tabs) shows Astra theme */
-        ext_arg,
-        "--allow-pre-commit-input",
     };
     int num_flags = (int)(sizeof(flags) / sizeof(flags[0]));
 
