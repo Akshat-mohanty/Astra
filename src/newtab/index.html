@@ -4,27 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Tab</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23090a0f'/><path d='M16 6 L18.2 13.8 L26 16 L18.2 18.2 L16 26 L13.8 18.2 L6 16 L13.8 13.8 Z' fill='%23818cf8'/></svg>">
   <style>
-    :root {
-      --bg: #090a0f;
-      --surface: #12141c;
-      --surface-elevated: #181b26;
-      --surface-hover: #1f2331;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-focus: rgba(129, 140, 248, 0.5);
-      --border-hover: rgba(255, 255, 255, 0.16);
-      --text-main: #f8fafc;
-      --text-muted: #cbd5e1;
-      --text-faint: #94a3b8;
-      --accent: #818cf8;
-      --accent-press: #6366f1;
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 18px;
-      --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -34,399 +14,274 @@
     }
 
     ::selection {
-      background: var(--accent);
-      color: #090a0f;
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
     }
 
     body {
-      background-color: var(--bg);
-      color: var(--text-main);
+      background-color: #181819;
+      color: #f5f5f5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 32px 40px;
-      overflow-x: hidden;
+      padding: 0 24px 20px 24px;
+      overflow: hidden;
       user-select: none;
     }
 
-    /* Top Corner Navigation */
-    .top-nav {
+    /* Top spacer to balance layout */
+    .top-spacer {
       width: 100%;
-      max-width: 1100px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 16px;
+      height: 40px;
     }
 
-    .ghost-nav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
-      color: var(--text-faint);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 450;
-      letter-spacing: -0.01em;
-      transition: color 0.15s ease, background 0.15s ease;
-    }
-
-    .ghost-nav-link:hover {
-      color: var(--text-main);
-      background: var(--surface);
-    }
-
-    /* Main Centered Stage */
+    /* Main Center Section */
     main {
       width: 100%;
-      max-width: 620px;
+      max-width: 652px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: auto 0;
-      text-align: center;
+      margin-top: -30px;
     }
 
-    /* Astra Emblem */
-    .emblem-wrapper {
-      margin-bottom: 32px;
+    /* Center Emblem */
+    .emblem-container {
+      margin-bottom: 26px;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
     }
 
-    .emblem-icon {
-      width: 36px;
-      height: 36px;
-      opacity: 0.92;
-      transition: opacity 0.2s ease, transform 0.2s var(--ease);
+    .emblem-img {
+      width: 77px;
+      height: 62px;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
     }
 
-    .emblem-wrapper:hover .emblem-icon {
-      opacity: 1;
-      transform: scale(1.05);
-    }
-
-    /* Command Search Bar */
-    .command-box {
+    /* Search Prompt Card */
+    .prompt-card {
       width: 100%;
-      position: relative;
-      margin-bottom: 28px;
+      background: #2d2d2d;
+      border-radius: 20px;
+      padding: 16px 18px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     }
 
-    .command-input-container {
-      width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 6px 8px 6px 14px;
+    .prompt-card:focus-within {
+      background: #2f2f2f;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Top Row: Search Icon + Text Input */
+    .input-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      gap: 12px;
+      width: 100%;
     }
 
-    .command-input-container:focus-within {
-      background: var(--surface-elevated);
-      border-color: var(--border-focus);
-      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .engine-trigger {
-      display: inline-flex;
+    .search-icon {
+      color: #7a7a7a;
+      display: flex;
       align-items: center;
-      gap: 5px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      justify-content: center;
+      flex-shrink: 0;
     }
 
-    .engine-trigger:hover {
-      background: var(--surface-hover);
-      color: var(--text-main);
-      border-color: var(--border-hover);
-    }
-
-    .command-input {
+    .prompt-input {
       flex: 1;
-      height: 44px;
       background: transparent;
       border: none;
       outline: none;
-      font-size: 16px;
-      color: var(--text-main);
-      letter-spacing: -0.01em;
+      font-size: 17px;
+      color: #f5f5f5;
+      font-weight: 400;
+      letter-spacing: -0.015em;
+      caret-color: #ffffff;
       user-select: text;
     }
 
-    .command-input::placeholder {
-      color: var(--text-faint);
+    .prompt-input::placeholder {
+      color: #787878;
       font-weight: 400;
     }
 
-    .command-submit {
-      width: 36px;
-      height: 36px;
-      background: var(--accent);
-      color: #090a0f;
-      border: none;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.15s ease, transform 0.1s ease;
-    }
-
-    .command-submit:hover {
-      background: #9aa5ff;
-    }
-
-    .command-submit:active {
-      transform: scale(0.95);
-      background: var(--accent-press);
-    }
-
-    /* Engine Dropdown */
-    .engine-menu {
-      position: absolute;
-      top: 58px;
-      left: 12px;
-      background: var(--surface-elevated);
-      border: 1px solid var(--border-hover);
-      border-radius: var(--radius-md);
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
-      padding: 4px;
-      display: none;
-      flex-direction: column;
-      z-index: 50;
-      min-width: 140px;
-    }
-
-    .engine-menu.visible {
-      display: flex;
-    }
-
-    .engine-choice {
+    /* Bottom Row: Controls */
+    .controls-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 7px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      color: var(--text-muted);
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      text-align: left;
-      transition: background 0.12s ease, color 0.12s ease;
+      width: 100%;
+      padding-top: 2px;
     }
 
-    .engine-choice:hover {
-      background: var(--surface-hover);
-      color: var(--text-main);
-    }
-
-    .engine-choice.selected {
-      color: var(--text-main);
-      font-weight: 500;
-    }
-
-    /* Shortcuts Clean Strip */
-    .shortcuts-strip {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .shortcut-pill {
+    /* Add tabs or files button */
+    .add-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      color: var(--text-muted);
-      text-decoration: none;
+      gap: 6px;
+      background: #383838;
+      color: #a3a3a3;
+      border: none;
+      border-radius: 9999px;
+      padding: 6px 14px;
       font-size: 13px;
       font-weight: 450;
-      letter-spacing: -0.01em;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s var(--ease);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .shortcut-pill:hover {
-      background: var(--surface-elevated);
-      border-color: var(--border-hover);
-      color: var(--text-main);
-      transform: translateY(-1px);
+    .add-btn:hover {
+      background: #424242;
+      color: #d1d1d1;
     }
 
-    .shortcut-pill svg {
-      opacity: 0.85;
-      transition: opacity 0.15s ease;
+    .add-btn svg {
+      opacity: 0.8;
     }
 
-    .shortcut-pill:hover svg {
-      opacity: 1;
-    }
-
-    /* Bottom Bar */
-    .bottom-bar {
-      width: 100%;
-      max-width: 1100px;
+    /* Right actions: Mic & Submit */
+    .right-actions {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 12.5px;
-      color: var(--text-faint);
+      gap: 10px;
     }
 
-    .kbd-tip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .key-cap {
-      display: inline-flex;
+    .action-icon-btn {
+      background: transparent;
+      border: none;
+      color: #787878;
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1px 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    .action-icon-btn:hover {
+      color: #b0b0b0;
+    }
+
+    .submit-arrow-btn {
+      width: 30px;
+      height: 30px;
+      background: #383838;
+      color: #787878;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+
+    .submit-arrow-btn:hover {
+      background: #484848;
+      color: #ffffff;
+    }
+
+    .submit-arrow-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Bottom Capsule Indicator */
+    .bottom-indicator {
+      width: 42px;
+      height: 5px;
+      border-radius: 9999px;
+      border: 1px solid #383839;
+      background: transparent;
+      margin-bottom: 2px;
+    }
+
+    /* Hidden file input for "+ Add tabs or files" */
+    #file-input {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation (Right-aligned, quiet) -->
-  <div class="top-nav">
-    <a href="https://chromewebstore.google.com" target="_blank" class="ghost-nav-link">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="7" height="7"></rect>
-        <rect x="14" y="3" width="7" height="7"></rect>
-        <rect x="14" y="14" width="7" height="7"></rect>
-        <rect x="3" y="14" width="7" height="7"></rect>
-      </svg>
-      <span>Web Store</span>
-    </a>
-    <a href="chrome://settings" target="_blank" class="ghost-nav-link">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-      </svg>
-      <span>Settings</span>
-    </a>
-  </div>
+  <!-- Top spacer -->
+  <div class="top-spacer"></div>
 
-  <!-- Center Stage -->
+  <!-- Center Content Stage -->
   <main>
-    <!-- Minimalist Astra Emblem -->
-    <div class="emblem-wrapper">
-      <svg class="emblem-icon" viewBox="0 0 32 32" fill="none">
-        <path d="M16 4 L18.5 13.5 L28 16 L18.5 18.5 L16 28 L13.5 18.5 L4 16 L13.5 13.5 Z" fill="#818cf8"/>
-      </svg>
+    <!-- Center Emblem -->
+    <div class="emblem-container">
+      <img src="logo_transparent.png" alt="Astra" class="emblem-img" />
     </div>
 
-    <!-- Command / Search Bar -->
-    <div class="command-box">
-      <form class="command-input-container" id="search-form">
-        <button type="button" class="engine-trigger" id="engine-btn" aria-label="Select search engine">
-          <span id="current-engine-name">Google</span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
+    <!-- Search Prompt Card -->
+    <form class="prompt-card" id="search-form">
+      <!-- Input Row -->
+      <div class="input-row">
+        <span class="search-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-        </button>
-
+        </span>
         <input 
           type="text" 
           id="search-input" 
-          class="command-input" 
-          placeholder="Search or enter address..." 
+          class="prompt-input" 
+          placeholder="Ask anything..." 
           autofocus 
           autocomplete="off" 
           spellcheck="false"
         />
-
-        <button type="submit" class="command-submit" aria-label="Search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      </form>
-
-      <!-- Engine Selector Popover -->
-      <div class="engine-menu" id="engine-menu">
-        <button type="button" class="engine-choice selected" data-engine="google">Google</button>
-        <button type="button" class="engine-choice" data-engine="duckduckgo">DuckDuckGo</button>
-        <button type="button" class="engine-choice" data-engine="brave">Brave</button>
-        <button type="button" class="engine-choice" data-engine="github">GitHub</button>
       </div>
-    </div>
 
-    <!-- Clean Shortcuts Strip -->
-    <div class="shortcuts-strip">
-      <a class="shortcut-pill" href="https://github.com">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-        </svg>
-        <span>GitHub</span>
-      </a>
+      <!-- Controls Row -->
+      <div class="controls-row">
+        <button type="button" class="add-btn" id="add-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Add tabs or files</span>
+        </button>
 
-      <a class="shortcut-pill" href="https://chatgpt.com">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-        </svg>
-        <span>ChatGPT</span>
-      </a>
+        <div class="right-actions">
+          <button type="button" class="action-icon-btn" id="mic-btn" aria-label="Voice input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
 
-      <a class="shortcut-pill" href="https://youtube.com">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"></polygon>
-        </svg>
-        <span>YouTube</span>
-      </a>
+          <button type="submit" class="submit-arrow-btn" aria-label="Submit">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </form>
 
-      <a class="shortcut-pill" href="chrome://extensions">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-        </svg>
-        <span>Extensions</span>
-      </a>
-    </div>
+    <input type="file" id="file-input" multiple />
   </main>
 
-  <!-- Bottom Bar -->
-  <div class="bottom-bar">
-    <div class="kbd-tip">
-      <span>Focus</span>
-      <span class="key-cap">⌘K</span>
-      <span>or</span>
-      <span class="key-cap">/</span>
-    </div>
-    <div>Astra</div>
-  </div>
+  <!-- Bottom Indicator -->
+  <div class="bottom-indicator"></div>
 
   <script src="newtab.js"></script>
 </body>
