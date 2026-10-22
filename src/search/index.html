@@ -4,27 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Astra</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230a0d14'/><path d='M16 4 L18.5 13.5 L28 16 L18.5 18.5 L16 28 L13.5 18.5 L4 16 L13.5 13.5 Z' fill='%236366f1'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23090a0f'/><path d='M16 6 L18.2 13.8 L26 16 L18.2 18.2 L16 26 L13.8 18.2 L6 16 L13.8 13.8 Z' fill='%23818cf8'/></svg>">
   <style>
     :root {
-      --bg: #0b0f17;
-      --surface-1: #131924;
-      --surface-2: #1b2332;
-      --surface-3: #263145;
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-strong: rgba(255, 255, 255, 0.16);
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-tertiary: #94a3b8;
-      --accent: #6366f1;
-      --accent-hover: #4f46e5;
-      --accent-subtle: rgba(99, 102, 241, 0.15);
-      --shield-green: #10b981;
+      --bg: #090a0f;
+      --surface: #12141c;
+      --surface-elevated: #181b26;
+      --surface-hover: #1f2331;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(129, 140, 248, 0.5);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --text-main: #f8fafc;
+      --text-muted: #cbd5e1;
+      --text-faint: #94a3b8;
+      --accent: #818cf8;
+      --accent-press: #6366f1;
       --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --radius-full: 9999px;
-      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     * {
@@ -37,201 +35,155 @@
 
     ::selection {
       background: var(--accent);
-      color: #ffffff;
+      color: #090a0f;
     }
 
     body {
       background-color: var(--bg);
-      color: var(--text-primary);
+      color: var(--text-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      align-items: center;
+      padding: 32px 40px;
       overflow-x: hidden;
-      padding: 28px 36px;
-      position: relative;
+      user-select: none;
     }
 
-    /* Header */
-    header {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    /* Top Corner Navigation */
+    .top-nav {
       width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .brand-mark {
+      max-width: 1100px;
       display: flex;
+      justify-content: flex-end;
       align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--text-primary);
+      gap: 16px;
     }
 
-    .star-logo {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .brand-title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
-
-    .header-pills {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .status-pill {
+    .ghost-nav-link {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-full);
-      font-size: 13px;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    .status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--shield-green);
-    }
-
-    .quick-link-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 14px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
+      gap: 6px;
+      padding: 6px 12px;
       border-radius: var(--radius-sm);
-      color: var(--text-secondary);
+      color: var(--text-faint);
       text-decoration: none;
       font-size: 13px;
-      font-weight: 500;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+      transition: color 0.15s ease, background 0.15s ease;
     }
 
-    .quick-link-btn:hover {
-      background: var(--surface-2);
-      color: var(--text-primary);
-      border-color: var(--border-strong);
+    .ghost-nav-link:hover {
+      color: var(--text-main);
+      background: var(--surface);
     }
 
-    /* Main Stage */
+    /* Main Centered Stage */
     main {
-      position: relative;
-      z-index: 10;
+      width: 100%;
+      max-width: 620px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      max-width: 740px;
-      margin: auto;
+      margin: auto 0;
       text-align: center;
-      padding: 40px 0;
     }
 
-    .time-heading {
-      font-size: 72px;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      line-height: 1;
-      margin-bottom: 12px;
-      color: var(--text-primary);
-      font-feature-settings: "tnum" 1;
+    /* Astra Emblem */
+    .emblem-wrapper {
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
     }
 
-    .greeting-subhead {
-      font-size: 16px;
-      color: var(--text-secondary);
-      margin-bottom: 40px;
-      font-weight: 400;
+    .emblem-icon {
+      width: 36px;
+      height: 36px;
+      opacity: 0.92;
+      transition: opacity 0.2s ease, transform 0.2s var(--ease);
     }
 
-    /* Command / Search Container */
-    .command-container {
+    .emblem-wrapper:hover .emblem-icon {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    /* Command Search Bar */
+    .command-box {
       width: 100%;
       position: relative;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
 
-    .command-bar {
+    .command-input-container {
       width: 100%;
-      background: var(--surface-1);
-      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 6px 10px 6px 16px;
+      padding: 6px 8px 6px 14px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s var(--ease-out);
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
-    .command-bar:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
-      transform: translateY(-1px);
+    .command-input-container:focus-within {
+      background: var(--surface-elevated);
+      border-color: var(--border-focus);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
     }
 
-    .search-engine-selector {
-      display: flex;
+    .engine-trigger {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      padding: 6px 10px;
-      font-size: 13px;
-      color: var(--text-secondary);
+      gap: 5px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
       cursor: pointer;
-      user-select: none;
-      transition: color 0.15s, background 0.15s;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
-    .search-engine-selector:hover {
-      color: var(--text-primary);
-      background: var(--surface-3);
+    .engine-trigger:hover {
+      background: var(--surface-hover);
+      color: var(--text-main);
+      border-color: var(--border-hover);
     }
 
-    .search-input {
+    .command-input {
       flex: 1;
-      height: 48px;
+      height: 44px;
       background: transparent;
       border: none;
       outline: none;
-      font-size: 17px;
-      color: var(--text-primary);
+      font-size: 16px;
+      color: var(--text-main);
       letter-spacing: -0.01em;
+      user-select: text;
     }
 
-    .search-input::placeholder {
-      color: var(--text-tertiary);
+    .command-input::placeholder {
+      color: var(--text-faint);
+      font-weight: 400;
     }
 
-    .submit-button {
+    .command-submit {
+      width: 36px;
+      height: 36px;
       background: var(--accent);
-      color: #ffffff;
+      color: #090a0f;
       border: none;
-      width: 42px;
-      height: 42px;
-      border-radius: var(--radius-md);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -239,182 +191,169 @@
       transition: background 0.15s ease, transform 0.1s ease;
     }
 
-    .submit-button:hover {
-      background: var(--accent-hover);
+    .command-submit:hover {
+      background: #9aa5ff;
     }
 
-    .submit-button:active {
-      transform: scale(0.96);
+    .command-submit:active {
+      transform: scale(0.95);
+      background: var(--accent-press);
     }
 
     /* Engine Dropdown */
-    .engine-dropdown {
+    .engine-menu {
       position: absolute;
-      top: 66px;
-      left: 16px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-strong);
+      top: 58px;
+      left: 12px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-hover);
       border-radius: var(--radius-md);
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
-      padding: 6px;
+      padding: 4px;
       display: none;
       flex-direction: column;
-      z-index: 100;
-      min-width: 160px;
-      text-align: left;
+      z-index: 50;
+      min-width: 140px;
     }
 
-    .engine-dropdown.open {
+    .engine-menu.visible {
       display: flex;
     }
 
-    .engine-option {
+    .engine-choice {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
+      justify-content: space-between;
+      padding: 7px 10px;
+      border-radius: 6px;
       font-size: 13px;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border: none;
+      color: var(--text-muted);
       background: transparent;
-      width: 100%;
+      border: none;
+      cursor: pointer;
       text-align: left;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.12s ease, color 0.12s ease;
     }
 
-    .engine-option:hover {
-      background: var(--surface-2);
-      color: var(--text-primary);
+    .engine-choice:hover {
+      background: var(--surface-hover);
+      color: var(--text-main);
     }
 
-    .engine-option.active {
-      color: var(--text-primary);
-      background: var(--accent-subtle);
-    }
-
-    /* Shortcuts Grid */
-    .shortcuts-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      flex-wrap: wrap;
-      width: 100%;
-    }
-
-    .shortcut-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 18px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 14px;
+    .engine-choice.selected {
+      color: var(--text-main);
       font-weight: 500;
-      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s var(--ease-out), color 0.15s ease;
     }
 
-    .shortcut-item:hover {
-      background: var(--surface-2);
-      border-color: var(--border-strong);
-      color: var(--text-primary);
-      transform: translateY(-2px);
-    }
-
-    .shortcut-icon-wrapper {
-      width: 22px;
-      height: 22px;
+    /* Shortcuts Clean Strip */
+    .shortcuts-strip {
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    /* Footer */
-    footer {
-      position: relative;
-      z-index: 10;
+    .shortcut-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 450;
+      letter-spacing: -0.01em;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s var(--ease);
+    }
+
+    .shortcut-pill:hover {
+      background: var(--surface-elevated);
+      border-color: var(--border-hover);
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+
+    .shortcut-pill svg {
+      opacity: 0.85;
+      transition: opacity 0.15s ease;
+    }
+
+    .shortcut-pill:hover svg {
+      opacity: 1;
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      width: 100%;
+      max-width: 1100px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding-top: 24px;
-      border-top: 1px solid var(--border-subtle);
-      font-size: 13px;
-      color: var(--text-tertiary);
+      font-size: 12.5px;
+      color: var(--text-faint);
     }
 
-    .keyboard-hint {
+    .kbd-tip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
-    .key-badge {
+    .key-cap {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 2px 7px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-strong);
-      border-radius: 5px;
+      padding: 1px 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
       font-size: 11px;
-      font-weight: 600;
-      color: var(--text-secondary);
+      font-weight: 500;
+      color: var(--text-muted);
     }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <header>
-    <a href="chrome://newtab" class="brand-mark">
-      <div class="star-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2 L14.5 9.5 L22 12 L14.5 14.5 L12 22 L9.5 14.5 L2 12 L9.5 9.5 Z" fill="#6366f1"/>
-        </svg>
-      </div>
-      <span class="brand-title">Astra</span>
+  <!-- Top Navigation (Right-aligned, quiet) -->
+  <div class="top-nav">
+    <a href="https://chromewebstore.google.com" target="_blank" class="ghost-nav-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      <span>Web Store</span>
     </a>
+    <a href="chrome://settings" target="_blank" class="ghost-nav-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Settings</span>
+    </a>
+  </div>
 
-    <div class="header-pills">
-      <div class="status-pill">
-        <span class="status-indicator"></span>
-        <span>Shields Active</span>
-      </div>
-      <a class="quick-link-btn" href="https://chromewebstore.google.com" target="_blank">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-        </svg>
-        <span>Web Store</span>
-      </a>
-      <a class="quick-link-btn" href="chrome://settings" target="_blank">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </a>
-    </div>
-  </header>
-
-  <!-- Main Stage -->
+  <!-- Center Stage -->
   <main>
-    <div class="time-heading" id="clock-display">12:00</div>
-    <div class="greeting-subhead" id="greeting-display">Ready to explore.</div>
+    <!-- Minimalist Astra Emblem -->
+    <div class="emblem-wrapper">
+      <svg class="emblem-icon" viewBox="0 0 32 32" fill="none">
+        <path d="M16 4 L18.5 13.5 L28 16 L18.5 18.5 L16 28 L13.5 18.5 L4 16 L13.5 13.5 Z" fill="#818cf8"/>
+      </svg>
+    </div>
 
-    <div class="command-container">
-      <form class="command-bar" id="search-form" onsubmit="executeSearch(event)">
-        <button type="button" class="search-engine-selector" id="engine-btn" onclick="toggleEngineMenu(event)">
+    <!-- Command / Search Bar -->
+    <div class="command-box">
+      <form class="command-input-container" id="search-form" onsubmit="executeSearch(event)">
+        <button type="button" class="engine-trigger" id="engine-btn" onclick="toggleEngineMenu(event)" aria-label="Select search engine">
           <span id="current-engine-name">Google</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
@@ -422,138 +361,110 @@
         <input 
           type="text" 
           id="search-input" 
-          class="search-input" 
-          placeholder="Search the web or type a URL..." 
+          class="command-input" 
+          placeholder="Search or enter address..." 
           autofocus 
           autocomplete="off" 
           spellcheck="false"
         />
 
-        <button type="submit" class="submit-button" aria-label="Search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="submit" class="command-submit" aria-label="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
       </form>
 
-      <!-- Engine Selector Menu -->
-      <div class="engine-dropdown" id="engine-dropdown">
-        <button type="button" class="engine-option active" onclick="selectEngine('google', 'Google')">Google</button>
-        <button type="button" class="engine-option" onclick="selectEngine('duckduckgo', 'DuckDuckGo')">DuckDuckGo</button>
-        <button type="button" class="engine-option" onclick="selectEngine('brave', 'Brave')">Brave</button>
-        <button type="button" class="engine-option" onclick="selectEngine('github', 'GitHub')">GitHub</button>
+      <!-- Engine Selector Popover -->
+      <div class="engine-menu" id="engine-menu">
+        <button type="button" class="engine-choice selected" onclick="selectEngine('google', 'Google')">Google</button>
+        <button type="button" class="engine-choice" onclick="selectEngine('duckduckgo', 'DuckDuckGo')">DuckDuckGo</button>
+        <button type="button" class="engine-choice" onclick="selectEngine('brave', 'Brave')">Brave</button>
+        <button type="button" class="engine-choice" onclick="selectEngine('github', 'GitHub')">GitHub</button>
       </div>
     </div>
 
-    <!-- Quick Shortcuts Bar -->
-    <div class="shortcuts-bar">
-      <a class="shortcut-item" href="https://chromewebstore.google.com">
-        <div class="shortcut-icon-wrapper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-        </div>
-        <span>Extensions</span>
-      </a>
-
-      <a class="shortcut-item" href="https://github.com">
-        <div class="shortcut-icon-wrapper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f1f5f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-          </svg>
-        </div>
+    <!-- Clean Shortcuts Strip -->
+    <div class="shortcuts-strip">
+      <a class="shortcut-pill" href="https://github.com">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+        </svg>
         <span>GitHub</span>
       </a>
 
-      <a class="shortcut-item" href="https://chatgpt.com">
-        <div class="shortcut-icon-wrapper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-          </svg>
-        </div>
-        <span>AI Copilot</span>
+      <a class="shortcut-pill" href="https://chatgpt.com">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+        </svg>
+        <span>ChatGPT</span>
       </a>
 
-      <a class="shortcut-item" href="https://youtube.com">
-        <div class="shortcut-icon-wrapper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"></polygon>
-          </svg>
-        </div>
+      <a class="shortcut-pill" href="https://youtube.com">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"></polygon>
+        </svg>
         <span>YouTube</span>
+      </a>
+
+      <a class="shortcut-pill" href="chrome://extensions">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        <span>Extensions</span>
       </a>
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer>
-    <div class="keyboard-hint">
-      <span>Focus search:</span>
-      <span class="key-badge">/</span>
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="kbd-tip">
+      <span>Focus</span>
+      <span class="key-cap">⌘K</span>
       <span>or</span>
-      <span class="key-badge">⌘K</span>
+      <span class="key-cap">/</span>
     </div>
-    <div>Astra Browser • Chromium Core</div>
-  </footer>
+    <div>Astra</div>
+  </div>
 
   <script>
-    // Live Clock & Time-based Greeting
-    function updateClock() {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('clock-display').textContent = `${hours}:${minutes}`;
-
-      const hr = now.getHours();
-      let greeting = 'Good evening';
-      if (hr >= 5 && hr < 12) greeting = 'Good morning';
-      else if (hr >= 12 && hr < 17) greeting = 'Good afternoon';
-      document.getElementById('greeting-display').textContent = `${greeting}. Where to next?`;
-    }
-    updateClock();
-    setInterval(updateClock, 10000);
-
-    // Search Engine Selection
+    // Search Engine Configuration
     const engines = {
       google: 'https://www.google.com/search?q=',
       duckduckgo: 'https://duckduckgo.com/?q=',
       brave: 'https://search.brave.com/search?q=',
       github: 'https://github.com/search?q='
     };
-    let currentEngine = localStorage.getItem('astra_engine') || 'google';
+    let currentEngine = localStorage.getItem('astra_pref_engine') || 'google';
 
     function initEngine() {
       const names = { google: 'Google', duckduckgo: 'DuckDuckGo', brave: 'Brave', github: 'GitHub' };
       document.getElementById('current-engine-name').textContent = names[currentEngine] || 'Google';
-      document.querySelectorAll('.engine-option').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('onclick').includes(currentEngine));
+      document.querySelectorAll('.engine-choice').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('onclick').includes(currentEngine));
       });
     }
     initEngine();
 
     function toggleEngineMenu(e) {
       e.stopPropagation();
-      const dropdown = document.getElementById('engine-dropdown');
-      dropdown.classList.toggle('open');
+      document.getElementById('engine-menu').classList.toggle('visible');
     }
 
     function selectEngine(id, name) {
       currentEngine = id;
-      localStorage.setItem('astra_engine', id);
+      localStorage.setItem('astra_pref_engine', id);
       document.getElementById('current-engine-name').textContent = name;
-      document.getElementById('engine-dropdown').classList.remove('open');
-      document.querySelectorAll('.engine-option').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('onclick').includes(id));
+      document.getElementById('engine-menu').classList.remove('visible');
+      document.querySelectorAll('.engine-choice').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('onclick').includes(id));
       });
       document.getElementById('search-input').focus();
     }
 
     window.addEventListener('click', () => {
-      document.getElementById('engine-dropdown').classList.remove('open');
+      document.getElementById('engine-menu').classList.remove('visible');
     });
 
     // Execute Search or Direct Navigation
@@ -575,7 +486,7 @@
       }
     }
 
-    // Hotkey to focus search
+    // Keyboard navigation: / or Cmd+K to focus
     window.addEventListener('keydown', (e) => {
       if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== document.getElementById('search-input')) {
         e.preventDefault();
