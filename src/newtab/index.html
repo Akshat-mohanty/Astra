@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Tab</title>
+  <title></title>
   <link rel="manifest" href="/site.webmanifest">
   <style>
     * {
@@ -46,12 +46,14 @@
       top: 0;
       left: 0;
       z-index: 100;
+      -webkit-app-region: drag;
     }
 
     .nav-controls {
       display: flex;
       align-items: center;
       gap: 14px;
+      -webkit-app-region: no-drag;
     }
 
     .nav-icon-btn {

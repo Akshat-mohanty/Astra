@@ -24,7 +24,7 @@ def patch_resources_pak():
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>New Tab</title>
+  <title></title>
   <style>
     * {{
       box-sizing: border-box;
@@ -66,12 +66,14 @@ def patch_resources_pak():
       top: 0;
       left: 0;
       z-index: 100;
+      -webkit-app-region: drag;
     }}
 
     .nav-controls {{
       display: flex;
       align-items: center;
       gap: 14px;
+      -webkit-app-region: no-drag;
     }}
 
     .nav-icon-btn {{

@@ -251,11 +251,10 @@ int main(int argc, char *argv[]) {
         "--start-maximized",
         win_size_arg,
         "--window-position=0,0",
-        /* Clean browser view: enable SidePanel (matching Dia sidebar icon), disable clutter */
-        "--enable-features=SidePanel,SidePanelPinning",
-        "--disable-features=ChromeLabs,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu",
-        "--homepage=chrome://newtab",
-        initial_url
+        /* App mode: removes native Omnibox toolbar, replaces with custom Astra navigation bar */
+        "--app=http://127.0.0.1:4545/",
+        "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations,DesktopPWAsTabStripSettings",
+        "--disable-features=ChromeLabs,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu"
     };
     int num_flags = (int)(sizeof(flags) / sizeof(flags[0]));
 
