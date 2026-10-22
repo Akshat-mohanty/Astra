@@ -1,0 +1,9 @@
+{
+  "name": "Astra",
+  "version": "1.0",
+  "manifest_version": 3,
+  "description": "Astra Native New Tab Experience",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  }
+}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Astra</title>
+  <title>New Tab</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23090a0f'/><path d='M16 6 L18.2 13.8 L26 16 L18.2 18.2 L16 26 L13.8 18.2 L6 16 L13.8 13.8 Z' fill='%23818cf8'/></svg>">
   <style>
     :root {
@@ -350,8 +350,8 @@
 
     <!-- Command / Search Bar -->
     <div class="command-box">
-      <form class="command-input-container" id="search-form" onsubmit="executeSearch(event)">
-        <button type="button" class="engine-trigger" id="engine-btn" onclick="toggleEngineMenu(event)" aria-label="Select search engine">
+      <form class="command-input-container" id="search-form">
+        <button type="button" class="engine-trigger" id="engine-btn" aria-label="Select search engine">
           <span id="current-engine-name">Google</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
@@ -377,10 +377,10 @@
 
       <!-- Engine Selector Popover -->
       <div class="engine-menu" id="engine-menu">
-        <button type="button" class="engine-choice selected" onclick="selectEngine('google', 'Google')">Google</button>
-        <button type="button" class="engine-choice" onclick="selectEngine('duckduckgo', 'DuckDuckGo')">DuckDuckGo</button>
-        <button type="button" class="engine-choice" onclick="selectEngine('brave', 'Brave')">Brave</button>
-        <button type="button" class="engine-choice" onclick="selectEngine('github', 'GitHub')">GitHub</button>
+        <button type="button" class="engine-choice selected" data-engine="google">Google</button>
+        <button type="button" class="engine-choice" data-engine="duckduckgo">DuckDuckGo</button>
+        <button type="button" class="engine-choice" data-engine="brave">Brave</button>
+        <button type="button" class="engine-choice" data-engine="github">GitHub</button>
       </div>
     </div>
 
@@ -428,72 +428,6 @@
     <div>Astra</div>
   </div>
 
-  <script>
-    // Search Engine Configuration
-    const engines = {
-      google: 'https://www.google.com/search?q=',
-      duckduckgo: 'https://duckduckgo.com/?q=',
-      brave: 'https://search.brave.com/search?q=',
-      github: 'https://github.com/search?q='
-    };
-    let currentEngine = localStorage.getItem('astra_pref_engine') || 'google';
-
-    function initEngine() {
-      const names = { google: 'Google', duckduckgo: 'DuckDuckGo', brave: 'Brave', github: 'GitHub' };
-      document.getElementById('current-engine-name').textContent = names[currentEngine] || 'Google';
-      document.querySelectorAll('.engine-choice').forEach(btn => {
-        btn.classList.toggle('selected', btn.getAttribute('onclick').includes(currentEngine));
-      });
-    }
-    initEngine();
-
-    function toggleEngineMenu(e) {
-      e.stopPropagation();
-      document.getElementById('engine-menu').classList.toggle('visible');
-    }
-
-    function selectEngine(id, name) {
-      currentEngine = id;
-      localStorage.setItem('astra_pref_engine', id);
-      document.getElementById('current-engine-name').textContent = name;
-      document.getElementById('engine-menu').classList.remove('visible');
-      document.querySelectorAll('.engine-choice').forEach(btn => {
-        btn.classList.toggle('selected', btn.getAttribute('onclick').includes(id));
-      });
-      document.getElementById('search-input').focus();
-    }
-
-    window.addEventListener('click', () => {
-      document.getElementById('engine-menu').classList.remove('visible');
-    });
-
-    // Execute Search or Direct Navigation
-    function executeSearch(e) {
-      e.preventDefault();
-      const input = document.getElementById('search-input').value.trim();
-      if (!input) return;
-
-      const isUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(input)
-                 || input.startsWith('localhost')
-                 || input.includes('://');
-
-      if (isUrl) {
-        const dest = input.startsWith('http://') || input.startsWith('https://') ? input : 'https://' + input;
-        window.location.href = dest;
-      } else {
-        const baseUrl = engines[currentEngine] || engines.google;
-        window.location.href = baseUrl + encodeURIComponent(input);
-      }
-    }
-
-    // Keyboard navigation: / or Cmd+K to focus
-    window.addEventListener('keydown', (e) => {
-      if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== document.getElementById('search-input')) {
-        e.preventDefault();
-        document.getElementById('search-input').focus();
-        document.getElementById('search-input').select();
-      }
-    });
-  </script>
+  <script src="newtab.js"></script>
 </body>
 </html>
