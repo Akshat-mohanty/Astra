@@ -277,6 +277,14 @@ int main(int argc, char *argv[]) {
     }
     new_argv[idx] = NULL;
 
+    /* Inject Astra Cocoa hook (removes IP/origin title, routes Cmd+T / Cmd+N to clean Astra windows) */
+    char hook_dylib[1024];
+    snprintf(hook_dylib, sizeof(hook_dylib), "%s/../Frameworks/libastra_hook.dylib", mac_dir);
+    char real_hook[1024];
+    if (realpath(hook_dylib, real_hook)) {
+        setenv("DYLD_INSERT_LIBRARIES", real_hook, 1);
+    }
+
     execv(target_bin, new_argv);
     perror("execv failed");
     return 1;

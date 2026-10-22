@@ -24,7 +24,7 @@ def patch_resources_pak():
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title></title>
+  <title>&#8203;</title>
   <style>
     * {{
       box-sizing: border-box;
