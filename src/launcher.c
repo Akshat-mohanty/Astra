@@ -42,6 +42,10 @@ static const char *mime_for(const char *path) {
     if (strcmp(dot, ".png")  == 0) return "image/png";
     if (strcmp(dot, ".svg")  == 0) return "image/svg+xml";
     if (strcmp(dot, ".ico")  == 0) return "image/x-icon";
+    if (strcmp(dot, ".woff2") == 0) return "font/woff2";
+    if (strcmp(dot, ".woff")  == 0) return "font/woff";
+    if (strcmp(dot, ".otf")   == 0) return "font/otf";
+    if (strcmp(dot, ".ttf")   == 0) return "font/ttf";
     if (strcmp(dot, ".webmanifest") == 0) return "application/manifest+json";
     return "application/octet-stream";
 }

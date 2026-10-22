@@ -98,9 +98,59 @@ def patch_resources_pak():
       transform: scale(0.95);
     }}
 
+    /* Pinned / Recent Tabs Strip matching Dia */
+    .pinned-tabs-strip {{
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 14px;
+      padding-left: 14px;
+      border-left: 1px solid rgba(255, 255, 255, 0.07);
+      -webkit-app-region: no-drag;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }}
+
+    .tab-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 450;
+      color: #a8a8ac;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease;
+      max-width: 170px;
+    }}
+
+    .tab-pill:hover {{
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+    }}
+
+    .tab-favicon {{
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }}
+
+    .tab-title {{
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+
     main {{
       width: 100%;
-      max-width: 652px;
+      max-width: 650px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -115,37 +165,38 @@ def patch_resources_pak():
     }}
 
     .emblem-img {{
-      width: 80px;
-      height: 90px;
+      width: 72px;
+      height: 72px;
       object-fit: contain;
       pointer-events: none;
       user-select: none;
-      opacity: 0.95;
+      opacity: 0.96;
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.3));
     }}
 
     .emblem-container:hover .emblem-img {{
-      transform: scale(1.06);
+      transform: scale(1.05);
       opacity: 1;
     }}
 
     .prompt-card {{
       width: 100%;
-      background: #2d2d2d;
-      border-radius: 20px;
-      padding: 16px 18px 14px 18px;
+      background: #2d2d2e;
+      border-radius: 22px;
+      padding: 16px 20px 14px 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      gap: 12px;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.07);
       transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     }}
 
     .prompt-card:focus-within {{
-      background: #2f2f2f;
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      background: #2e2e30;
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 52px rgba(0, 0, 0, 0.55);
     }}
 
     .input-row {{
@@ -289,6 +340,33 @@ def patch_resources_pak():
         </svg>
       </button>
     </div>
+
+    <!-- Pinned / Recent Tabs Strip matching Dia -->
+    <div class="pinned-tabs-strip" id="pinned-tabs-strip">
+      <a class="tab-pill" href="https://github.com/Akshat-mohanty/Astra" title="GitHub — Astra">
+        <svg class="tab-favicon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span class="tab-title">GitHub — Astra</span>
+      </a>
+
+      <a class="tab-pill" href="https://google.com" title="Google">
+        <svg class="tab-favicon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span class="tab-title">Google</span>
+      </a>
+
+      <a class="tab-pill" href="https://claude.ai" title="Claude">
+        <svg class="tab-favicon" viewBox="0 0 24 24" fill="#D97706">
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <span class="tab-title">Claude</span>
+      </a>
+    </div>
   </header>
 
   <main>
@@ -381,11 +459,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (input && submitBtn) {
-    input.addEventListener('input', () => {
+    const updateSubmitState = () => {
       const hasText = input.value.trim().length > 0;
-      submitBtn.style.color = hasText ? '#ffffff' : '#787878';
-      submitBtn.style.background = hasText ? '#4a4a4a' : '#383838';
-    });
+      if (hasText) {
+        submitBtn.classList.add('active');
+        submitBtn.style.background = '#ffffff';
+        submitBtn.style.color = '#191919';
+      } else {
+        submitBtn.classList.remove('active');
+        submitBtn.style.background = '#3e3f41';
+        submitBtn.style.color = '#88888b';
+      }
+    };
+    input.addEventListener('input', updateSubmitState);
+    input.addEventListener('change', updateSubmitState);
   }
 
   if (searchForm) {

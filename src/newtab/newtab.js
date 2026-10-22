@@ -24,13 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Active state for submit button when input has text
+  // Active state for submit button when input has text (matching Dia's active white arrow)
   if (input && submitBtn) {
-    input.addEventListener('input', () => {
+    const updateSubmitState = () => {
       const hasText = input.value.trim().length > 0;
-      submitBtn.style.color = hasText ? '#ffffff' : '#787878';
-      submitBtn.style.background = hasText ? '#4a4a4a' : '#383838';
-    });
+      if (hasText) {
+        submitBtn.classList.add('active');
+      } else {
+        submitBtn.classList.remove('active');
+      }
+    };
+    input.addEventListener('input', updateSubmitState);
+    input.addEventListener('change', updateSubmitState);
   }
 
   // Execute Search or Navigate
@@ -54,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add tabs or files
+  // Add tabs or files (opens file picker or attaches tab reference)
   if (addBtn && fileInput) {
     addBtn.addEventListener('click', () => {
       fileInput.click();
@@ -66,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (input) {
           input.value = `[Attached: ${fileNames}] `;
           input.focus();
+          if (submitBtn) submitBtn.classList.add('active');
         }
       }
     });
@@ -79,24 +85,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.start();
-        micBtn.style.color = '#ef4444'; // Red recording dot feel
+        micBtn.style.color = '#ef4444'; // Red recording indicator
 
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
           input.value = transcript;
-          micBtn.style.color = '#787878';
+          micBtn.style.color = '#78787a';
+          if (submitBtn) submitBtn.classList.add('active');
           input.focus();
         };
 
         recognition.onerror = () => {
-          micBtn.style.color = '#787878';
+          micBtn.style.color = '#78787a';
         };
 
         recognition.onend = () => {
-          micBtn.style.color = '#787878';
+          micBtn.style.color = '#78787a';
         };
       } else {
-        input.placeholder = "Listening not supported on this engine";
+        input.placeholder = "Voice listening not supported on this engine";
         setTimeout(() => {
           input.placeholder = "Ask anything...";
         }, 2000);
