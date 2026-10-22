@@ -3,7 +3,11 @@
 
 static void open_new_astra_instance(void) {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        system("open -n -a /Applications/Astra.app &");
+        char cmd[512];
+        snprintf(cmd, sizeof(cmd),
+                 "open -n -a /Applications/Astra.app --args \"--app=http://127.0.0.1:4545/?t=%llu\" &",
+                 (unsigned long long)([[NSDate date] timeIntervalSince1970] * 1000));
+        system(cmd);
     });
 }
 
@@ -18,7 +22,8 @@ static void open_new_astra_instance(void) {
 @end
 
 static AstraMenuTarget *g_menu_target = nil;
-static void (*orig_sendEvent)(id, SEL, NSEvent *);
+static void (*orig_sendEvent)(id, SEL, NSEvent *) = NULL;
+static void (*orig_commandDispatch)(id, SEL, id) = NULL;
 
 static void my_sendEvent(id self, SEL _cmd, NSEvent *event) {
     if ([event type] == NSEventTypeKeyDown) {
@@ -31,7 +36,29 @@ static void my_sendEvent(id self, SEL _cmd, NSEvent *event) {
             }
         }
     }
-    orig_sendEvent(self, _cmd, event);
+    if (orig_sendEvent) {
+        orig_sendEvent(self, _cmd, event);
+    }
+}
+
+static void my_commandDispatch(id self, SEL _cmd, id sender) {
+    NSInteger tag = 0;
+    if ([sender respondsToSelector:@selector(tag)]) {
+        tag = [sender tag];
+    }
+    NSString *title = @"";
+    if ([sender respondsToSelector:@selector(title)]) {
+        title = [sender title];
+    }
+    // Intercept Chromium IDC_NEW_TAB (34014), IDC_NEW_WINDOW (34015), IDC_NEW_INCOGNITO_WINDOW (34016)
+    if (tag == 34014 || tag == 34015 || tag == 34016 ||
+        [title containsString:@"New Tab"] || [title containsString:@"New Window"]) {
+        open_new_astra_instance();
+        return;
+    }
+    if (orig_commandDispatch) {
+        orig_commandDispatch(self, _cmd, sender);
+    }
 }
 
 static void configure_window(NSWindow *win) {
@@ -70,7 +97,17 @@ static void install_astra_hook(void) {
         method_setImplementation(m, (IMP)my_sendEvent);
     }
 
-    // 2. Hook window creation and configure titlebar
+    // 2. Hook AppController commandDispatch: to route all new tab/window commands to clean Astra app instances
+    Class appCtrl = objc_getClass("AppController");
+    if (appCtrl) {
+        Method mDispatch = class_getInstanceMethod(appCtrl, @selector(commandDispatch:));
+        if (mDispatch) {
+            orig_commandDispatch = (void (*)(id, SEL, id))method_getImplementation(mDispatch);
+            method_setImplementation(mDispatch, (IMP)my_commandDispatch);
+        }
+    }
+
+    // 3. Hook window creation and configure titlebar
     [[NSNotificationCenter defaultCenter] addObserverForName:NSWindowDidBecomeKeyNotification
                                                       object:nil
                                                        queue:[NSOperationQueue mainQueue]
@@ -79,7 +116,7 @@ static void install_astra_hook(void) {
         configure_window(win);
     }];
 
-    // 3. Periodic timer to keep title hidden and patch menu items
+    // 4. Periodic timer to keep title hidden and patch menu items
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(500 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
         [NSTimer scheduledTimerWithTimeInterval:0.2 repeats:YES block:^(NSTimer * _Nonnull timer) {
             for (NSWindow *win in [NSApp windows]) {

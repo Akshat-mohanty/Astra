@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const micBtn = document.getElementById('mic-btn');
   const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
 
+  // Prevent duplicate bar if opened in a window that already has native toolbar
+  try {
+    if (window.matchMedia && window.matchMedia('(display-mode: browser)').matches) {
+      const topBar = document.querySelector('.top-nav-bar');
+      if (topBar) topBar.style.display = 'none';
+      document.body.style.paddingTop = '24px';
+    }
+  } catch (err) {}
+
   // Top navigation bar controls
   const backBtn = document.getElementById('nav-back-btn');
   const forwardBtn = document.getElementById('nav-forward-btn');

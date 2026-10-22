@@ -59,14 +59,24 @@ def patch_resources_pak():
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding: 0 18px;
-      background: #181819;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 0 16px;
+      background: #191919;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       position: fixed;
       top: 0;
       left: 0;
       z-index: 100;
       -webkit-app-region: drag;
+    }}
+
+    /* Never show duplicate top bar if window is a standard browser window with native toolbar */
+    @media (display-mode: browser) {{
+      .top-nav-bar {{
+        display: none !important;
+      }}
+      body {{
+        padding-top: 24px !important;
+      }}
     }}
 
     .nav-controls {{
@@ -438,6 +448,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('file-input');
   const micBtn = document.getElementById('mic-btn');
   const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
+
+  // Prevent duplicate bar if opened in a window that already has native toolbar
+  try {
+    if (window.matchMedia && window.matchMedia('(display-mode: browser)').matches) {
+      const topBar = document.querySelector('.top-nav-bar');
+      if (topBar) topBar.style.display = 'none';
+      document.body.style.paddingTop = '24px';
+    }
+  } catch (err) {}
 
   // Top navigation bar controls
   const backBtn = document.getElementById('nav-back-btn');

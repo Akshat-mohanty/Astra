@@ -57,6 +57,16 @@
       -webkit-app-region: drag;
     }
 
+    /* Never show duplicate top bar if window is a standard browser window with native toolbar */
+    @media (display-mode: browser) {
+      .top-nav-bar {
+        display: none !important;
+      }
+      body {
+        padding-top: 24px !important;
+      }
+    }
+
     .nav-controls {
       display: flex;
       align-items: center;

@@ -233,11 +233,18 @@ int main(int argc, char *argv[]) {
     /* parent: wait until server is ready before exec'ing Chromium */
     wait_for_server();
 
-    // Check if an external user URL was passed
+    // Check if an external user URL or custom --app was passed
     int has_user_url = 0;
     const char *initial_url = "chrome://newtab";
+    const char *app_url_flag = "--app=http://127.0.0.1:4545/";
+    char custom_app_flag[1024];
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (strncmp(argv[i], "--app=", 6) == 0) {
+            snprintf(custom_app_flag, sizeof(custom_app_flag), "%s", argv[i]);
+            app_url_flag = custom_app_flag;
+            continue;
+        }
         if (argv[i][0] != '-') {
             has_user_url = 1;
             initial_url = argv[i];
@@ -256,7 +263,7 @@ int main(int argc, char *argv[]) {
         win_size_arg,
         "--window-position=0,0",
         /* App mode: removes native Omnibox toolbar, replaces with custom Astra navigation bar */
-        "--app=http://127.0.0.1:4545/",
+        app_url_flag,
         "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations,DesktopPWAsTabStripSettings",
         "--disable-features=ChromeLabs,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu"
     };
@@ -266,6 +273,7 @@ int main(int argc, char *argv[]) {
     int extra = 0;
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (strncmp(argv[i], "--app=", 6) == 0) continue;
         if (has_user_url && argv[i][0] != '-') continue;
         extra++;
     }
@@ -276,6 +284,7 @@ int main(int argc, char *argv[]) {
         new_argv[idx++] = (char *)flags[i];
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (strncmp(argv[i], "--app=", 6) == 0) continue;
         if (has_user_url && argv[i][0] != '-') continue;
         new_argv[idx++] = argv[i];
     }
