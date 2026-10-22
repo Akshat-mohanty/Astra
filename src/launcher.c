@@ -40,17 +40,18 @@ int main(int argc, char *argv[]) {
     snprintf(win_size_arg, sizeof(win_size_arg), "--window-size=%d,%d", width, height);
     char win_pos_arg[64] = "--window-position=0,0";
 
-    // Check if a specific URL was passed
-    int has_url = 0;
+    // Check if an external user-specified URL was passed (filtering out macOS -psn flags)
+    int has_user_url = 0;
     for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
         if (argv[i][0] != '-') {
-            has_url = 1;
+            has_user_url = 1;
             break;
         }
     }
 
-    // Allocate arguments: target_bin + user_data_arg + ext_path + --no-first-run + --start-maximized + win_size + win_pos + (chrome://newtab if needed) + incoming args + NULL
-    int new_argc = argc + 8;
+    // Allocate arguments
+    int new_argc = argc + 9;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
     int idx = 0;
@@ -63,11 +64,14 @@ int main(int argc, char *argv[]) {
     new_argv[idx++] = win_pos_arg;
 
     for (int i = 1; i < argc; i++) {
+        // Skip macOS LaunchServices process serial number argument
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
         new_argv[idx++] = argv[i];
     }
 
-    if (!has_url) {
-        new_argv[idx++] = "chrome://newtab";
+    // Fixed deterministic Astra extension URL on startup
+    if (!has_user_url) {
+        new_argv[idx++] = "chrome-extension://dhkpjbnpckffnojbmobgkipnajincgmi/index.html";
     }
 
     new_argv[idx] = NULL;
