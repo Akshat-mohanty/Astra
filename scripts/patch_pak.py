@@ -19,7 +19,7 @@ def patch_resources_pak():
         logo_b64 = base64.b64encode(f.read()).decode('utf-8')
     data_uri = f"data:image/png;base64,{logo_b64}"
 
-    # 2. Build complete self-contained HTML
+    # 2. Build complete self-contained HTML (using external module new_tab_page.js for 100% CSP compliance)
     html_content = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -278,95 +278,97 @@ def patch_resources_pak():
 
   <div class="bottom-indicator"></div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {{
-      const input = document.getElementById('search-input');
-      const searchForm = document.getElementById('search-form');
-      const addBtn = document.getElementById('add-btn');
-      const fileInput = document.getElementById('file-input');
-      const micBtn = document.getElementById('mic-btn');
-      const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
-
-      if (input && submitBtn) {{
-        input.addEventListener('input', () => {{
-          const hasText = input.value.trim().length > 0;
-          submitBtn.style.color = hasText ? '#ffffff' : '#787878';
-          submitBtn.style.background = hasText ? '#4a4a4a' : '#383838';
-        }});
-      }}
-
-      if (searchForm) {{
-        searchForm.addEventListener('submit', (e) => {{
-          e.preventDefault();
-          if (!input) return;
-          const query = input.value.trim();
-          if (!query) return;
-
-          const isUrl = /^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{{2,6}})([\\/\\w \\.-]*)*\\/?$/.test(query)
-                     || query.startsWith('localhost')
-                     || query.includes('://');
-
-          if (isUrl) {{
-            const dest = query.startsWith('http://') || query.startsWith('https://') ? query : 'https://' + query;
-            window.location.href = dest;
-          }} else {{
-            window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
-          }}
-        }});
-      }}
-
-      if (addBtn && fileInput) {{
-        addBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', () => {{
-          if (fileInput.files.length > 0) {{
-            const fileNames = Array.from(fileInput.files).map(f => f.name).join(', ');
-            if (input) {{
-              input.value = `[Attached: ${{fileNames}}] `;
-              input.focus();
-            }}
-          }}
-        }});
-      }}
-
-      if (micBtn && input) {{
-        micBtn.addEventListener('click', () => {{
-          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-          if (SpeechRecognition) {{
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.start();
-            micBtn.style.color = '#ef4444';
-            recognition.onresult = (event) => {{
-              input.value = event.results[0][0].transcript;
-              micBtn.style.color = '#787878';
-              input.focus();
-            }};
-            recognition.onerror = () => micBtn.style.color = '#787878';
-            recognition.onend = () => micBtn.style.color = '#787878';
-          }}
-        }});
-      }}
-
-      window.addEventListener('keydown', (e) => {{
-        if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== input) {{
-          e.preventDefault();
-          if (input) {{
-            input.focus();
-            input.select();
-          }}
-        }}
-      }});
-    }});
-  </script>
+  <!-- Loaded as standard WebUI script satisfying CSP -->
+  <script type="module" src="new_tab_page.js"></script>
 </body>
 </html>
 """
 
-    # 3. Gzip compress the replacement payload
-    compressed_payload = gzip.compress(html_content.encode('utf-8'))
-    print(f"Compressed payload size: {len(compressed_payload)} bytes")
+    js_content = """
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('search-input');
+  const searchForm = document.getElementById('search-form');
+  const addBtn = document.getElementById('add-btn');
+  const fileInput = document.getElementById('file-input');
+  const micBtn = document.getElementById('mic-btn');
+  const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
 
-    # 4. Read original pak
+  if (input && submitBtn) {
+    input.addEventListener('input', () => {
+      const hasText = input.value.trim().length > 0;
+      submitBtn.style.color = hasText ? '#ffffff' : '#787878';
+      submitBtn.style.background = hasText ? '#4a4a4a' : '#383838';
+    });
+  }
+
+  if (searchForm) {
+    searchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!input) return;
+      const query = input.value.trim();
+      if (!query) return;
+
+      const isUrl = /^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$/.test(query)
+                 || query.startsWith('localhost')
+                 || query.includes('://');
+
+      if (isUrl) {
+        const dest = query.startsWith('http://') || query.startsWith('https://') ? query : 'https://' + query;
+        window.location.href = dest;
+      } else {
+        window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+      }
+    });
+  }
+
+  if (addBtn && fileInput) {
+    addBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        const fileNames = Array.from(fileInput.files).map(f => f.name).join(', ');
+        if (input) {
+          input.value = `[Attached: ${fileNames}] `;
+          input.focus();
+        }
+      }
+    });
+  }
+
+  if (micBtn && input) {
+    micBtn.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.start();
+        micBtn.style.color = '#ef4444';
+        recognition.onresult = (event) => {
+          input.value = event.results[0][0].transcript;
+          micBtn.style.color = '#787878';
+          input.focus();
+        };
+        recognition.onerror = () => micBtn.style.color = '#787878';
+        recognition.onend = () => micBtn.style.color = '#787878';
+      }
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== input) {
+      e.preventDefault();
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+  });
+});
+"""
+
+    compressed_html = gzip.compress(html_content.encode('utf-8'))
+    compressed_js = gzip.compress(js_content.encode('utf-8'))
+
+    # Read original pak
     with open(backup_path, 'rb') as f:
         orig_data = f.read()
 
@@ -390,11 +392,10 @@ def patch_resources_pak():
         next_offset = res_entries[i+1][1]
         payloads[rid] = orig_data[offset:next_offset]
 
-    # Replace Resource ID 23390 (Chromium New Tab Page)
-    TARGET_ID = 23390
-    assert TARGET_ID in payloads, f"Resource {TARGET_ID} not found in pak!"
-    payloads[TARGET_ID] = compressed_payload
-    print(f"Replaced Resource ID {TARGET_ID} with Astra New Tab Page")
+    # Replace Resource ID 23390 (HTML) and 23392 (JS)
+    payloads[23390] = compressed_html
+    payloads[23392] = compressed_js
+    print("Replaced Resource ID 23390 (HTML) and 23392 (JS) with CSP compliance")
 
     # Reconstruct PAK
     new_header = struct.pack('<IIHH', v, enc, num_res, num_alias)

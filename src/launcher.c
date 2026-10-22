@@ -36,10 +36,17 @@ int main(int argc, char *argv[]) {
     snprintf(win_size_arg, sizeof(win_size_arg), "--window-size=%d,%d", width, height);
     char win_pos_arg[64] = "--window-position=0,0";
 
-    // Disable trending search popups & zero-prefix suggestions
-    const char *disable_suggest_features = "--disable-features=ZeroSuggestPrefetching,OmniboxZeroSuggestPrefetching,OmniboxTrendingZeroPrefixSuggestions,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestInMemoryCaching";
+    // Check if an external user URL was passed
+    int has_user_url = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (argv[i][0] != '-') {
+            has_user_url = 1;
+            break;
+        }
+    }
 
-    // Allocate arguments
+    // Allocate arguments: target_bin + user_data_arg + --no-first-run + --start-maximized + win_size + win_pos + app/url arg + incoming args + NULL
     int new_argc = argc + 8;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
@@ -50,10 +57,13 @@ int main(int argc, char *argv[]) {
     new_argv[idx++] = "--start-maximized";
     new_argv[idx++] = win_size_arg;
     new_argv[idx++] = win_pos_arg;
-    new_argv[idx++] = (char *)disable_suggest_features;
+
+    // Launch in clean frameless app mode without the browser toolbar
+    if (!has_user_url) {
+        new_argv[idx++] = "--app=chrome://newtab";
+    }
 
     for (int i = 1; i < argc; i++) {
-        // Skip macOS LaunchServices process serial number argument
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
         new_argv[idx++] = argv[i];
     }
