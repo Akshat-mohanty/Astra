@@ -6,6 +6,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const micBtn = document.getElementById('mic-btn');
   const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
 
+  // Top navigation bar controls
+  const backBtn = document.getElementById('nav-back-btn');
+  const forwardBtn = document.getElementById('nav-forward-btn');
+  const reloadBtn = document.getElementById('nav-reload-btn');
+  const sidebarBtn = document.getElementById('sidebar-toggle-btn');
+
+  if (backBtn) backBtn.addEventListener('click', () => window.history.back());
+  if (forwardBtn) forwardBtn.addEventListener('click', () => window.history.forward());
+  if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
+  if (sidebarBtn) {
+    sidebarBtn.addEventListener('click', () => {
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
   // Active state for submit button when input has text
   if (input && submitBtn) {
     input.addEventListener('input', () => {

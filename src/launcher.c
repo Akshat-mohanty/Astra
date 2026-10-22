@@ -229,6 +229,18 @@ int main(int argc, char *argv[]) {
     /* parent: wait until server is ready before exec'ing Chromium */
     wait_for_server();
 
+    // Check if an external user URL was passed
+    int has_user_url = 0;
+    const char *initial_url = "chrome://newtab";
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (argv[i][0] != '-') {
+            has_user_url = 1;
+            initial_url = argv[i];
+            break;
+        }
+    }
+
     /* ── build Chromium argv ── */
     const char *flags[] = {
         target_bin,
@@ -239,27 +251,31 @@ int main(int argc, char *argv[]) {
         "--start-maximized",
         win_size_arg,
         "--window-position=0,0",
-        /* PWA mode: hides toolbar completely */
-        "--app=http://127.0.0.1:4545",
-        /* Tab strip in app-mode windows; new tabs open to app's new_tab_url */
-        "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations,DesktopPWAsTabStripSettings",
-        /* suppress chrome labs / trending searches clutter */
-        "--disable-features=ChromeLabs,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching",
+        /* Clean browser view: enable SidePanel (matching Dia sidebar icon), disable clutter */
+        "--enable-features=SidePanel,SidePanelPinning",
+        "--disable-features=ChromeLabs,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu",
+        "--homepage=chrome://newtab",
+        initial_url
     };
     int num_flags = (int)(sizeof(flags) / sizeof(flags[0]));
 
     /* pass through any extra argv (e.g. -psn_... from macOS, or a URL) */
     int extra = 0;
-    for (int i = 1; i < argc; i++)
-        if (strncmp(argv[i], "-psn", 4) != 0) extra++;
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (has_user_url && argv[i][0] != '-') continue;
+        extra++;
+    }
 
     char **new_argv = malloc((num_flags + extra + 1) * sizeof(char *));
     int idx = 0;
     for (int i = 0; i < num_flags; i++)
         new_argv[idx++] = (char *)flags[i];
-    for (int i = 1; i < argc; i++)
-        if (strncmp(argv[i], "-psn", 4) != 0)
-            new_argv[idx++] = argv[i];
+    for (int i = 1; i < argc; i++) {
+        if (strncmp(argv[i], "-psn", 4) == 0) continue;
+        if (has_user_url && argv[i][0] != '-') continue;
+        new_argv[idx++] = argv[i];
+    }
     new_argv[idx] = NULL;
 
     execv(target_bin, new_argv);

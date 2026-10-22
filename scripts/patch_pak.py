@@ -47,9 +47,53 @@ def patch_resources_pak():
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 0 24px 20px 24px;
+      padding: 56px 24px 20px 24px;
       overflow: hidden;
       user-select: none;
+    }}
+
+    /* Top Navigation Bar matching Dia / Arc style (Screenshot 2026-10-23 at 12.48.33 AM) */
+    .top-nav-bar {{
+      width: 100%;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 18px;
+      background: #181819;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }}
+
+    .nav-controls {{
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }}
+
+    .nav-icon-btn {{
+      background: transparent;
+      border: none;
+      color: #8c8c8e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
+    }}
+
+    .nav-icon-btn:hover {{
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }}
+
+    .nav-icon-btn:active {{
+      transform: scale(0.95);
     }}
 
     main {{
@@ -220,6 +264,40 @@ def patch_resources_pak():
   </style>
 </head>
 <body>
+  <!-- Top Navigation Bar matching Dia / Arc style (Screenshot 2026-10-23 at 12.48.33 AM) -->
+  <header class="top-nav-bar">
+    <div class="nav-controls">
+      <button type="button" class="nav-icon-btn" id="sidebar-toggle-btn" aria-label="Toggle Sidebar" title="Toggle Sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="4"></rect>
+          <path d="M9 3v18"></path>
+          <path d="M6 7h1"></path>
+          <path d="M6 11h1"></path>
+          <path d="M6 15h1"></path>
+        </svg>
+      </button>
+
+      <button type="button" class="nav-icon-btn" id="nav-back-btn" aria-label="Back" title="Back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      <button type="button" class="nav-icon-btn" id="nav-forward-btn" aria-label="Forward" title="Forward">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+
+      <button type="button" class="nav-icon-btn" id="nav-reload-btn" aria-label="Reload" title="Reload">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24"></path>
+          <polyline points="21 3 21 8 16 8"></polyline>
+        </svg>
+      </button>
+    </div>
+  </header>
+
   <main>
     <div class="emblem-container">
       <img src="{data_uri}" alt="Astra" class="emblem-img" />
@@ -292,6 +370,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('file-input');
   const micBtn = document.getElementById('mic-btn');
   const submitBtn = searchForm ? searchForm.querySelector('.submit-arrow-btn') : null;
+
+  // Top navigation bar controls
+  const backBtn = document.getElementById('nav-back-btn');
+  const forwardBtn = document.getElementById('nav-forward-btn');
+  const reloadBtn = document.getElementById('nav-reload-btn');
+  const sidebarBtn = document.getElementById('sidebar-toggle-btn');
+
+  if (backBtn) backBtn.addEventListener('click', () => window.history.back());
+  if (forwardBtn) forwardBtn.addEventListener('click', () => window.history.forward());
+  if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
+  if (sidebarBtn) {
+    sidebarBtn.addEventListener('click', () => {
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    });
+  }
 
   if (input && submitBtn) {
     input.addEventListener('input', () => {
