@@ -24,26 +24,16 @@ int main(int argc, char *argv[]) {
         snprintf(user_data_arg, sizeof(user_data_arg), "--user-data-dir=/tmp/AstraUserData");
     }
 
-    const char *default_url = "file:///Users/akshatmohanty/Astra/src/search/index.html";
-
-    // Allocate arguments: target_bin + user_data_arg + incoming args + default_url (if needed) + NULL
-    int new_argc = argc + 3;
+    // Allocate arguments: target_bin + user_data_arg + incoming args + NULL
+    int new_argc = argc + 2;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
     int idx = 0;
     new_argv[idx++] = target_bin;
     new_argv[idx++] = user_data_arg;
 
-    int has_url = 0;
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            has_url = 1;
-        }
         new_argv[idx++] = argv[i];
-    }
-
-    if (!has_url) {
-        new_argv[idx++] = (char *)default_url;
     }
 
     new_argv[idx] = NULL;
