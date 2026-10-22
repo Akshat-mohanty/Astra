@@ -30,6 +30,14 @@ static const char *get_mime_type(const char *path) {
 }
 
 static void serve_file(int client_fd, const char *web_root, const char *req_path) {
+    // Handle in-page new tab / window requests
+    if (strcmp(req_path, "/__astra_new_tab__") == 0) {
+        system("open -n -a /Applications/Astra.app &");
+        const char *ok_resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK";
+        send(client_fd, ok_resp, strlen(ok_resp), 0);
+        return;
+    }
+
     char clean_path[1024];
     if (strcmp(req_path, "/") == 0 || strcmp(req_path, "") == 0) {
         snprintf(clean_path, sizeof(clean_path), "%s/index.html", web_root);
@@ -186,6 +194,14 @@ int main(int argc, char *argv[]) {
             usleep(10000);
             if (is_port_open(SERVER_PORT)) break;
         }
+    }
+
+    // Insert Astra AppKit hook to intercept Cmd+T and Cmd+N so they never revert to normal Chromium look
+    char dylib_path[1024];
+    snprintf(dylib_path, sizeof(dylib_path), "%s/../Frameworks/libastra_hook.dylib", dir);
+    struct stat dst;
+    if (stat(dylib_path, &dst) == 0) {
+        setenv("DYLD_INSERT_LIBRARIES", dylib_path, 1);
     }
 
     char *home = getenv("HOME");

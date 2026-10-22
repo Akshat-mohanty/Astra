@@ -86,8 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Keyboard shortcut: pressing / or Cmd+K focuses prompt
+  // Keyboard shortcut: pressing / or Cmd+K focuses prompt; Cmd+T / Cmd+N opens clean Astra tab
   window.addEventListener('keydown', (e) => {
+    if ((e.metaKey && e.key === 't') || (e.metaKey && e.key === 'n')) {
+      e.preventDefault();
+      fetch('/__astra_new_tab__').catch(() => {});
+      return;
+    }
+
     if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== input) {
       e.preventDefault();
       if (input) {
