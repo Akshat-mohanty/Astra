@@ -28,17 +28,31 @@ int main(int argc, char *argv[]) {
     char ext_path[1024];
     snprintf(ext_path, sizeof(ext_path), "--load-extension=%s/../Resources/astra_internal", dir);
 
-    // Allocate arguments: target_bin + user_data_arg + ext_path + incoming args + NULL
-    int new_argc = argc + 3;
+    // Check if a specific URL was passed
+    int has_url = 0;
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] != '-') {
+            has_url = 1;
+            break;
+        }
+    }
+
+    // Allocate arguments: target_bin + user_data_arg + ext_path + --no-first-run + (chrome://newtab if needed) + incoming args + NULL
+    int new_argc = argc + 5;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
     int idx = 0;
     new_argv[idx++] = target_bin;
     new_argv[idx++] = user_data_arg;
     new_argv[idx++] = ext_path;
+    new_argv[idx++] = "--no-first-run";
 
     for (int i = 1; i < argc; i++) {
         new_argv[idx++] = argv[i];
+    }
+
+    if (!has_url) {
+        new_argv[idx++] = "chrome://newtab";
     }
 
     new_argv[idx] = NULL;
