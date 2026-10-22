@@ -251,15 +251,6 @@ def patch_resources_pak():
       color: #ffffff;
     }}
 
-    .bottom-indicator {{
-      width: 42px;
-      height: 5px;
-      border-radius: 9999px;
-      border: 1px solid #383839;
-      background: transparent;
-      margin-bottom: 2px;
-    }}
-
     #file-input {{
       display: none;
     }}
@@ -355,8 +346,6 @@ def patch_resources_pak():
 
     <input type="file" id="file-input" multiple />
   </main>
-
-  <div class="bottom-indicator"></div>
 
   <!-- Loaded as standard WebUI script satisfying CSP -->
   <script type="module" src="new_tab_page.js"></script>

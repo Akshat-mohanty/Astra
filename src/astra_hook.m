@@ -39,6 +39,21 @@ static void configure_window(NSWindow *win) {
     // Hide the title text and any IP/origin from the top center
     [win setTitleVisibility:NSWindowTitleHidden];
     [win setTitle:@""];
+
+    // Ensure window is visible on an active display (avoiding phantom off-screen coordinates)
+    NSRect frame = [win frame];
+    if (frame.size.width > 200 && frame.size.height > 200) {
+        BOOL onScreen = NO;
+        for (NSScreen *s in [NSScreen screens]) {
+            if (NSIntersectsRect(frame, [s frame])) {
+                onScreen = YES;
+                break;
+            }
+        }
+        if (!onScreen && [NSScreen mainScreen]) {
+            [win center];
+        }
+    }
 }
 
 __attribute__((constructor))
