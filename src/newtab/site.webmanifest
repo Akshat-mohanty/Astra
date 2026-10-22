@@ -1,0 +1,17 @@
+{
+  "name": "Astra",
+  "short_name": "Astra",
+  "description": "Astra Browser New Tab",
+  "display": "tabbed",
+  "start_url": "/",
+  "scope": "/",
+  "background_color": "#181819",
+  "theme_color": "#181819",
+  "icons": [
+    {
+      "src": "/astra_logo.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}
