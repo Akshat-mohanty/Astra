@@ -196,6 +196,10 @@ int main(int argc, char *argv[]) {
     snprintf(res_dir, sizeof(res_dir), "%s/../Resources/newtab", mac_dir);
     realpath(res_dir, g_newtab_dir);
 
+    /* extension load arg (overrides chrome://newtab for new tabs) */
+    char ext_arg[1024];
+    snprintf(ext_arg, sizeof(ext_arg), "--load-extension=%s", g_newtab_dir);
+
     /* ── user-data dir ── */
     char *home = getenv("HOME");
     char user_data_arg[1024];
@@ -240,6 +244,9 @@ int main(int argc, char *argv[]) {
         "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations",
         /* suppress trending searches dropdown */
         "--disable-features=ChromeLabs,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching",
+        /* load the Astra extension so chrome://newtab (new tabs) shows Astra theme */
+        ext_arg,
+        "--allow-pre-commit-input",
     };
     int num_flags = (int)(sizeof(flags) / sizeof(flags[0]));
 
