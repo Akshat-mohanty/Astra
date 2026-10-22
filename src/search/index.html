@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astra Search</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%236366f1'/><stop offset='50%' stop-color='%238b5cf6'/><stop offset='100%' stop-color='%23ec4899'/></linearGradient></defs><circle cx='50' cy='50' r='46' fill='%230f172a'/><polygon points='50,15 62,38 88,50 62,62 50,85 38,62 12,50 38,38' fill='url(%23g)'/></svg>">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 27, 46, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-1: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-3: #ec4899;
+      --gradient: linear-gradient(135deg, #6366f1, #8b5cf6 50%, #ec4899);
+      --glow: rgba(139, 92, 246, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(139, 92, 246, 0.08) 0px, transparent 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+      padding: 24px;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-size: 13px;
+      color: #c7d2fe;
+      font-weight: 500;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .top-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .top-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .top-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Main Container */
+    .center-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 720px;
+      margin: auto 0;
+      text-align: center;
+    }
+
+    /* Logo */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      filter: drop-shadow(0 0 20px var(--glow));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(3deg); }
+    }
+
+    .logo-text {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      color: var(--text-muted);
+      font-size: 17px;
+      margin-bottom: 36px;
+      font-weight: 400;
+    }
+
+    /* Search Container */
+    .search-box {
+      width: 100%;
+      position: relative;
+      margin-bottom: 32px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 20px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      padding: 4px 8px 4px 20px;
+    }
+
+    .search-input-wrapper:focus-within {
+      border-color: rgba(139, 92, 246, 0.6);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(139, 92, 246, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .search-icon {
+      color: var(--text-muted);
+      margin-right: 14px;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      height: 52px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .search-action-btn {
+      background: var(--gradient);
+      border: none;
+      color: white;
+      padding: 10px 22px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .search-action-btn:hover {
+      opacity: 0.92;
+    }
+
+    .shortcut-hint {
+      position: absolute;
+      right: 120px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      padding: 3px 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      pointer-events: none;
+    }
+
+    /* Shortcuts Grid */
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      width: 100%;
+      max-width: 580px;
+    }
+
+    .shortcut-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .shortcut-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-3px);
+    }
+
+    .shortcut-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .shortcut-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Footer */
+    .footer {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #64748b;
+      padding: 16px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="badge-pill">
+      <span class="badge-dot"></span>
+      <span>Astra Engine v1.0 • Apple Silicon</span>
+    </div>
+    <nav class="top-links">
+      <a class="top-link" href="https://chromewebstore.google.com" target="_blank">Chrome Web Store</a>
+      <a class="top-link" href="chrome://extensions" target="_blank">Extensions</a>
+      <a class="top-link" href="chrome://settings" target="_blank">Settings</a>
+    </nav>
+  </header>
+
+  <!-- Center Stage -->
+  <main class="center-stage">
+    <div class="logo-container">
+      <svg class="logo-icon" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="astra-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366f1"/>
+            <stop offset="50%" stop-color="#8b5cf6"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+          </linearGradient>
+        </defs>
+        <circle cx="50" cy="50" r="46" fill="#121829" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+        <polygon points="50,14 62,38 88,50 62,62 50,86 38,62 12,50 38,38" fill="url(#astra-grad)"/>
+      </svg>
+      <h1 class="logo-text">Astra</h1>
+    </div>
+    <p class="tagline">The next-generation browser built for speed, intelligence, and privacy.</p>
+
+    <!-- Search Form -->
+    <form class="search-box" id="search-form" onsubmit="handleSearch(event)">
+      <div class="search-input-wrapper">
+        <span class="search-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input 
+          type="text" 
+          id="search-query" 
+          class="search-input" 
+          placeholder="Search with Astra or enter URL..." 
+          autofocus 
+          autocomplete="off"
+        />
+        <span class="shortcut-hint">/</span>
+        <button type="submit" class="search-action-btn">
+          <span>Search</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    <!-- Shortcuts -->
+    <div class="shortcuts-grid">
+      <a class="shortcut-card" href="https://chromewebstore.google.com">
+        <div class="shortcut-icon" style="color: #60a5fa;">🧩</div>
+        <span class="shortcut-label">Web Store</span>
+      </a>
+      <a class="shortcut-card" href="https://github.com">
+        <div class="shortcut-icon" style="color: #f1f5f9;">🐙</div>
+        <span class="shortcut-label">GitHub</span>
+      </a>
+      <a class="shortcut-card" href="https://youtube.com">
+        <div class="shortcut-icon" style="color: #f87171;">▶️</div>
+        <span class="shortcut-label">YouTube</span>
+      </a>
+      <a class="shortcut-card" href="https://chatgpt.com">
+        <div class="shortcut-icon" style="color: #34d399;">✨</div>
+        <span class="shortcut-label">AI Chat</span>
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>Astra Search Engine • Powered by Chromium</div>
+    <div>100% Chrome Web Store Extension Compatible</div>
+  </footer>
+
+  <script>
+    function handleSearch(e) {
+      e.preventDefault();
+      const query = document.getElementById('search-query').value.trim();
+      if (!query) return;
+
+      // Check if it's a URL
+      const isUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(query) 
+                 || query.startsWith('localhost') 
+                 || query.includes('://');
+
+      if (isUrl) {
+        const dest = query.startsWith('http://') || query.startsWith('https://') ? query : 'https://' + query;
+        window.location.href = dest;
+      } else {
+        // Query Astra Search (defaults to privacy-focused Google/DuckDuckGo transparent pass-through until local backend is queried)
+        window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+      }
+    }
+
+    // Keyboard shortcut / to focus search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== document.getElementById('search-query')) {
+        e.preventDefault();
+        document.getElementById('search-query').focus();
+      }
+    });
+  </script>
+</body>
+</html>

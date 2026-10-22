@@ -1,0 +1,23 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Application build output & binaries
+build/
+*.dmg
+*.app/
+*.o
+*.obj
+
+# External disk image & workspace symlinks
+build_workspace
+*.sparseimage
+*.sparsebundle
+
+# Engine downloads
+engine/*.dmg
+
+# User profile data & caches
+/tmp/Astra*
+user_data/
