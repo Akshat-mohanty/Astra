@@ -165,18 +165,17 @@ def patch_resources_pak():
     }}
 
     .emblem-img {{
-      width: 72px;
-      height: 72px;
+      width: 80px;
+      height: 90px;
       object-fit: contain;
       pointer-events: none;
       user-select: none;
-      opacity: 0.96;
+      opacity: 0.95;
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.3));
     }}
 
     .emblem-container:hover .emblem-img {{
-      transform: scale(1.05);
+      transform: scale(1.06);
       opacity: 1;
     }}
 
