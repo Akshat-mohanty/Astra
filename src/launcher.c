@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <mach-o/dyld.h>
+#include <CoreGraphics/CoreGraphics.h>
 
 int main(int argc, char *argv[]) {
     char path[1024];
@@ -28,6 +29,17 @@ int main(int argc, char *argv[]) {
     char ext_path[1024];
     snprintf(ext_path, sizeof(ext_path), "--load-extension=%s/../Resources/astra_internal", dir);
 
+    // Detect primary screen resolution for full view
+    CGRect screen = CGDisplayBounds(CGMainDisplayID());
+    int width = (int)screen.size.width;
+    int height = (int)screen.size.height;
+    if (width <= 0) width = 1440;
+    if (height <= 0) height = 900;
+
+    char win_size_arg[64];
+    snprintf(win_size_arg, sizeof(win_size_arg), "--window-size=%d,%d", width, height);
+    char win_pos_arg[64] = "--window-position=0,0";
+
     // Check if a specific URL was passed
     int has_url = 0;
     for (int i = 1; i < argc; i++) {
@@ -37,8 +49,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Allocate arguments: target_bin + user_data_arg + ext_path + --no-first-run + (chrome://newtab if needed) + incoming args + NULL
-    int new_argc = argc + 5;
+    // Allocate arguments: target_bin + user_data_arg + ext_path + --no-first-run + --start-maximized + win_size + win_pos + (chrome://newtab if needed) + incoming args + NULL
+    int new_argc = argc + 8;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
     int idx = 0;
@@ -46,6 +58,9 @@ int main(int argc, char *argv[]) {
     new_argv[idx++] = user_data_arg;
     new_argv[idx++] = ext_path;
     new_argv[idx++] = "--no-first-run";
+    new_argv[idx++] = "--start-maximized";
+    new_argv[idx++] = win_size_arg;
+    new_argv[idx++] = win_pos_arg;
 
     for (int i = 1; i < argc; i++) {
         new_argv[idx++] = argv[i];
