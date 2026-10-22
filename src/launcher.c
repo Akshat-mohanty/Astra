@@ -36,8 +36,11 @@ int main(int argc, char *argv[]) {
     snprintf(win_size_arg, sizeof(win_size_arg), "--window-size=%d,%d", width, height);
     char win_pos_arg[64] = "--window-position=0,0";
 
-    // Allocate arguments: target_bin + user_data_arg + --no-first-run + --start-maximized + win_size + win_pos + incoming args + NULL
-    int new_argc = argc + 7;
+    // Disable trending search popups & zero-prefix suggestions
+    const char *disable_suggest_features = "--disable-features=ZeroSuggestPrefetching,OmniboxZeroSuggestPrefetching,OmniboxTrendingZeroPrefixSuggestions,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestInMemoryCaching";
+
+    // Allocate arguments
+    int new_argc = argc + 8;
     char **new_argv = malloc((new_argc + 1) * sizeof(char *));
 
     int idx = 0;
@@ -47,6 +50,7 @@ int main(int argc, char *argv[]) {
     new_argv[idx++] = "--start-maximized";
     new_argv[idx++] = win_size_arg;
     new_argv[idx++] = win_pos_arg;
+    new_argv[idx++] = (char *)disable_suggest_features;
 
     for (int i = 1; i < argc; i++) {
         // Skip macOS LaunchServices process serial number argument
