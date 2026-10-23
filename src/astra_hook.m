@@ -538,18 +538,23 @@ static void update_window_layout(NSWindow *win) {
     }
 
     if (isVertical) {
-        // In vertical mode: keep viewsCompositor visible so compositor renders
-        if (viewsCompositor && [viewsCompositor isHidden]) {
-            [viewsCompositor setHidden:NO];
+        NSRect contentFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height - topTabHeight);
+
+        // Position ViewsCompositorSuperview so GPU compositor renders from sidebarWidth to right edge
+        if (viewsCompositor) {
+            if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
+            NSRect compFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height);
+            if (!NSEqualRects([viewsCompositor frame], compFrame)) {
+                [viewsCompositor setFrame:compFrame];
+            }
         }
 
-        // Adjust WebContentsViewCocoa to start at sidebarWidth and fill under top cover
+        // Adjust WebContentsViewCocoa to start at sidebarWidth and fill to the right edge
         if (webContentsView) {
-            NSRect targetFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height - topTabHeight);
-            if (!NSEqualRects([webContentsView frame], targetFrame)) {
-                [webContentsView setFrame:targetFrame];
+            if (!NSEqualRects([webContentsView frame], contentFrame)) {
+                [webContentsView setFrame:contentFrame];
                 for (NSView *sub in [webContentsView subviews]) {
-                    [sub setFrame:NSMakeRect(0, 0, targetFrame.size.width, targetFrame.size.height)];
+                    [sub setFrame:NSMakeRect(0, 0, contentFrame.size.width, contentFrame.size.height)];
                 }
             }
         }
@@ -602,8 +607,12 @@ static void update_window_layout(NSWindow *win) {
         }
     } else {
         // Horizontal Tabs mode: restore native top tab strip
-        if (viewsCompositor && [viewsCompositor isHidden]) {
-            [viewsCompositor setHidden:NO];
+        if (viewsCompositor) {
+            if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
+            NSRect fullCompFrame = NSMakeRect(0, 0, winBounds.size.width, winBounds.size.height);
+            if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
+                [viewsCompositor setFrame:fullCompFrame];
+            }
         }
         if (sidebarView && ![sidebarView isHidden]) {
             [sidebarView setHidden:YES];

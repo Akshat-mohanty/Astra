@@ -362,40 +362,14 @@
       border-color: rgba(255, 255, 255, 0.08);
     }
 
-    /* ─── Vertical Tab Sidebar on Left ─── */
+    /* ─── Vertical Tab Sidebar on Left (handled by native Cocoa hook) ─── */
     :root {
       --vtab-width: 220px;
       --accent-color: #7c5cfc;
     }
 
-    body.tabs-vertical {
-      padding-left: calc(var(--vtab-width) + 24px) !important;
-      transition: padding-left 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    body.tabs-vertical.vtab-compact {
-      --vtab-width: 60px;
-    }
-
-    body.tabs-vertical .top-nav-bar {
-      display: none !important;
-    }
-
     .astra-vertical-tab-sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: var(--vtab-width);
-      background: #141416;
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
-      display: none;
-      flex-direction: column;
-      padding: 16px 10px;
-      z-index: 100;
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
-      transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      -webkit-app-region: no-drag;
+      display: none !important;
     }
 
     body.tabs-vertical .astra-vertical-tab-sidebar {
