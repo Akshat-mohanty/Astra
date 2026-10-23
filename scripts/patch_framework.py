@@ -13,6 +13,7 @@ Patch:    00 00 80 52 c0 03 5f d6  (mov w0, #0; ret)
 
 import os
 import subprocess
+import struct
 import sys
 
 FRAMEWORK_PATH = '/Applications/Astra.app/Contents/Frameworks/Thorium Framework.framework/Versions/138.0.7204.303/Thorium Framework'
@@ -21,6 +22,90 @@ BACKUP_PATH = FRAMEWORK_PATH + '.orig'
 OFFSET = 0x119ac8c
 ORIG_HEX = 'f657bda9f44f01a9'
 PATCH_BYTES = bytes.fromhex('00008052c0035fd6')
+
+# kGlobeIcon vector path replacement with Astra constellation matrix
+REP1_PATH_OFFSET = 0xbb532e0
+REP1_STRUCT_SIZE_OFFSET = 0xd0d6910 + 8
+
+REP2_PATH_OFFSET = 0xc0859f8
+REP2_STRUCT_SIZE_OFFSET = 0xd255d98 + 8
+
+def build_constellation_blob():
+    blob = bytearray()
+    count = 0
+    def emit_cmd(c):
+        nonlocal count
+        blob.extend(struct.pack('<I', c))
+        count += 1
+    def emit_flt(v):
+        nonlocal count
+        blob.extend(struct.pack('<f', float(v)))
+        count += 1
+
+    # 1. CANVAS_DIMENSIONS, 24
+    emit_cmd(28)
+    emit_flt(24.0)
+
+    center = (12.0, 12.0)
+    ring = [
+        (12.0, 4.5),
+        (18.5, 8.25),
+        (18.5, 15.75),
+        (12.0, 19.5),
+        (5.5, 15.75),
+        (5.5, 8.25)
+    ]
+    all_nodes = [center] + ring
+
+    # 12 connecting lines: 6 spokes from center to ring, 6 perimeter edges
+    edges = []
+    for p in ring:
+        edges.append((center, p))
+    for i in range(6):
+        edges.append((ring[i], ring[(i+1)%6]))
+
+    sw = 0.5  # half stroke width
+    for p1, p2 in edges:
+        x1, y1 = p1
+        x2, y2 = p2
+        dx = x2 - x1
+        dy = y2 - y1
+        length = (dx*dx + dy*dy)**0.5
+        if length == 0: continue
+        nx = -dy / length * sw
+        ny = dx / length * sw
+        emit_cmd(7)  # MOVE_TO
+        emit_flt(x1 - nx)
+        emit_flt(y1 - ny)
+        emit_cmd(11) # LINE_TO
+        emit_flt(x1 + nx)
+        emit_flt(y1 + ny)
+        emit_cmd(11) # LINE_TO
+        emit_flt(x2 + nx)
+        emit_flt(y2 + ny)
+        emit_cmd(11) # LINE_TO
+        emit_flt(x2 - nx)
+        emit_flt(y2 - ny)
+        emit_cmd(27) # CLOSE
+
+    # 7 diamond stars at each node
+    r = 1.2
+    for x, y in all_nodes:
+        emit_cmd(7)
+        emit_flt(x)
+        emit_flt(y - r)
+        emit_cmd(11)
+        emit_flt(x + r)
+        emit_flt(y)
+        emit_cmd(11)
+        emit_flt(x)
+        emit_flt(y + r)
+        emit_cmd(11)
+        emit_flt(x - r)
+        emit_flt(y)
+        emit_cmd(27)
+
+    return bytes(blob), count
 
 def main():
     if not os.path.exists(FRAMEWORK_PATH):
@@ -49,6 +134,20 @@ def main():
             f.seek(OFFSET)
             f.write(PATCH_BYTES)
             print("Patch applied.")
+
+        # Patch kGlobeIcon vector paths
+        blob, count = build_constellation_blob()
+        # Patch Rep 1
+        f.seek(REP1_PATH_OFFSET)
+        f.write(blob)
+        f.seek(REP1_STRUCT_SIZE_OFFSET)
+        f.write(struct.pack('<Q', count))
+        # Patch Rep 2
+        f.seek(REP2_PATH_OFFSET)
+        f.write(blob)
+        f.seek(REP2_STRUCT_SIZE_OFFSET)
+        f.write(struct.pack('<Q', count))
+        print(f"Successfully patched kGlobeIcon with Astra constellation vector ({count} elements)!")
 
     # 3. Re-sign framework and app
     print("Re-signing framework and app...")

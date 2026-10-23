@@ -4,6 +4,13 @@
   "manifest_version": 3,
   "description": "Astra Native New Tab Experience",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmT+I3i/8xkfXKtG7Umh7Rjq8xJoRf/2EFtGWk3OuoSCoCS+c9XttVKKsS5ZXGz6H7Ij33FOtklftZUsOdMquGKWMayXGBcmf0UYHtGpSZ76XQJPP6HwC7VVWw3Cw+MRqJ73oGXmQn0wD1HabaxHtBwmk0ttgH4+9Ntr6UfckExLy4mjzOj9rvUGTySBFnQzD5shLiHKNQDya/H9ldhC74vEjEi9P9mMjggEC0ylV8tWmL+Hn2Tu3ByaHkmJVYI4wg6Ez0D36RJ54E39Fr9+ThxbZ2BE4/Fg23oaZtWHmcVS9CnC7EkWftBFe/Lu21GEyiH4uWOAR8+tuKSB3sDXfvwIDAQAB",
+  "icons": {
+    "16": "icons/icon_16.png",
+    "24": "icons/icon_24.png",
+    "32": "icons/icon_32.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
   "chrome_url_overrides": {
     "newtab": "index.html"
   }
