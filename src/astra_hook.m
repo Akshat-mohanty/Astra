@@ -201,14 +201,67 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 @property (nonatomic, strong) NSArray *lastTitles;
 @property (nonatomic, assign) NSInteger lastActiveIndex;
 - (void)layoutSidebarViews;
+- (void)updateTabsWithTitles:(NSArray *)titles activeIndex:(NSInteger)activeIdx;
+- (void)addOptimisticTabWithTitle:(NSString *)title;
+- (void)setActiveTabIndexLocally:(NSInteger)idx;
+- (void)removeTabLocallyAtIndex:(NSInteger)idx;
+- (void)scrollToActiveTab;
 @end
+
+static __unsafe_unretained AstraVerticalSidebarView *s_currentSidebarView = nil;
+static NSAppleScript *s_queryTabsScript = nil;
+static NSAppleScript *s_newTabSettingsScript = nil;
+
+static void query_and_update_tabs(AstraVerticalSidebarView *sidebarView) {
+    if (!sidebarView || [sidebarView isHidden]) return;
+
+    if (!s_queryTabsScript) {
+        NSString *src = @"tell application \"Astra\" to get {title of every tab of window 1, active tab index of window 1}";
+        s_queryTabsScript = [[NSAppleScript alloc] initWithSource:src];
+        [s_queryTabsScript compileAndReturnError:nil];
+    }
+
+    NSDictionary *err = nil;
+    NSAppleEventDescriptor *desc = [s_queryTabsScript executeAndReturnError:&err];
+    if (!err && desc) {
+        NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
+        NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
+        NSInteger activeIdx = [activeDesc int32Value];
+        NSMutableArray *titles = [NSMutableArray array];
+        for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
+            NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
+            [titles addObject:AstraSanitizeTabTitle(st)];
+        }
+        [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
+    }
+}
+
+static void force_refresh_tabs(void) {
+    if (s_currentSidebarView) {
+        query_and_update_tabs(s_currentSidebarView);
+    }
+}
 
 /* ─── Settings Helper & Menu Interceptor ──────────────────────────────────── */
 static void open_settings_in_new_tab(void) {
+    if (s_currentSidebarView) {
+        [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
+    }
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:
-            @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://settings\"}"];
-        [as executeAndReturnError:nil];
+        if (!s_newTabSettingsScript) {
+            NSString *src = @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://settings\"}";
+            s_newTabSettingsScript = [[NSAppleScript alloc] initWithSource:src];
+            [s_newTabSettingsScript compileAndReturnError:nil];
+        }
+        [s_newTabSettingsScript executeAndReturnError:nil];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            force_refresh_tabs();
+        });
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(90 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            force_refresh_tabs();
+        });
     });
 }
 
@@ -333,25 +386,93 @@ static void configure_menu_items(void) {
 
 - (void)onTabClicked:(AstraTabButton *)sender {
     NSInteger idx = sender.tabIndex;
+    [self setActiveTabIndexLocally:idx];
+
     NSString *src = [NSString stringWithFormat:
         @"tell application \"Astra\" to tell window 1 to set active tab index to %ld", (long)idx];
     NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
     [as executeAndReturnError:nil];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        force_refresh_tabs();
+    });
 }
 
 - (void)onTabCloseClicked:(NSButton *)sender {
     AstraTabButton *parent = (AstraTabButton *)[sender superview];
     if (!parent) return;
     NSInteger idx = parent.tabIndex;
+    [self removeTabLocallyAtIndex:idx];
+
     NSString *src = [NSString stringWithFormat:
         @"tell application \"Astra\" to close tab %ld of window 1", (long)idx];
     NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
     [as executeAndReturnError:nil];
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        force_refresh_tabs();
+    });
+}
+
+- (void)addOptimisticTabWithTitle:(NSString *)title {
+    NSMutableArray *newTitles = [_lastTitles mutableCopy];
+    if (!newTitles) newTitles = [NSMutableArray array];
+    [newTitles addObject:title ? title : @"New Tab"];
+    NSInteger newActiveIdx = [newTitles count];
+    [self updateTabsWithTitles:newTitles activeIndex:newActiveIdx];
+    [self scrollToActiveTab];
+}
+
+- (void)setActiveTabIndexLocally:(NSInteger)idx {
+    if (_lastTitles) {
+        [self updateTabsWithTitles:_lastTitles activeIndex:idx];
+        [self scrollToActiveTab];
+    }
+}
+
+- (void)removeTabLocallyAtIndex:(NSInteger)idx {
+    if (_lastTitles && idx > 0 && idx <= (NSInteger)[_lastTitles count]) {
+        NSMutableArray *newTitles = [_lastTitles mutableCopy];
+        [newTitles removeObjectAtIndex:idx - 1];
+        NSInteger newActive = _lastActiveIndex;
+        if (newActive > (NSInteger)[newTitles count]) {
+            newActive = (NSInteger)[newTitles count];
+        }
+        [self updateTabsWithTitles:newTitles activeIndex:newActive];
+        [self scrollToActiveTab];
+    }
+}
+
+- (void)scrollToActiveTab {
+    if (_lastActiveIndex <= 0) return;
+    CGFloat rowH = 36.0;
+    CGFloat spacing = 4.0;
+    CGFloat y = (_lastActiveIndex - 1) * (rowH + spacing);
+    [_scrollView.contentView scrollToPoint:NSMakePoint(0, y)];
+    [_scrollView reflectScrolledClipView:_scrollView.contentView];
 }
 
 - (void)updateTabsWithTitles:(NSArray *)titles activeIndex:(NSInteger)activeIdx {
     if ([titles isEqualToArray:_lastTitles] && activeIdx == _lastActiveIndex) {
         return; // No change
+    }
+
+    NSArray *subviews = [_tabContainer subviews];
+    BOOL sameCount = ([subviews count] == [titles count]);
+
+    if (sameCount) {
+        _lastTitles = [titles copy];
+        _lastActiveIndex = activeIdx;
+        for (NSInteger i = 0; i < (NSInteger)[subviews count]; i++) {
+            AstraTabButton *btn = (AstraTabButton *)subviews[i];
+            btn.tabIndex = i + 1;
+            btn.isCurrent = (btn.tabIndex == activeIdx);
+            btn.rawTitle = AstraSanitizeTabTitle(titles[i]);
+            [btn updateAppearance];
+            [btn setToolTip:btn.rawTitle];
+            [btn.closeBtn setAlphaValue:btn.isCurrent ? 0.7 : 0.0];
+        }
+        return;
     }
 
     _lastTitles = [titles copy];
@@ -555,27 +676,14 @@ static void update_window_layout(NSWindow *win) {
                 sidebarView.lastTitles = nil;
             }
         }
+        s_currentSidebarView = sidebarView;
 
-        // Query open tabs and update sidebar
+        // Query open tabs and update sidebar with fast, responsive interval
         static NSTimeInterval s_last_query = 0;
         NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
-        if (now - s_last_query > 0.25) {
+        if (now - s_last_query > 0.08) {
             s_last_query = now;
-            NSString *src = @"tell application \"Astra\" to get {title of every tab of window 1, active tab index of window 1}";
-            NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-            NSDictionary *err = nil;
-            NSAppleEventDescriptor *desc = [as executeAndReturnError:&err];
-            if (!err && desc) {
-                NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
-                NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
-                NSInteger activeIdx = [activeDesc int32Value];
-                NSMutableArray *titles = [NSMutableArray array];
-                for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
-                    NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
-                    [titles addObject:AstraSanitizeTabTitle(st)];
-                }
-                [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
-            }
+            query_and_update_tabs(sidebarView);
         }
     } else {
         // Horizontal Tabs mode: restore native top tab strip
@@ -636,6 +744,17 @@ static void install_astra_hook(void) {
             if ([chars isEqualToString:@","]) {
                 open_settings_in_new_tab();
                 return nil;
+            } else if ([chars isEqualToString:@"t"]) {
+                if (s_currentSidebarView) {
+                    [s_currentSidebarView addOptimisticTabWithTitle:@"New Tab"];
+                }
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(35 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
+                });
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
+                });
+                return event;
             }
         }
         return event;
@@ -650,8 +769,8 @@ static void install_astra_hook(void) {
         configure_menu_items();
     }];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(300 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-        [NSTimer scheduledTimerWithTimeInterval:0.2 repeats:YES block:^(NSTimer * _Nonnull timer) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        [NSTimer scheduledTimerWithTimeInterval:0.08 repeats:YES block:^(NSTimer * _Nonnull timer) {
             configure_menu_items();
             for (NSWindow *win in [NSApp windows]) {
                 configure_window(win);
