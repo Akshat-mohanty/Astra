@@ -23,14 +23,56 @@ OFFSET = 0x119ac8c
 ORIG_HEX = 'f657bda9f44f01a9'
 PATCH_BYTES = bytes.fromhex('00008052c0035fd6')
 
-# kGlobeIcon vector path replacement with Astra constellation matrix
-REP1_PATH_OFFSET = 0xbb532e0
+# kGlobeIcon vector path replacement with exact Astra constellation matrix from screenshot
+NEW_PATH_OFFSET = 0xbd2e66a  # Zero padding area in __const (size 5138 bytes)
+
+REP1_STRUCT_PTR_OFFSET = 0xd0d6910
 REP1_STRUCT_SIZE_OFFSET = 0xd0d6910 + 8
 
-REP2_PATH_OFFSET = 0xc0859f8
+REP2_STRUCT_PTR_OFFSET = 0xd255d98
 REP2_STRUCT_SIZE_OFFSET = 0xd255d98 + 8
 
 def build_constellation_blob():
+    from PIL import Image
+    icon_path = '/Users/akshatmohanty/Astra/src/newtab/icons/icon_24.png'
+    t = Image.open(icon_path).convert('L')
+    small = t.resize((24, 24), Image.Resampling.LANCZOS)
+
+    # Build mask with open hexagonal cells and local maxima constellation dots
+    mask = Image.new('L', (24, 24), 0)
+    for y in range(24):
+        for x in range(24):
+            v = small.getpixel((x, y))
+            if v > 68:
+                mask.putpixel((x, y), 255)
+            elif v > 38:
+                is_max = True
+                for dy in [-1, 0, 1]:
+                    for dx in [-1, 0, 1]:
+                        if 0 <= x+dx < 24 and 0 <= y+dy < 24:
+                            if small.getpixel((x+dx, y+dy)) > v:
+                                is_max = False
+                                break
+                    if not is_max: break
+                if is_max:
+                    mask.putpixel((x, y), 255)
+
+    spans = []
+    for y in range(24):
+        in_span = False
+        start_x = 0
+        for x in range(24):
+            if mask.getpixel((x, y)) > 0:
+                if not in_span:
+                    in_span = True
+                    start_x = x
+            else:
+                if in_span:
+                    in_span = False
+                    spans.append((start_x, y, x, y + 1))
+        if in_span:
+            spans.append((start_x, y, 24, y + 1))
+
     blob = bytearray()
     count = 0
     def emit_cmd(c):
@@ -42,68 +84,23 @@ def build_constellation_blob():
         blob.extend(struct.pack('<f', float(v)))
         count += 1
 
-    # 1. CANVAS_DIMENSIONS, 24
-    emit_cmd(28)
+    emit_cmd(28) # CANVAS_DIMENSIONS
     emit_flt(24.0)
 
-    center = (12.0, 12.0)
-    ring = [
-        (12.0, 4.5),
-        (18.5, 8.25),
-        (18.5, 15.75),
-        (12.0, 19.5),
-        (5.5, 15.75),
-        (5.5, 8.25)
-    ]
-    all_nodes = [center] + ring
-
-    # 12 connecting lines: 6 spokes from center to ring, 6 perimeter edges
-    edges = []
-    for p in ring:
-        edges.append((center, p))
-    for i in range(6):
-        edges.append((ring[i], ring[(i+1)%6]))
-
-    sw = 0.5  # half stroke width
-    for p1, p2 in edges:
-        x1, y1 = p1
-        x2, y2 = p2
-        dx = x2 - x1
-        dy = y2 - y1
-        length = (dx*dx + dy*dy)**0.5
-        if length == 0: continue
-        nx = -dy / length * sw
-        ny = dx / length * sw
-        emit_cmd(7)  # MOVE_TO
-        emit_flt(x1 - nx)
-        emit_flt(y1 - ny)
+    for x1, y1, x2, y2 in spans:
+        emit_cmd(7) # MOVE_TO
+        emit_flt(x1)
+        emit_flt(y1)
         emit_cmd(11) # LINE_TO
-        emit_flt(x1 + nx)
-        emit_flt(y1 + ny)
+        emit_flt(x2)
+        emit_flt(y1)
         emit_cmd(11) # LINE_TO
-        emit_flt(x2 + nx)
-        emit_flt(y2 + ny)
+        emit_flt(x2)
+        emit_flt(y2)
         emit_cmd(11) # LINE_TO
-        emit_flt(x2 - nx)
-        emit_flt(y2 - ny)
+        emit_flt(x1)
+        emit_flt(y2)
         emit_cmd(27) # CLOSE
-
-    # 7 diamond stars at each node
-    r = 1.2
-    for x, y in all_nodes:
-        emit_cmd(7)
-        emit_flt(x)
-        emit_flt(y - r)
-        emit_cmd(11)
-        emit_flt(x + r)
-        emit_flt(y)
-        emit_cmd(11)
-        emit_flt(x)
-        emit_flt(y + r)
-        emit_cmd(11)
-        emit_flt(x - r)
-        emit_flt(y)
-        emit_cmd(27)
 
     return bytes(blob), count
 
@@ -137,17 +134,20 @@ def main():
 
         # Patch kGlobeIcon vector paths
         blob, count = build_constellation_blob()
-        # Patch Rep 1
-        f.seek(REP1_PATH_OFFSET)
+        # Write blob to NEW_PATH_OFFSET
+        f.seek(NEW_PATH_OFFSET)
         f.write(blob)
+        # Update Rep 1 pointer and size
+        f.seek(REP1_STRUCT_PTR_OFFSET)
+        f.write(struct.pack('<Q', NEW_PATH_OFFSET))
         f.seek(REP1_STRUCT_SIZE_OFFSET)
         f.write(struct.pack('<Q', count))
-        # Patch Rep 2
-        f.seek(REP2_PATH_OFFSET)
-        f.write(blob)
+        # Update Rep 2 pointer and size
+        f.seek(REP2_STRUCT_PTR_OFFSET)
+        f.write(struct.pack('<Q', NEW_PATH_OFFSET))
         f.seek(REP2_STRUCT_SIZE_OFFSET)
         f.write(struct.pack('<Q', count))
-        print(f"Successfully patched kGlobeIcon with Astra constellation vector ({count} elements)!")
+        print(f"Successfully patched kGlobeIcon with exact Astra constellation vector ({count} elements at {hex(NEW_PATH_OFFSET)})!")
 
     # 3. Re-sign framework and app
     print("Re-signing framework and app...")

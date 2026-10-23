@@ -249,7 +249,6 @@ int main(int argc, char *argv[]) {
     const char *flags[] = {
         target_bin,
         user_data_arg,
-        ext_arg,
         "--no-first-run",
         "--no-default-browser-check",
         "--disable-search-engine-choice-screen",
