@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const lower = query.toLowerCase();
       if (lower === 'settings' || lower === 'preferences' || lower === 'astra://settings') {
-        window.location.href = 'chrome://settings';
+        window.open('chrome://settings', '_blank');
         return;
       }
 
@@ -75,13 +75,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Keyboard shortcut Cmd+, for Settings
+  // Keyboard shortcut Cmd+, for Settings (opens in a new tab)
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === ',') {
       e.preventDefault();
-      window.location.href = 'chrome://settings';
+      window.open('chrome://settings', '_blank');
     }
   });
+
+  // Corner settings button (opens in a new tab)
+  const cornerSettingsBtn = document.querySelector('.corner-settings-btn');
+  if (cornerSettingsBtn) {
+    cornerSettingsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('chrome://settings', '_blank');
+    });
+  }
 
   // Add tabs or files (opens file picker or attaches tab reference)
   if (addBtn && fileInput) {

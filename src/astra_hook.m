@@ -203,6 +203,51 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 - (void)layoutSidebarViews;
 @end
 
+/* ─── Settings Helper & Menu Interceptor ──────────────────────────────────── */
+static void open_settings_in_new_tab(void) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:
+            @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://settings\"}"];
+        [as executeAndReturnError:nil];
+    });
+}
+
+@interface AstraMenuHandler : NSObject
++ (instancetype)sharedHandler;
+- (void)openSettingsInNewTab:(id)sender;
+@end
+
+@implementation AstraMenuHandler
++ (instancetype)sharedHandler {
+    static AstraMenuHandler *s_h = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        s_h = [[AstraMenuHandler alloc] init];
+    });
+    return s_h;
+}
+- (void)openSettingsInNewTab:(id)sender {
+    open_settings_in_new_tab();
+}
+@end
+
+static void configure_menu_items(void) {
+    NSMenu *mainMenu = [NSApp mainMenu];
+    if (!mainMenu) return;
+    for (NSMenuItem *topItem in [mainMenu itemArray]) {
+        if ([topItem hasSubmenu]) {
+            for (NSMenuItem *subItem in [[topItem submenu] itemArray]) {
+                if ([[subItem keyEquivalent] isEqualToString:@","] ||
+                    [[subItem title] containsString:@"Settings"] ||
+                    [[subItem title] containsString:@"Preferences"]) {
+                    [subItem setTarget:[AstraMenuHandler sharedHandler]];
+                    [subItem setAction:@selector(openSettingsInNewTab:)];
+                }
+            }
+        }
+    }
+}
+
 @implementation AstraVerticalSidebarView
 - (instancetype)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
@@ -283,9 +328,7 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 }
 
 - (void)onSettingsClicked:(id)sender {
-    NSAppleScript *as = [[NSAppleScript alloc] initWithSource:
-        @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://settings/tabs\"}"];
-    [as executeAndReturnError:nil];
+    open_settings_in_new_tab();
 }
 
 - (void)onTabClicked:(AstraTabButton *)sender {
@@ -587,16 +630,29 @@ __attribute__((constructor))
 static void install_astra_hook(void) {
     if (strcmp(getprogname(), "Astra_bin") != 0) return;
 
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent * _Nullable(NSEvent * _Nonnull event) {
+        if (([event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagCommand) {
+            NSString *chars = [event charactersIgnoringModifiers];
+            if ([chars isEqualToString:@","]) {
+                open_settings_in_new_tab();
+                return nil;
+            }
+        }
+        return event;
+    }];
+
     [[NSNotificationCenter defaultCenter] addObserverForName:NSWindowDidBecomeKeyNotification
                                                       object:nil
                                                        queue:[NSOperationQueue mainQueue]
                                                   usingBlock:^(NSNotification * _Nonnull note) {
         NSWindow *win = note.object;
         configure_window(win);
+        configure_menu_items();
     }];
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(300 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
         [NSTimer scheduledTimerWithTimeInterval:0.2 repeats:YES block:^(NSTimer * _Nonnull timer) {
+            configure_menu_items();
             for (NSWindow *win in [NSApp windows]) {
                 configure_window(win);
             }
