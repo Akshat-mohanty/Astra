@@ -321,9 +321,41 @@ def patch_resources_pak():
     #file-input {{
       display: none;
     }}
+
+    .corner-settings-btn {{
+      position: fixed;
+      top: 18px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #88888b;
+      background: transparent;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      z-index: 90;
+      -webkit-app-region: no-drag;
+    }}
+
+    .corner-settings-btn:hover {{
+      color: #f4f3ef;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.08);
+    }}
   </style>
 </head>
 <body>
+  <!-- Corner Settings Action Button -->
+  <a href="chrome://settings" class="corner-settings-btn" title="Astra Settings (⌘,)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </a>
   <!-- Top Navigation Bar matching Dia / Arc style (Screenshot 2026-10-23 at 12.48.33 AM) -->
   <header class="top-nav-bar">
     <div class="nav-controls">
@@ -507,18 +539,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = input.value.trim();
       if (!query) return;
 
+      const lower = query.toLowerCase();
+      if (lower === 'settings' || lower === 'preferences' || lower === 'astra://settings') {
+        window.location.href = 'chrome://settings';
+        return;
+      }
+
       const isUrl = /^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$/.test(query)
                  || query.startsWith('localhost')
                  || query.includes('://');
 
       if (isUrl) {
-        const dest = query.startsWith('http://') || query.startsWith('https://') ? query : 'https://' + query;
+        const dest = (query.startsWith('http://') || query.startsWith('https://') || query.startsWith('chrome://'))
+                     ? query : 'https://' + query;
         window.location.href = dest;
       } else {
         window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
       }
     });
   }
+
+  // Keyboard shortcut Cmd+, for Settings
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+      e.preventDefault();
+      window.location.href = 'chrome://settings';
+    }
+  });
 
   if (addBtn && fileInput) {
     addBtn.addEventListener('click', () => fileInput.click());
@@ -595,6 +642,25 @@ document.addEventListener('DOMContentLoaded', () => {
     payloads[23390] = compressed_html
     payloads[23392] = compressed_js
     print("Replaced Resource ID 23390 (HTML) and 23392 (JS) with CSP compliance")
+
+    # Replace Resource ID 25185 (Settings HTML) and 25186 (Settings JS) with Astra Custom Settings
+    settings_dir = '/Users/akshatmohanty/Astra/src/settings'
+    if os.path.exists(f'{settings_dir}/settings.html'):
+        with open(f'{settings_dir}/settings.html', 'r', encoding='utf-8') as f:
+            s_html = f.read()
+        with open(f'{settings_dir}/settings.css', 'r', encoding='utf-8') as f:
+            s_css = f.read()
+        with open(f'{settings_dir}/settings.js', 'r', encoding='utf-8') as f:
+            s_js = f.read()
+
+        # Inline CSS for instant dark mode render and zero CSP issues
+        inlined_s_html = s_html.replace(
+            '<link rel="stylesheet" href="settings.css">',
+            f'<style>\n{s_css}\n</style>'
+        )
+        payloads[25185] = gzip.compress(inlined_s_html.encode('utf-8'))
+        payloads[25186] = gzip.compress(s_js.encode('utf-8'))
+        print("Replaced Resource ID 25185 (Settings HTML) and 25186 (Settings JS) with Astra Custom Settings!")
 
     icons_dir = '/Users/akshatmohanty/Astra/src/newtab/icons'
     if os.path.exists(f'{icons_dir}/icon_16.png') and 17186 in payloads:

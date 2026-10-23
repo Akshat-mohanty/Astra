@@ -55,18 +55,33 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = input.value.trim();
       if (!query) return;
 
+      const lower = query.toLowerCase();
+      if (lower === 'settings' || lower === 'preferences' || lower === 'astra://settings') {
+        window.location.href = 'chrome://settings';
+        return;
+      }
+
       const isUrl = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/.test(query)
                  || query.startsWith('localhost')
                  || query.includes('://');
 
       if (isUrl) {
-        const dest = query.startsWith('http://') || query.startsWith('https://') ? query : 'https://' + query;
+        const dest = (query.startsWith('http://') || query.startsWith('https://') || query.startsWith('chrome://'))
+                     ? query : 'https://' + query;
         window.location.href = dest;
       } else {
         window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(query);
       }
     });
   }
+
+  // Keyboard shortcut Cmd+, for Settings
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+      e.preventDefault();
+      window.location.href = 'chrome://settings';
+    }
+  });
 
   // Add tabs or files (opens file picker or attaches tab reference)
   if (addBtn && fileInput) {
