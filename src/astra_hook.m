@@ -47,9 +47,9 @@
     [chevron lineToPoint:NSMakePoint(SX(16.2), SY(14.8))];
     [chevron closePath];
 
-    [[NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:0.35] setFill];
+    [[NSColor colorWithCalibratedWhite:1.0 alpha:0.18] setFill];
     [chevron fill];
-    [[NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:0.9] setStroke];
+    [[NSColor colorWithCalibratedWhite:1.0 alpha:0.92] setStroke];
     [chevron setLineWidth:1.5];
     [chevron stroke];
 
@@ -138,9 +138,9 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
 - (void)updateAppearance {
     if (_isCurrent) {
-        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:0.25].CGColor;
+        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.12].CGColor;
         self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:0.45].CGColor;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.24].CGColor;
     } else if (_isHovered) {
         self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.05].CGColor;
         self.layer.borderWidth = 1.0;
@@ -163,7 +163,7 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         NSRect dotRect = NSMakeRect((b.size.width - 8) / 2.0, (b.size.height - 8) / 2.0, 8, 8);
         NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:dotRect];
         if (_isCurrent) {
-            [[NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:1.0] setFill];
+            [[NSColor colorWithCalibratedWhite:1.0 alpha:0.95] setFill];
         } else {
             [[NSColor colorWithCalibratedWhite:0.6 alpha:0.5] setFill];
         }
@@ -176,7 +176,7 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
     NSRect dotRect = NSMakeRect(12, (b.size.height - 7) / 2.0, 7, 7);
     NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:dotRect];
     if (_isCurrent) {
-        [[NSColor colorWithCalibratedRed:0.49 green:0.36 blue:0.99 alpha:1.0] setFill];
+        [[NSColor colorWithCalibratedWhite:1.0 alpha:0.95] setFill];
     } else {
         [[NSColor colorWithCalibratedWhite:0.6 alpha:0.5] setFill];
     }

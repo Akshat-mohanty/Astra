@@ -82,9 +82,9 @@ function getTemplateTabs() {
       }
 
       .orientation-card[active] {
-        border-color: #7c5cfc;
-        background: rgba(124, 92, 252, 0.08);
-        box-shadow: 0 8px 28px rgba(124, 92, 252, 0.18);
+        border-color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
       }
 
       /* Mock Window Previews */
@@ -148,10 +148,10 @@ function getTemplateTabs() {
       }
 
       .mock-h-tab.active {
-        background: #7c5cfc;
-        color: #ffffff;
+        background: #ffffff;
+        color: #000000;
         font-weight: 600;
-        box-shadow: 0 2px 6px rgba(124, 92, 252, 0.4);
+        box-shadow: 0 2px 6px rgba(255, 255, 255, 0.25);
       }
 
       .mock-h-tab-add {
@@ -233,8 +233,8 @@ function getTemplateTabs() {
       }
 
       .mock-v-tab.active {
-        background: rgba(124, 92, 252, 0.25);
-        border-left: 2px solid #7c5cfc;
+        background: rgba(255, 255, 255, 0.15);
+        border-left: 2px solid #ffffff;
         color: #ffffff;
         font-weight: 600;
       }
@@ -277,9 +277,9 @@ function getTemplateTabs() {
       }
 
       .badge-tag.highlight {
-        background: rgba(124, 92, 252, 0.2);
-        color: #a78bfa;
-        border: 1px solid rgba(124, 92, 252, 0.3);
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.25);
       }
 
       .card-description {
@@ -302,8 +302,8 @@ function getTemplateTabs() {
       }
 
       .orientation-card[active] .custom-radio-circle {
-        border-color: #7c5cfc;
-        background: #7c5cfc;
+        border-color: #ffffff;
+        background: #ffffff;
       }
 
       .custom-radio-circle::after {
@@ -311,7 +311,7 @@ function getTemplateTabs() {
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #ffffff;
+        background: #000000;
         opacity: 0;
         transition: opacity 0.15s ease;
       }
@@ -403,13 +403,13 @@ function getTemplateTabs() {
       }
 
       .native-select:focus {
-        border-color: #7c5cfc;
+        border-color: rgba(255, 255, 255, 0.5);
       }
     </style>
 
     <div class="tabs-section-header">
       <div class="tabs-main-title">
-        <cr-icon icon="settings20:auto-tab-group" style="color: #7c5cfc;"></cr-icon>
+        <cr-icon icon="settings20:auto-tab-group" style="color: #ffffff;"></cr-icon>
         <span>Tabs & Workspace Layout</span>
       </div>
       <div class="tabs-main-subtitle">

@@ -91,11 +91,11 @@ def patch_resources_pak():
       --cr-secondary-text-color: #929298 !important;
       --cr-separator-color: rgba(255, 255, 255, 0.08) !important;
       --cr-separator-line: 1px solid rgba(255, 255, 255, 0.08) !important;
-      --cr-focus-outline-color: #7c5cfc !important;
-      --cr-checked-color: #7c5cfc !important;
+      --cr-focus-outline-color: rgba(255, 255, 255, 0.4) !important;
+      --cr-checked-color: #ffffff !important;
       --cr-hover-background-color: rgba(255, 255, 255, 0.05) !important;
-      --cr-active-background-color: rgba(124, 92, 252, 0.1) !important;
-      --cr-toggle-checked-bar-color: #7c5cfc !important;
+      --cr-active-background-color: rgba(255, 255, 255, 0.12) !important;
+      --cr-toggle-checked-bar-color: rgba(255, 255, 255, 0.4) !important;
       --cr-toggle-checked-button-color: #ffffff !important;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
     }
@@ -124,13 +124,13 @@ def patch_resources_pak():
 
     a.cr-nav-menu-item[selected],
     a.cr-nav-menu-item:focus {
-      background: rgba(124, 92, 252, 0.14) !important;
+      background: rgba(255, 255, 255, 0.12) !important;
       color: #ffffff !important;
       font-weight: 600 !important;
     }
 
     a.cr-nav-menu-item[selected] cr-icon {
-      color: #7c5cfc !important;
+      color: #ffffff !important;
     }
   </style>
 </head>
@@ -200,6 +200,12 @@ def patch_resources_pak():
     patched_settings = patched_settings.replace(
         'TOP_LEVEL_EQUIVALENT_ROUTE=loadTimeData.getBoolean("isGuest")?guestTopLevelRoute:routes.PEOPLE;',
         'TOP_LEVEL_EQUIVALENT_ROUTE=loadTimeData.getBoolean("isGuest")?guestTopLevelRoute:routes.PRIVACY;'
+    )
+
+    # Style selected menu items in monochrome white & black
+    patched_settings = patched_settings.replace(
+        '.cr-nav-menu-item[selected]{--iron-icon-fill-color:black;background:var(--google-blue-300);color:var(--google-grey-900)}',
+        '.cr-nav-menu-item[selected]{--iron-icon-fill-color:#000000;background:#ffffff;color:#000000;font-weight:600}'
     )
 
     # Inject Tabs menu item into getTemplate$4 (SettingsMenuElement)
