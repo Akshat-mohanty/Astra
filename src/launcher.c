@@ -233,18 +233,11 @@ int main(int argc, char *argv[]) {
     /* parent: wait until server is ready before exec'ing Chromium */
     wait_for_server();
 
-    // Check if an external user URL or custom --app was passed
+    // Check if an external user URL or custom flags were passed
     int has_user_url = 0;
     const char *initial_url = "chrome://newtab";
-    const char *app_url_flag = "--app=http://127.0.0.1:4545/";
-    char custom_app_flag[1024];
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
-        if (strncmp(argv[i], "--app=", 6) == 0) {
-            snprintf(custom_app_flag, sizeof(custom_app_flag), "%s", argv[i]);
-            app_url_flag = custom_app_flag;
-            continue;
-        }
         if (argv[i][0] != '-') {
             has_user_url = 1;
             initial_url = argv[i];
@@ -262,18 +255,16 @@ int main(int argc, char *argv[]) {
         "--start-maximized",
         win_size_arg,
         "--window-position=0,0",
-        /* App mode: removes native Omnibox toolbar, replaces with custom Astra navigation bar */
-        app_url_flag,
-        "--enable-features=DesktopPWAsTabStrip,DesktopPWAsTabStripCustomizations,DesktopPWAsTabStripSettings",
-        "--disable-features=ChromeLabs,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu"
+        "--homepage=chrome://newtab",
+        "--disable-features=ChromeLabs,SidePanel,SidePanelPinning,LensOverlay,OmniboxTrendingZeroPrefixSuggestionsOnNTP,OmniboxZeroSuggestPrefetching,SharingHubDesktopAppMenu",
+        initial_url
     };
     int num_flags = (int)(sizeof(flags) / sizeof(flags[0]));
 
-    /* pass through any extra argv (e.g. -psn_... from macOS, or a URL) */
+    /* pass through any extra argv (e.g. -psn_... from macOS, or flags) */
     int extra = 0;
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
-        if (strncmp(argv[i], "--app=", 6) == 0) continue;
         if (has_user_url && argv[i][0] != '-') continue;
         extra++;
     }
@@ -284,7 +275,6 @@ int main(int argc, char *argv[]) {
         new_argv[idx++] = (char *)flags[i];
     for (int i = 1; i < argc; i++) {
         if (strncmp(argv[i], "-psn", 4) == 0) continue;
-        if (strncmp(argv[i], "--app=", 6) == 0) continue;
         if (has_user_url && argv[i][0] != '-') continue;
         new_argv[idx++] = argv[i];
     }
