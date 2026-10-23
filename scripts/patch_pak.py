@@ -71,7 +71,7 @@ def patch_resources_pak():
 <head>
   <meta charset="utf-8">
   <meta name="color-scheme" content="light dark">
-  <title>$i18n{settings}</title>
+  <title>Astra Settings</title>
   <base href="chrome://settings">
   <link rel="stylesheet" href="chrome://resources/css/md_colors.css">
   <style>
@@ -80,9 +80,28 @@ def patch_resources_pak():
       touch-action: manipulation;
     }
 
+    /* Custom Astra Obsidian Theme Variables on Root Level */
+    :root, [dark], html, body {
+      --md-background-color: #121214 !important;
+      --cr-toolbar-background-color: #121214 !important;
+      --cr-card-background-color: #18181b !important;
+      --cr-card-border-radius: 14px !important;
+      --cr-primary-text-color: #f4f3ef !important;
+      --cr-secondary-text-color: #929298 !important;
+      --cr-separator-color: rgba(255, 255, 255, 0.08) !important;
+      --cr-separator-line: 1px solid rgba(255, 255, 255, 0.08) !important;
+      --cr-focus-outline-color: #7c5cfc !important;
+      --cr-checked-color: #7c5cfc !important;
+      --cr-hover-background-color: rgba(255, 255, 255, 0.05) !important;
+      --cr-active-background-color: rgba(124, 92, 252, 0.1) !important;
+      --cr-toggle-checked-bar-color: #7c5cfc !important;
+      --cr-toggle-checked-button-color: #ffffff !important;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+    }
+
     @media (prefers-color-scheme: dark) {
       html {
-        background: var(--md-background-color);
+        background: #121214;
       }
     }
 
@@ -90,6 +109,27 @@ def patch_resources_pak():
     body {
       height: 100%;
       margin: 0;
+      background: #121214;
+    }
+
+    settings-ui {
+      --settings-menu-width: 256px;
+    }
+
+    cr-toolbar {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+      background: #121214 !important;
+    }
+
+    a.cr-nav-menu-item[selected],
+    a.cr-nav-menu-item:focus {
+      background: rgba(124, 92, 252, 0.14) !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    a.cr-nav-menu-item[selected] cr-icon {
+      color: #7c5cfc !important;
     }
   </style>
 </head>
