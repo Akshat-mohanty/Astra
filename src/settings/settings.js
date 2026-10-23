@@ -5,10 +5,17 @@ const DEFAULT_SETTINGS = {
   theme: 'theme-obsidian',
   accent: '#7c5cfc',
   startup_mode: 'newtab',
+  tab_orientation: 'horizontal',
+  vtab_width: 'expanded',
+  auto_collapse_tabs: false,
+  tab_hover_close: true,
+  tab_position: 'after_current',
+  tab_preview: true,
   search_engine: 'google',
   memory_saver: true,
   gpu_accel: true,
   dim_tabs: true,
+  glassmorphism: true,
   tab_audio: true,
   search_suggestions: true,
   ai_synthesis: true,
@@ -130,6 +137,86 @@ class SettingsManager {
       });
     });
 
+    // Tab Orientation Selection (Horizontal vs Vertical)
+    const cardHorizontal = document.getElementById('card-orient-horizontal');
+    const cardVertical = document.getElementById('card-orient-vertical');
+    const vtabGroup = document.getElementById('vtab-settings-group');
+
+    const updateOrientationUI = (orientation) => {
+      if (cardHorizontal && cardVertical) {
+        const isVert = (orientation === 'vertical');
+        cardHorizontal.classList.toggle('active', !isVert);
+        cardVertical.classList.toggle('active', isVert);
+
+        const badgeH = cardHorizontal.querySelector('.orient-badge');
+        const badgeV = cardVertical.querySelector('.orient-badge');
+        if (badgeH && badgeV) {
+          if (isVert) {
+            badgeH.innerText = 'Top Screen';
+            badgeH.className = 'orient-badge';
+            badgeV.innerText = 'Current';
+            badgeV.className = 'orient-badge active-badge';
+          } else {
+            badgeH.innerText = 'Current';
+            badgeH.className = 'orient-badge current-badge';
+            badgeV.innerText = 'Left Screen';
+            badgeV.className = 'orient-badge new-badge';
+          }
+        }
+      }
+      if (vtabGroup) {
+        vtabGroup.style.display = (orientation === 'vertical') ? '' : 'none';
+      }
+    };
+
+    updateOrientationUI(this.settings.tab_orientation);
+
+    if (cardHorizontal) {
+      cardHorizontal.addEventListener('click', () => {
+        this.settings.tab_orientation = 'horizontal';
+        updateOrientationUI('horizontal');
+        this.saveSettings();
+        this.showToast('Tab orientation set to Horizontal (Top)');
+      });
+    }
+
+    if (cardVertical) {
+      cardVertical.addEventListener('click', () => {
+        this.settings.tab_orientation = 'vertical';
+        updateOrientationUI('vertical');
+        this.saveSettings();
+        this.showToast('Tab orientation set to Vertical (Assigned to left)');
+      });
+    }
+
+    // Vertical Tab Width Selector
+    const vwidthButtons = document.querySelectorAll('#vtab-width-selector .segment-btn');
+    vwidthButtons.forEach(btn => {
+      if (btn.getAttribute('data-vwidth') === this.settings.vtab_width) {
+        vwidthButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      btn.addEventListener('click', () => {
+        vwidthButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const width = btn.getAttribute('data-vwidth');
+        this.settings.vtab_width = width;
+        this.saveSettings();
+        this.showToast(`Vertical tab width set to ${btn.innerText}`);
+      });
+    });
+
+    // Tab Position Selector
+    const tabPosSelect = document.getElementById('pref-tab-position');
+    if (tabPosSelect) {
+      tabPosSelect.value = this.settings.tab_position || 'after_current';
+      tabPosSelect.addEventListener('change', (e) => {
+        this.settings.tab_position = e.target.value;
+        this.saveSettings();
+        this.showToast('New tab placement updated');
+      });
+    }
+
     // Search Engine Selector
     const searchSelect = document.getElementById('pref-search-engine');
     if (searchSelect) {
@@ -145,6 +232,10 @@ class SettingsManager {
     this.bindToggle('pref-memory-saver', 'memory_saver', 'Memory Saver');
     this.bindToggle('pref-gpu-accel', 'gpu_accel', 'GPU Acceleration');
     this.bindToggle('pref-dim-tabs', 'dim_tabs', 'Inactive Tab Dimming');
+    this.bindToggle('pref-glassmorphism', 'glassmorphism', 'Glassmorphism Material');
+    this.bindToggle('pref-auto-collapse-tabs', 'auto_collapse_tabs', 'Auto-Collapse Vertical Sidebar');
+    this.bindToggle('pref-tab-hover-close', 'tab_hover_close', 'Hover-Only Close Button');
+    this.bindToggle('pref-tab-preview', 'tab_preview', 'Tab Hover Previews');
     this.bindToggle('pref-tab-audio', 'tab_audio', 'Tab Audio Indicators');
     this.bindToggle('pref-search-suggestions', 'search_suggestions', 'Search Suggestions');
     this.bindToggle('pref-ai-synthesis', 'ai_synthesis', 'AI Query Synthesis');
@@ -271,6 +362,7 @@ class SettingsManager {
     const titles = {
       general: 'General Settings',
       appearance: 'Appearance & Themes',
+      tabs: 'Tabs',
       search: 'Search & AI Assistant',
       privacy: 'Privacy & Security',
       downloads: 'Downloads & Files',
@@ -280,7 +372,8 @@ class SettingsManager {
 
     const descriptions = {
       general: 'Manage startup behavior, system defaults, and browsing performance.',
-      appearance: 'Customize color themes, accent glows, tab strip layout, and visual styling.',
+      appearance: 'Customize color themes, accent glows, and visual styling.',
+      tabs: 'Configure tab orientation (horizontal vs. vertical sidebar assigned to left), sidebar layout, and tab stack behaviors.',
       search: 'Configure your primary search provider and smart prompt bar synthesis.',
       privacy: 'Manage cookie tracking rules, browsing history, and secure HTTPS connections.',
       downloads: 'Set your preferred download location and file saving behavior.',

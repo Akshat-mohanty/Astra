@@ -361,9 +361,335 @@
       background: rgba(255, 255, 255, 0.08);
       border-color: rgba(255, 255, 255, 0.08);
     }
+
+    /* ─── Vertical Tab Sidebar on Left ─── */
+    :root {
+      --vtab-width: 220px;
+      --accent-color: #7c5cfc;
+    }
+
+    body.tabs-vertical {
+      padding-left: calc(var(--vtab-width) + 24px) !important;
+      transition: padding-left 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body.tabs-vertical.vtab-compact {
+      --vtab-width: 60px;
+    }
+
+    body.tabs-vertical .top-nav-bar {
+      display: none !important;
+    }
+
+    .astra-vertical-tab-sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--vtab-width);
+      background: #141416;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: none;
+      flex-direction: column;
+      padding: 16px 10px;
+      z-index: 100;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+      transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      -webkit-app-region: no-drag;
+    }
+
+    body.tabs-vertical .astra-vertical-tab-sidebar {
+      display: flex;
+    }
+
+    .vtab-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px 14px 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 12px;
+    }
+
+    .vtab-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vtab-emblem {
+      width: 24px;
+      height: 24px;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .vtab-brand-name {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      color: #f4f3ef;
+      white-space: nowrap;
+    }
+
+    .vtab-collapse-toggle {
+      background: transparent;
+      border: none;
+      color: #88888b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .vtab-collapse-toggle:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f4f3ef;
+    }
+
+    .vtab-new-tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f4f3ef;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 14px;
+      transition: all 0.15s ease;
+    }
+
+    .vtab-new-tab-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .vtab-new-tab-btn kbd {
+      margin-left: auto;
+      font-size: 10px;
+      color: #88888b;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .vtab-section-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #71717a;
+      padding: 4px 8px;
+      margin-bottom: 4px;
+    }
+
+    .vtab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .vtab-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #a1a1aa;
+      font-size: 13px;
+      font-weight: 450;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .vtab-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #f4f3ef;
+    }
+
+    .vtab-item.active {
+      background: rgba(124, 92, 252, 0.15);
+      color: #ffffff;
+      font-weight: 550;
+      border-left: 2.5px solid var(--accent-color);
+    }
+
+    .vtab-favicon-wrap {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .vtab-favicon-wrap svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .vtab-item-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vtab-close-btn {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease, color 0.15s ease;
+    }
+
+    .vtab-item:hover .vtab-close-btn {
+      opacity: 1;
+    }
+
+    .vtab-close-btn:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .vtab-footer {
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .vtab-footer-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: #88888b;
+      text-decoration: none;
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .vtab-footer-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f4f3ef;
+    }
+
+    /* Compact mode */
+    body.vtab-compact .vtab-brand-name,
+    body.vtab-compact .vtab-new-tab-btn span,
+    body.vtab-compact .vtab-new-tab-btn kbd,
+    body.vtab-compact .vtab-section-label,
+    body.vtab-compact .vtab-item-title,
+    body.vtab-compact .vtab-close-btn,
+    body.vtab-compact .vtab-footer-btn span {
+      display: none !important;
+    }
+
+    body.vtab-compact .vtab-item,
+    body.vtab-compact .vtab-new-tab-btn,
+    body.vtab-compact .vtab-footer-btn {
+      justify-content: center;
+      padding: 8px 0;
+    }
   </style>
 </head>
-<body>
+<body class="tabs-horizontal">
+  <!-- Astra Vertical Tab Sidebar (Assigned to the left of the screen when vertical tabs are enabled) -->
+  <aside class="astra-vertical-tab-sidebar" id="astra-vtab-sidebar">
+    <div class="vtab-header">
+      <div class="vtab-brand">
+        <svg class="vtab-emblem" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 2 L20.5 7 L20.5 17 L12 22 L3.5 17 L3.5 7 Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 6.8 L7.8 14.8 L16.2 14.8 Z" stroke-width="1.8" fill="rgba(124, 92, 252, 0.25)" stroke="var(--accent-color, #7c5cfc)"/>
+        </svg>
+        <span class="vtab-brand-name">Astra</span>
+      </div>
+      <button class="vtab-collapse-toggle" id="vtab-toggle-btn" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <button type="button" class="vtab-new-tab-btn" id="vtab-new-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span>New Tab</span>
+      <kbd>⌘T</kbd>
+    </button>
+
+    <div class="vtab-section-label">Tabs & Spaces</div>
+    <div class="vtab-list vtab-pinned-list">
+      <a class="vtab-item active" href="chrome://newtab" title="Astra Home">
+        <span class="vtab-favicon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2 L20.5 7 L20.5 17 L12 22 L3.5 17 L3.5 7 Z"/>
+          </svg>
+        </span>
+        <span class="vtab-item-title">New Tab</span>
+      </a>
+
+      <a class="vtab-item" href="https://github.com/Akshat-mohanty/Astra" title="GitHub — Astra">
+        <span class="vtab-favicon-wrap">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+        </span>
+        <span class="vtab-item-title">GitHub — Astra</span>
+        <button class="vtab-close-btn" title="Close tab">&times;</button>
+      </a>
+
+      <a class="vtab-item" href="https://google.com" title="Google Search">
+        <span class="vtab-favicon-wrap">
+          <svg viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+        </span>
+        <span class="vtab-item-title">Google</span>
+        <button class="vtab-close-btn" title="Close tab">&times;</button>
+      </a>
+
+      <a class="vtab-item" href="https://claude.ai" title="Claude AI">
+        <span class="vtab-favicon-wrap">
+          <svg viewBox="0 0 24 24" fill="#D97706">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </span>
+        <span class="vtab-item-title">Claude</span>
+        <button class="vtab-close-btn" title="Close tab">&times;</button>
+      </a>
+    </div>
+
+    <div class="vtab-footer">
+      <a href="chrome://settings#tabs" class="vtab-footer-btn" title="Tab Settings">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Tab Settings</span>
+      </a>
+    </div>
+  </aside>
   <!-- Corner Settings Action Button -->
   <a href="chrome://settings" class="corner-settings-btn" title="Astra Settings (⌘,)">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

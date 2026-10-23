@@ -60,6 +60,14 @@
           <span>Appearance</span>
         </a>
 
+        <a href="#tabs" class="nav-item" data-section="tabs">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <path d="M9 3v18"></path>
+          </svg>
+          <span>Tabs</span>
+        </a>
+
         <a href="#search" class="nav-item" data-section="search">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
@@ -228,18 +236,8 @@
           </div>
 
           <div class="card-group">
-            <h2 class="group-title">Tab Bar Layout</h2>
+            <h2 class="group-title">Display & Window Polish</h2>
             <div class="settings-card">
-              <div class="setting-row">
-                <div class="setting-info">
-                  <span class="option-title">Native Top Horizontal Tabs</span>
-                  <span class="option-desc">Clean macOS tab strip with integrated traffic lights and hidden redundant Omnibox.</span>
-                </div>
-                <span class="badge-active">Enabled</span>
-              </div>
-
-              <div class="card-divider"></div>
-
               <div class="setting-row">
                 <div class="setting-info">
                   <span class="option-title">Dim Inactive Tabs</span>
@@ -255,6 +253,138 @@
 
               <div class="setting-row">
                 <div class="setting-info">
+                  <span class="option-title">Glassmorphism Blur</span>
+                  <span class="option-desc">Enables macOS native vibrant material translucency on sidebar surfaces.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="pref-glassmorphism" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TABS SECTION -->
+        <section id="section-tabs" class="settings-section">
+          <div class="card-group">
+            <h2 class="group-title">Tab Orientation</h2>
+            <p class="group-subtitle">Configure whether your tabs appear across the top or assigned as an ergonomic sidebar to the left of the screen.</p>
+            <div class="orientation-grid">
+              <!-- Horizontal Card -->
+              <div class="orientation-card active" data-orientation="horizontal" id="card-orient-horizontal">
+                <div class="orient-preview orient-horizontal-preview">
+                  <div class="mock-window">
+                    <div class="mock-topbar">
+                      <div class="mock-dots">
+                        <span></span><span></span><span></span>
+                      </div>
+                      <div class="mock-tab-strip">
+                        <div class="mock-tab active">Tab 1</div>
+                        <div class="mock-tab">Tab 2</div>
+                        <div class="mock-tab-add">+</div>
+                      </div>
+                    </div>
+                    <div class="mock-body">
+                      <div class="mock-content-bar"></div>
+                      <div class="mock-content-body"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="orient-meta">
+                  <div class="orient-header-row">
+                    <span class="option-title">Horizontal Tabs</span>
+                    <span class="orient-badge">Current</span>
+                    <span class="orient-radio-check"></span>
+                  </div>
+                  <span class="option-desc">Classic tab strip arranged horizontally across the top of the browser window.</span>
+                </div>
+              </div>
+
+              <!-- Vertical Card -->
+              <div class="orientation-card" data-orientation="vertical" id="card-orient-vertical">
+                <div class="orient-preview orient-vertical-preview">
+                  <div class="mock-window vertical-layout">
+                    <div class="mock-sidebar">
+                      <div class="mock-dots">
+                        <span></span><span></span><span></span>
+                      </div>
+                      <div class="mock-v-tab active">
+                        <span class="mock-v-dot"></span>Tab 1
+                      </div>
+                      <div class="mock-v-tab">
+                        <span class="mock-v-dot"></span>Tab 2
+                      </div>
+                      <div class="mock-v-tab">
+                        <span class="mock-v-dot"></span>Tab 3
+                      </div>
+                      <div class="mock-v-add">+ New Tab</div>
+                    </div>
+                    <div class="mock-body">
+                      <div class="mock-content-bar"></div>
+                      <div class="mock-content-body"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="orient-meta">
+                  <div class="orient-header-row">
+                    <span class="option-title">Vertical Tabs</span>
+                    <span class="orient-badge new-badge">Left Screen</span>
+                    <span class="orient-radio-check"></span>
+                  </div>
+                  <span class="option-desc">Tabs are assigned to the left of the screen as a vertical sidebar (Arc & Dia style).</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-group" id="vtab-settings-group">
+            <h2 class="group-title">Vertical Tab Preferences</h2>
+            <div class="settings-card">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="option-title">Sidebar Width</span>
+                  <span class="option-desc">Choose between an expanded sidebar with full page titles or an ultra-compact icon strip.</span>
+                </div>
+                <div class="segmented-control" id="vtab-width-selector">
+                  <button class="segment-btn active" data-vwidth="expanded">Expanded (220px)</button>
+                  <button class="segment-btn" data-vwidth="compact">Compact (56px)</button>
+                </div>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="option-title">Auto-Collapse Left Sidebar</span>
+                  <span class="option-desc">Automatically collapse the vertical tab sidebar into compact icon mode when browsing web content.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="pref-auto-collapse-tabs" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="option-title">Show Close Button on Hover Only</span>
+                  <span class="option-desc">Keeps the vertical tab list uncluttered by showing the &times; close button only on active pointer hover.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="pref-tab-hover-close" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-group">
+            <h2 class="group-title">Tab Workflow & Audio</h2>
+            <div class="settings-card">
+              <div class="setting-row">
+                <div class="setting-info">
                   <span class="option-title">Tab Audio Indicators</span>
                   <span class="option-desc">Display animated sound wave icon and click-to-mute on noisy tabs.</span>
                 </div>
@@ -263,8 +393,35 @@
                   <span class="slider"></span>
                 </label>
               </div>
+
+              <div class="card-divider"></div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="option-title">New Tab Placement</span>
+                  <span class="option-desc">Where newly created tabs open in your tab stack.</span>
+                </div>
+                <select class="custom-select" id="pref-tab-position">
+                  <option value="after_current" selected>After current tab</option>
+                  <option value="at_end">At the end of tabs</option>
+                </select>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="option-title">Tab Hover Previews</span>
+                  <span class="option-desc">Show card preview and domain when hovering over background tabs.</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="pref-tab-preview" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
             </div>
           </div>
+        </section>
         </section>
 
         <!-- SEARCH & AI SECTION -->

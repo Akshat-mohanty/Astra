@@ -135,6 +135,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Tab Orientation and Vertical Sidebar Controller
+  const vtabSidebar = document.getElementById('astra-vtab-sidebar');
+  const vtabToggleBtn = document.getElementById('vtab-toggle-btn');
+  const vtabNewBtn = document.getElementById('vtab-new-btn');
+
+  function applySettings() {
+    let settings = {};
+    try {
+      const saved = localStorage.getItem('astra_settings');
+      if (saved) settings = JSON.parse(saved);
+    } catch (e) {}
+
+    const orientation = settings.tab_orientation || 'horizontal';
+    const isVertical = (orientation === 'vertical');
+    const isCompact = (settings.vtab_width === 'compact');
+
+    document.body.classList.toggle('tabs-vertical', isVertical);
+    document.body.classList.toggle('tabs-horizontal', !isVertical);
+    document.body.classList.toggle('vtab-compact', isCompact);
+
+    if (settings.accent) {
+      document.documentElement.style.setProperty('--accent-color', settings.accent);
+    }
+  }
+
+  // Initial apply
+  applySettings();
+
+  // Listen for storage changes across tabs / settings page
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'astra_settings') {
+      applySettings();
+    }
+  });
+
+  window.addEventListener('astra-settings-updated', () => {
+    applySettings();
+  });
+
+  // Toggle compact vertical tabs sidebar
+  if (vtabToggleBtn) {
+    vtabToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('vtab-compact');
+      try {
+        const saved = localStorage.getItem('astra_settings');
+        const settings = saved ? JSON.parse(saved) : {};
+        settings.vtab_width = document.body.classList.contains('vtab-compact') ? 'compact' : 'expanded';
+        localStorage.setItem('astra_settings', JSON.stringify(settings));
+      } catch (e) {}
+    });
+  }
+
+  // New Tab button in vertical sidebar
+  if (vtabNewBtn) {
+    vtabNewBtn.addEventListener('click', () => {
+      window.open('chrome://newtab', '_blank');
+    });
+  }
+
+  // Handle closing tabs inside vertical sidebar
+  if (vtabSidebar) {
+    vtabSidebar.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('.vtab-close-btn');
+      if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const item = closeBtn.closest('.vtab-item');
+        if (item) {
+          item.style.opacity = '0';
+          item.style.transform = 'translateX(-12px)';
+          setTimeout(() => item.remove(), 160);
+        }
+      }
+    });
+  }
+
   // Keyboard shortcut: pressing / or Cmd+K focuses prompt
   window.addEventListener('keydown', (e) => {
     if ((e.key === '/' || (e.metaKey && e.key === 'k')) && document.activeElement !== input) {
