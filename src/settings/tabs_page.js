@@ -710,14 +710,19 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
   }
 
   saveSetting_(key, val) {
+    let saved = {};
     try {
-      let saved = {};
       const raw = localStorage.getItem('astra_settings');
       if (raw) saved = JSON.parse(raw);
       saved[key] = val;
       localStorage.setItem('astra_settings', JSON.stringify(saved));
       window.dispatchEvent(new CustomEvent('astra-settings-updated', { detail: saved }));
     } catch(err) {}
+
+    try {
+      const jsonStr = encodeURIComponent(JSON.stringify(saved));
+      fetch('http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr, { mode: 'no-cors' }).catch(() => {});
+    } catch(e) {}
   }
 }
 customElements.define(SettingsTabsPageElement.is, SettingsTabsPageElement);

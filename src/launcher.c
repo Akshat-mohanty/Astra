@@ -109,6 +109,60 @@ static void serve_file(int fd, const char *rel_path) {
     free(buf);
 }
 
+static void url_decode(char *dst, const char *src, size_t dst_size) {
+    size_t i = 0;
+    while (*src && *src != '&' && *src != ' ' && i + 1 < dst_size) {
+        if (*src == '%' && src[1] && src[2]) {
+            int ch = 0;
+            if (sscanf(src + 1, "%2x", &ch) == 1) {
+                dst[i++] = (char)ch;
+                src += 3;
+                continue;
+            }
+        } else if (*src == '+') {
+            dst[i++] = ' ';
+            src++;
+            continue;
+        }
+        dst[i++] = *src++;
+    }
+    dst[i] = '\0';
+}
+
+/* ─── Handle /api/setting endpoint ───────────────────────────────────────── */
+static void handle_api_setting(int fd, const char *raw_path) {
+    char *home = getenv("HOME");
+    char conf_path[1024];
+    snprintf(conf_path, sizeof(conf_path), "%s/Library/Application Support/Astra/astra_settings.json", home ? home : "/tmp");
+
+    const char *j = strstr(raw_path, "json=");
+    if (j) {
+        char decoded[4096] = {0};
+        url_decode(decoded, j + 5, sizeof(decoded));
+        FILE *fp = fopen(conf_path, "w");
+        if (fp) {
+            fputs(decoded, fp);
+            fputc('\n', fp);
+            fclose(fp);
+        }
+    } else {
+        char key[64] = {0};
+        char val[64] = {0};
+        const char *k = strstr(raw_path, "key=");
+        const char *v = strstr(raw_path, "val=");
+        if (k) sscanf(k + 4, "%63[^& \r\n]", key);
+        if (v) sscanf(v + 4, "%63[^& \r\n]", val);
+
+        FILE *fp = fopen(conf_path, "w");
+        if (fp) {
+            fprintf(fp, "{\"%s\":\"%s\"}\n", key, val);
+            fclose(fp);
+        }
+    }
+    const char *resp = "{\"ok\":true}";
+    send_response(fd, 200, "OK", "application/json", resp, strlen(resp));
+}
+
 /* ─── Handle one HTTP connection ─────────────────────────────────────────── */
 static void handle_conn(int fd) {
     char buf[RECV_BUF];
@@ -119,6 +173,12 @@ static void handle_conn(int fd) {
     /* parse first line: METHOD /path HTTP/... */
     char method[8], path[1024];
     if (sscanf(buf, "%7s %1023s", method, path) != 2) {
+        close(fd);
+        return;
+    }
+
+    if (strncmp(path, "/api/setting", 12) == 0) {
+        handle_api_setting(fd, path);
         close(fd);
         return;
     }
