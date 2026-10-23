@@ -1,4 +1,4 @@
-# Astra Browser & Astra Search 🚀
+# Astra Browser & Astra Search 
 
 **Astra** is an ultra-fast, lightweight web browser built on a modern Chromium core with zero bloat, custom Astra branding, integrated **Astra Search**, and **100% native Chrome Web Store extension compatibility**.
 
