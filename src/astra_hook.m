@@ -192,12 +192,69 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 }
 @end
 
+/* ─── Settings Footer Button ─────────────────────────────────────────────── */
+@interface AstraSettingsButton : NSButton
+@property (nonatomic, strong) NSTrackingArea *trackingArea;
+@property (nonatomic, assign) BOOL isHovered;
+@end
+
+@implementation AstraSettingsButton
+- (instancetype)initWithFrame:(NSRect)frameRect {
+    self = [super initWithFrame:frameRect];
+    if (self) {
+        [self setButtonType:NSButtonTypeMomentaryChange];
+        [self setBordered:NO];
+        [self setTitle:@"Settings"];
+        [self setFont:[NSFont systemFontOfSize:12.5 weight:NSFontWeightMedium]];
+        [self setContentTintColor:[NSColor colorWithCalibratedWhite:0.75 alpha:1.0]];
+        [self setAlignment:NSTextAlignmentCenter];
+        [self setWantsLayer:YES];
+        self.layer.cornerRadius = 7.0;
+    }
+    return self;
+}
+
+- (void)updateTrackingAreas {
+    [super updateTrackingAreas];
+    if (_trackingArea) [self removeTrackingArea:_trackingArea];
+    _trackingArea = [[NSTrackingArea alloc] initWithRect:self.bounds
+                                                 options:NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways
+                                                   owner:self
+                                                userInfo:nil];
+    [self addTrackingArea:_trackingArea];
+}
+
+- (void)mouseEntered:(NSEvent *)event {
+    _isHovered = YES;
+    self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
+    [self setContentTintColor:[NSColor whiteColor]];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)mouseExited:(NSEvent *)event {
+    _isHovered = NO;
+    self.layer.backgroundColor = [NSColor clearColor].CGColor;
+    [self setContentTintColor:[NSColor colorWithCalibratedWhite:0.75 alpha:1.0]];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)mouseDown:(NSEvent *)event {
+    [super mouseDown:event];
+    if (self.target && self.action) {
+        #pragma clang diagnostic push
+        #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+        [self.target performSelector:self.action withObject:self];
+        #pragma clang diagnostic pop
+    }
+}
+@end
+
 /* ─── Astra Vertical Sidebar View ─────────────────────────────────────────── */
 @interface AstraVerticalSidebarView : NSView
 @property (nonatomic, strong) NSScrollView *scrollView;
 @property (nonatomic, strong) AstraFlippedView *tabContainer;
 @property (nonatomic, strong) NSView *footerView;
-@property (nonatomic, strong) NSButton *settingsBtn;
+@property (nonatomic, strong) AstraSettingsButton *settingsBtn;
 @property (nonatomic, strong) NSArray *lastTitles;
 @property (nonatomic, assign) NSInteger lastActiveIndex;
 - (void)layoutSidebarViews;
@@ -212,6 +269,22 @@ static __unsafe_unretained AstraVerticalSidebarView *s_currentSidebarView = nil;
 static NSAppleScript *s_queryTabsScript = nil;
 static NSAppleScript *s_newTabSettingsScript = nil;
 
+static void astra_log(NSString *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    NSString *msg = [[NSString alloc] initWithFormat:fmt arguments:args];
+    va_end(args);
+    NSString *line = [NSString stringWithFormat:@"[%@] %@\n", [NSDate date], msg];
+    NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:@"/tmp/astra_debug.log"];
+    if (!fh) {
+        [[NSFileManager defaultManager] createFileAtPath:@"/tmp/astra_debug.log" contents:nil attributes:nil];
+        fh = [NSFileHandle fileHandleForWritingAtPath:@"/tmp/astra_debug.log"];
+    }
+    [fh seekToEndOfFile];
+    [fh writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
+    [fh closeFile];
+}
+
 static void query_and_update_tabs(AstraVerticalSidebarView *sidebarView) {
     if (!sidebarView || [sidebarView isHidden]) return;
 
@@ -223,6 +296,9 @@ static void query_and_update_tabs(AstraVerticalSidebarView *sidebarView) {
 
     NSDictionary *err = nil;
     NSAppleEventDescriptor *desc = [s_queryTabsScript executeAndReturnError:&err];
+    if (err) {
+        astra_log(@"query_and_update_tabs ERROR: %@", err);
+    }
     if (!err && desc) {
         NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
         NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
@@ -244,6 +320,7 @@ static void force_refresh_tabs(void) {
 
 /* ─── Settings Helper & Menu Interceptor ──────────────────────────────────── */
 static void open_settings_in_new_tab(void) {
+    astra_log(@"open_settings_in_new_tab called");
     if (s_currentSidebarView) {
         [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
     }
@@ -257,7 +334,13 @@ static void open_settings_in_new_tab(void) {
             s_newTabSettingsScript = [[NSAppleScript alloc] initWithSource:src];
             [s_newTabSettingsScript compileAndReturnError:nil];
         }
-        [s_newTabSettingsScript executeAndReturnError:nil];
+        NSDictionary *err = nil;
+        [s_newTabSettingsScript executeAndReturnError:&err];
+        if (err) {
+            astra_log(@"open_settings_in_new_tab ERROR: %@", err);
+        } else {
+            astra_log(@"open_settings_in_new_tab SUCCESS");
+        }
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
             force_refresh_tabs();
@@ -324,13 +407,7 @@ static void configure_menu_items(void) {
         _footerView.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.06].CGColor;
         [_footerView setAutoresizingMask:NSViewMaxYMargin | NSViewWidthSizable];
 
-        _settingsBtn = [[NSButton alloc] initWithFrame:NSMakeRect(12, 6, w - 24, 32)];
-        [_settingsBtn setButtonType:NSButtonTypeMomentaryChange];
-        [_settingsBtn setBordered:NO];
-        [_settingsBtn setTitle:@"Settings"];
-        [_settingsBtn setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
-        [_settingsBtn setContentTintColor:[NSColor colorWithCalibratedWhite:0.7 alpha:1.0]];
-        [_settingsBtn setAlignment:NSTextAlignmentCenter];
+        _settingsBtn = [[AstraSettingsButton alloc] initWithFrame:NSMakeRect(12, 6, w - 24, 32)];
         [_settingsBtn setTarget:self];
         [_settingsBtn setAction:@selector(onSettingsClicked:)];
         [_footerView addSubview:_settingsBtn];
@@ -454,7 +531,21 @@ static void configure_menu_items(void) {
     CGFloat rowH = 36.0;
     CGFloat spacing = 4.0;
     CGFloat y = (_lastActiveIndex - 1) * (rowH + spacing);
-    [_scrollView.contentView scrollToPoint:NSMakePoint(0, y)];
+    NSRect tabRect = NSMakeRect(0, y, [_scrollView bounds].size.width, rowH);
+    NSRect visibleRect = [_scrollView.contentView bounds];
+
+    if (NSContainsRect(visibleRect, tabRect)) {
+        return;
+    }
+
+    CGFloat targetY = visibleRect.origin.y;
+    if (tabRect.origin.y < visibleRect.origin.y) {
+        targetY = tabRect.origin.y;
+    } else if (NSMaxY(tabRect) > NSMaxY(visibleRect)) {
+        targetY = NSMaxY(tabRect) - visibleRect.size.height;
+    }
+    if (targetY < 0) targetY = 0;
+    [_scrollView.contentView scrollToPoint:NSMakePoint(0, targetY)];
     [_scrollView reflectScrolledClipView:_scrollView.contentView];
 }
 
@@ -478,6 +569,7 @@ static void configure_menu_items(void) {
             [btn setToolTip:btn.rawTitle];
             [btn.closeBtn setAlphaValue:btn.isCurrent ? 0.7 : 0.0];
         }
+        [self scrollToActiveTab];
         return;
     }
 
@@ -501,6 +593,11 @@ static void configure_menu_items(void) {
     docFrame.size.width = itemWidth;
     docFrame.size.height = MAX(totalH, [_scrollView bounds].size.height);
     [_tabContainer setFrame:docFrame];
+
+    if (totalH <= [_scrollView bounds].size.height) {
+        [_scrollView.contentView scrollToPoint:NSMakePoint(0, 0)];
+        [_scrollView reflectScrolledClipView:_scrollView.contentView];
+    }
 
     for (NSInteger i = 0; i < (NSInteger)[titles count]; i++) {
         NSString *title = titles[i];
