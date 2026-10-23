@@ -327,9 +327,10 @@ static void configure_menu_items(void) {
         _settingsBtn = [[NSButton alloc] initWithFrame:NSMakeRect(12, 6, w - 24, 32)];
         [_settingsBtn setButtonType:NSButtonTypeMomentaryChange];
         [_settingsBtn setBordered:NO];
-        [_settingsBtn setTitle:@"⚙  Settings"];
+        [_settingsBtn setTitle:@"Settings"];
         [_settingsBtn setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
         [_settingsBtn setContentTintColor:[NSColor colorWithCalibratedWhite:0.7 alpha:1.0]];
+        [_settingsBtn setAlignment:NSTextAlignmentLeft];
         [_settingsBtn setTarget:self];
         [_settingsBtn setAction:@selector(onSettingsClicked:)];
         [_footerView addSubview:_settingsBtn];
@@ -370,10 +371,12 @@ static void configure_menu_items(void) {
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
     if (compact) {
         [_settingsBtn setFrame:NSMakeRect(8, 6, w - 16, 32)];
-        [_settingsBtn setTitle:@"⚙"];
+        [_settingsBtn setTitle:@"Settings"];
+        [_settingsBtn setAlignment:NSTextAlignmentCenter];
     } else {
         [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
-        [_settingsBtn setTitle:@"⚙  Settings"];
+        [_settingsBtn setTitle:@"Settings"];
+        [_settingsBtn setAlignment:NSTextAlignmentLeft];
     }
 
     CGFloat sx = compact ? 6.0 : 10.0;
