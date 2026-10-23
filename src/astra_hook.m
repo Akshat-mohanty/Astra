@@ -698,9 +698,61 @@ static CGFloat read_sidebar_width_setting(void) {
 }
 
 /* ─── Window Layout Manager ───────────────────────────────────────────────── */
+#import <objc/runtime.h>
+
 static BOOL s_is_fullscreen_transitioning = NO;
 
+static BOOL is_exclusive_access_bubble(NSWindow *w) {
+    if (!w) return NO;
+    if (![[w className] isEqualToString:@"NativeWidgetMacNSWindow"]) return NO;
+    NSRect f = [w frame];
+    if (f.size.width >= 250 && f.size.width <= 500 && f.size.height >= 35 && f.size.height <= 70) {
+        if (f.origin.y > 600) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+static void (*orig_orderWindow)(id, SEL, NSWindowOrderingMode, NSInteger) = NULL;
+static void (*orig_setAlphaValue)(id, SEL, CGFloat) = NULL;
+
+static void astra_swizzled_orderWindow(NSWindow *self, SEL _cmd, NSWindowOrderingMode mode, NSInteger otherWindowNumber) {
+    if (is_exclusive_access_bubble(self)) {
+        if (orig_setAlphaValue) orig_setAlphaValue(self, @selector(setAlphaValue:), 0.0);
+        [self setIgnoresMouseEvents:YES];
+        [self orderOut:nil];
+        return;
+    }
+    if (orig_orderWindow) {
+        orig_orderWindow(self, _cmd, mode, otherWindowNumber);
+    }
+}
+
+static void astra_swizzled_setAlphaValue(NSWindow *self, SEL _cmd, CGFloat alpha) {
+    if (is_exclusive_access_bubble(self)) {
+        if (orig_setAlphaValue) {
+            orig_setAlphaValue(self, _cmd, 0.0);
+        }
+        return;
+    }
+    if (orig_setAlphaValue) {
+        orig_setAlphaValue(self, _cmd, alpha);
+    }
+}
+
+static void suppress_exclusive_access_bubble(void) {
+    for (NSWindow *w in [NSApp windows]) {
+        if (is_exclusive_access_bubble(w)) {
+            [w setAlphaValue:0.0];
+            [w setIgnoresMouseEvents:YES];
+            [w orderOut:nil];
+        }
+    }
+}
+
 static void configure_fullscreen_toolbar(void) {
+    suppress_exclusive_access_bubble();
     for (NSWindow *w in [NSApp windows]) {
         if ([[w className] isEqualToString:@"NSToolbarFullScreenWindow"]) {
             NSView *cv = [w contentView];
@@ -893,6 +945,18 @@ __attribute__((constructor))
 static void install_astra_hook(void) {
     if (strcmp(getprogname(), "Astra_bin") != 0) return;
 
+    Method m_order = class_getInstanceMethod([NSWindow class], @selector(orderWindow:relativeTo:));
+    if (m_order) {
+        orig_orderWindow = (void (*)(id, SEL, NSWindowOrderingMode, NSInteger))method_getImplementation(m_order);
+        method_setImplementation(m_order, (IMP)astra_swizzled_orderWindow);
+    }
+
+    Method m_alpha = class_getInstanceMethod([NSWindow class], @selector(setAlphaValue:));
+    if (m_alpha) {
+        orig_setAlphaValue = (void (*)(id, SEL, CGFloat))method_getImplementation(m_alpha);
+        method_setImplementation(m_alpha, (IMP)astra_swizzled_setAlphaValue);
+    }
+
     [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent * _Nullable(NSEvent * _Nonnull event) {
         if (([event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagCommand) {
             NSString *chars = [event charactersIgnoringModifiers];
@@ -949,6 +1013,7 @@ static void install_astra_hook(void) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
         [NSTimer scheduledTimerWithTimeInterval:0.08 repeats:YES block:^(NSTimer * _Nonnull timer) {
             configure_menu_items();
+            suppress_exclusive_access_bubble();
             for (NSWindow *win in [NSApp windows]) {
                 configure_window(win);
             }
