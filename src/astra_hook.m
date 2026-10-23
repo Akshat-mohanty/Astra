@@ -250,56 +250,48 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 - (void)layoutSidebarViews;
 - (void)updateTabsWithTitles:(NSArray *)titles activeIndex:(NSInteger)activeIdx;
 - (void)addOptimisticTabWithTitle:(NSString *)title;
+- (void)removeActiveTabOptimistically;
 - (void)setActiveTabIndexLocally:(NSInteger)idx;
 - (void)removeTabLocallyAtIndex:(NSInteger)idx;
 - (void)scrollToActiveTab;
 @end
 
 static __unsafe_unretained AstraVerticalSidebarView *s_currentSidebarView = nil;
-static NSAppleScript *s_queryTabsScript = nil;
-static NSAppleScript *s_newTabSettingsScript = nil;
-
-static void astra_log(NSString *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    NSString *msg = [[NSString alloc] initWithFormat:fmt arguments:args];
-    va_end(args);
-    NSString *line = [NSString stringWithFormat:@"[%@] %@\n", [NSDate date], msg];
-    NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:@"/tmp/astra_debug.log"];
-    if (!fh) {
-        [[NSFileManager defaultManager] createFileAtPath:@"/tmp/astra_debug.log" contents:nil attributes:nil];
-        fh = [NSFileHandle fileHandleForWritingAtPath:@"/tmp/astra_debug.log"];
-    }
-    [fh seekToEndOfFile];
-    [fh writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
-    [fh closeFile];
-}
 
 static void query_and_update_tabs(AstraVerticalSidebarView *sidebarView) {
     if (!sidebarView || [sidebarView isHidden]) return;
 
-    if (!s_queryTabsScript) {
-        NSString *src = @"tell application \"Astra\" to get {title of every tab of window 1, active tab index of window 1}";
-        s_queryTabsScript = [[NSAppleScript alloc] initWithSource:src];
-        [s_queryTabsScript compileAndReturnError:nil];
-    }
+    static BOOL s_is_querying = NO;
+    if (s_is_querying) return;
+    s_is_querying = YES;
 
-    NSDictionary *err = nil;
-    NSAppleEventDescriptor *desc = [s_queryTabsScript executeAndReturnError:&err];
-    if (err) {
-        astra_log(@"query_and_update_tabs ERROR: %@", err);
-    }
-    if (!err && desc) {
-        NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
-        NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
-        NSInteger activeIdx = [activeDesc int32Value];
-        NSMutableArray *titles = [NSMutableArray array];
-        for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
-            NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
-            [titles addObject:AstraSanitizeTabTitle(st)];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString *src = @"tell application \"Astra\" to get {title of every tab of window 1, active tab index of window 1}";
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
+        NSDictionary *err = nil;
+        NSAppleEventDescriptor *desc = [as executeAndReturnError:&err];
+
+        if (!err && desc) {
+            NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
+            NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
+            NSInteger activeIdx = [activeDesc int32Value];
+            NSMutableArray *titles = [NSMutableArray array];
+            for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
+                NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
+                [titles addObject:AstraSanitizeTabTitle(st)];
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                s_is_querying = NO;
+                if (sidebarView && ![sidebarView isHidden]) {
+                    [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
+                }
+            });
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                s_is_querying = NO;
+            });
         }
-        [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
-    }
+    });
 }
 
 static void force_refresh_tabs(void) {
@@ -317,32 +309,22 @@ static void open_settings_in_new_tab(void) {
     }
     s_last_open_settings = now;
 
-    astra_log(@"open_settings_in_new_tab called");
     if (s_currentSidebarView) {
         [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
     }
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (!s_newTabSettingsScript) {
-            NSString *src = @"tell application \"Astra\" to tell window 1\n"
-                             "set newTab to make new tab with properties {URL:\"chrome://settings\"}\n"
-                             "set active tab index to (count of tabs)\n"
-                             "end tell";
-            s_newTabSettingsScript = [[NSAppleScript alloc] initWithSource:src];
-            [s_newTabSettingsScript compileAndReturnError:nil];
-        }
-        NSDictionary *err = nil;
-        [s_newTabSettingsScript executeAndReturnError:&err];
-        if (err) {
-            astra_log(@"open_settings_in_new_tab ERROR: %@", err);
-        } else {
-            astra_log(@"open_settings_in_new_tab SUCCESS");
-        }
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString *src = @"tell application \"Astra\" to tell window 1\n"
+                         "set newTab to make new tab with properties {URL:\"chrome://settings\"}\n"
+                         "set active tab index to (count of tabs)\n"
+                         "end tell";
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
+        [as executeAndReturnError:nil];
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(35 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
             force_refresh_tabs();
         });
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(90 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
             force_refresh_tabs();
         });
     });
@@ -468,13 +450,15 @@ static void configure_menu_items(void) {
     NSInteger idx = sender.tabIndex;
     [self setActiveTabIndexLocally:idx];
 
-    NSString *src = [NSString stringWithFormat:
-        @"tell application \"Astra\" to tell window 1 to set active tab index to %ld", (long)idx];
-    NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-    [as executeAndReturnError:nil];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString *src = [NSString stringWithFormat:
+            @"tell application \"Astra\" to tell window 1 to set active tab index to %ld", (long)idx];
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
+        [as executeAndReturnError:nil];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-        force_refresh_tabs();
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            force_refresh_tabs();
+        });
     });
 }
 
@@ -484,14 +468,22 @@ static void configure_menu_items(void) {
     NSInteger idx = parent.tabIndex;
     [self removeTabLocallyAtIndex:idx];
 
-    NSString *src = [NSString stringWithFormat:
-        @"tell application \"Astra\" to close tab %ld of window 1", (long)idx];
-    NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-    [as executeAndReturnError:nil];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString *src = [NSString stringWithFormat:
+            @"tell application \"Astra\" to close tab %ld of window 1", (long)idx];
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
+        [as executeAndReturnError:nil];
 
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(25 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-        force_refresh_tabs();
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            force_refresh_tabs();
+        });
     });
+}
+
+- (void)removeActiveTabOptimistically {
+    if (_lastActiveIndex > 0 && _lastTitles && _lastActiveIndex <= (NSInteger)[_lastTitles count]) {
+        [self removeTabLocallyAtIndex:_lastActiveIndex];
+    }
 }
 
 - (void)addOptimisticTabWithTitle:(NSString *)title {
@@ -971,6 +963,17 @@ static void install_astra_hook(void) {
                     force_refresh_tabs();
                 });
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
+                });
+                return event;
+            } else if ([chars isEqualToString:@"w"]) {
+                if (s_currentSidebarView) {
+                    [s_currentSidebarView removeActiveTabOptimistically];
+                }
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(40 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
+                });
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(140 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
                     force_refresh_tabs();
                 });
                 return event;
