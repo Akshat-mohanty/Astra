@@ -23,56 +23,16 @@ OFFSET = 0x119ac8c
 ORIG_HEX = 'f657bda9f44f01a9'
 PATCH_BYTES = bytes.fromhex('00008052c0035fd6')
 
-# kGlobeIcon vector path replacement with exact Astra constellation matrix from screenshot
-NEW_PATH_OFFSET = 0xbd2e66a  # Zero padding area in __const (size 5138 bytes)
-
+# kGlobeIcon vector path replacement with exact Astra constellation emblem
+REP1_PATH_OFFSET = 0xbb532e0
 REP1_STRUCT_PTR_OFFSET = 0xd0d6910
 REP1_STRUCT_SIZE_OFFSET = 0xd0d6910 + 8
 
+REP2_PATH_OFFSET = 0xc0859f8
 REP2_STRUCT_PTR_OFFSET = 0xd255d98
 REP2_STRUCT_SIZE_OFFSET = 0xd255d98 + 8
 
 def build_constellation_blob():
-    from PIL import Image
-    icon_path = '/Users/akshatmohanty/Astra/src/newtab/icons/icon_24.png'
-    t = Image.open(icon_path).convert('L')
-    small = t.resize((24, 24), Image.Resampling.LANCZOS)
-
-    # Build mask with open hexagonal cells and local maxima constellation dots
-    mask = Image.new('L', (24, 24), 0)
-    for y in range(24):
-        for x in range(24):
-            v = small.getpixel((x, y))
-            if v > 68:
-                mask.putpixel((x, y), 255)
-            elif v > 38:
-                is_max = True
-                for dy in [-1, 0, 1]:
-                    for dx in [-1, 0, 1]:
-                        if 0 <= x+dx < 24 and 0 <= y+dy < 24:
-                            if small.getpixel((x+dx, y+dy)) > v:
-                                is_max = False
-                                break
-                    if not is_max: break
-                if is_max:
-                    mask.putpixel((x, y), 255)
-
-    spans = []
-    for y in range(24):
-        in_span = False
-        start_x = 0
-        for x in range(24):
-            if mask.getpixel((x, y)) > 0:
-                if not in_span:
-                    in_span = True
-                    start_x = x
-            else:
-                if in_span:
-                    in_span = False
-                    spans.append((start_x, y, x, y + 1))
-        if in_span:
-            spans.append((start_x, y, 24, y + 1))
-
     blob = bytearray()
     count = 0
     def emit_cmd(c):
@@ -87,21 +47,69 @@ def build_constellation_blob():
     emit_cmd(28) # CANVAS_DIMENSIONS
     emit_flt(24.0)
 
-    for x1, y1, x2, y2 in spans:
+    def add_star(cx, cy, rx=0.8, ry=0.8):
         emit_cmd(7) # MOVE_TO
-        emit_flt(x1)
-        emit_flt(y1)
+        emit_flt(cx); emit_flt(cy - ry)
         emit_cmd(11) # LINE_TO
-        emit_flt(x2)
-        emit_flt(y1)
-        emit_cmd(11) # LINE_TO
-        emit_flt(x2)
-        emit_flt(y2)
-        emit_cmd(11) # LINE_TO
-        emit_flt(x1)
-        emit_flt(y2)
+        emit_flt(cx + rx); emit_flt(cy)
+        emit_cmd(11)
+        emit_flt(cx); emit_flt(cy + ry)
+        emit_cmd(11)
+        emit_flt(cx - rx); emit_flt(cy)
         emit_cmd(27) # CLOSE
 
+    def add_stroke(p1, p2, w=0.36):
+        x1, y1 = p1
+        x2, y2 = p2
+        dx, dy = x2 - x1, y2 - y1
+        l = (dx*dx + dy*dy)**0.5
+        if l == 0: return
+        nx = -dy / l * w
+        ny = dx / l * w
+        emit_cmd(7)
+        emit_flt(x1 - nx); emit_flt(y1 - ny)
+        emit_cmd(11)
+        emit_flt(x1 + nx); emit_flt(y1 + ny)
+        emit_cmd(11)
+        emit_flt(x2 + nx); emit_flt(y2 + ny)
+        emit_cmd(11)
+        emit_flt(x2 - nx); emit_flt(y2 - ny)
+        emit_cmd(27)
+
+    # 1. Outer Diamond Perimeter (6 isometric hexagon edges)
+    outer = [(12.0, 2.0), (20.5, 7.0), (20.5, 17.0), (12.0, 22.0), (3.5, 17.0), (3.5, 7.0)]
+    for i in range(6):
+        add_stroke(outer[i], outer[(i+1)%6], w=0.35)
+
+    # 2. Central Chevron "A" Core
+    # Apex at (12.0, 6.8), feet at (7.8, 14.8) and (16.2, 14.8)
+    add_stroke((12.0, 6.8), (7.8, 14.8), w=0.55)
+    add_stroke((12.0, 6.8), (16.2, 14.8), w=0.55)
+    # Horizontal crossbar
+    add_stroke((9.2, 12.8), (14.8, 12.8), w=0.45)
+
+    # 3. Constellation Facet Spoke Lines
+    add_stroke((12.0, 2.0), (12.0, 6.8), w=0.35)  # Top spoke
+    add_stroke((12.0, 6.8), (3.5, 7.0), w=0.32)   # Upper left spoke
+    add_stroke((12.0, 6.8), (20.5, 7.0), w=0.32)  # Upper right spoke
+    add_stroke((7.8, 14.8), (3.5, 17.0), w=0.32)  # Lower left spoke
+    add_stroke((16.2, 14.8), (20.5, 17.0), w=0.32) # Lower right spoke
+    add_stroke((7.8, 14.8), (12.0, 22.0), w=0.35) # Bottom left spoke
+    add_stroke((16.2, 14.8), (12.0, 22.0), w=0.35) # Bottom right spoke
+
+    # 4. Constellation Stars at Nodes (6 stars, total elements = 286 <= 289)
+    stars = [
+        (12.0, 2.0),  # Top Tip
+        (12.0, 22.0), # Bottom Tip
+        (12.0, 6.8),  # Chevron Apex Star
+        (7.8, 14.8),  # Left Foot Star
+        (16.2, 14.8), # Right Foot Star
+        (12.0, 12.8), # Center Star
+    ]
+    for sx, sy in stars:
+        add_star(sx, sy, 0.8, 0.8)
+
+    assert count <= 289, f"Blob count {count} exceeds 289 limit!"
     return bytes(blob), count
 
 def main():
@@ -134,20 +142,26 @@ def main():
 
         # Patch kGlobeIcon vector paths
         blob, count = build_constellation_blob()
-        # Write blob to NEW_PATH_OFFSET
-        f.seek(NEW_PATH_OFFSET)
+
+        # Patch Rep 1
+        f.seek(REP1_PATH_OFFSET)
         f.write(blob)
-        # Update Rep 1 pointer and size
+        # Restore Rep 1 struct pointer to REP1_PATH_OFFSET
         f.seek(REP1_STRUCT_PTR_OFFSET)
-        f.write(struct.pack('<Q', NEW_PATH_OFFSET))
+        f.write(struct.pack('<Q', REP1_PATH_OFFSET))
         f.seek(REP1_STRUCT_SIZE_OFFSET)
         f.write(struct.pack('<Q', count))
-        # Update Rep 2 pointer and size
+
+        # Patch Rep 2
+        f.seek(REP2_PATH_OFFSET)
+        f.write(blob)
+        # Restore Rep 2 struct pointer to REP2_PATH_OFFSET
         f.seek(REP2_STRUCT_PTR_OFFSET)
-        f.write(struct.pack('<Q', NEW_PATH_OFFSET))
+        f.write(struct.pack('<Q', REP2_PATH_OFFSET))
         f.seek(REP2_STRUCT_SIZE_OFFSET)
         f.write(struct.pack('<Q', count))
-        print(f"Successfully patched kGlobeIcon with exact Astra constellation vector ({count} elements at {hex(NEW_PATH_OFFSET)})!")
+
+        print(f"Successfully patched kGlobeIcon with exact Astra constellation emblem ({count} elements at {hex(REP1_PATH_OFFSET)} and {hex(REP2_PATH_OFFSET)})!")
 
     # 3. Re-sign framework and app
     print("Re-signing framework and app...")
