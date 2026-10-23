@@ -191,9 +191,6 @@
 @property (nonatomic, strong) NSView *headerView;
 @property (nonatomic, strong) AstraEmblemView *emblem;
 @property (nonatomic, strong) NSTextField *brandLabel;
-@property (nonatomic, strong) NSButton *addTabBtn;
-@property (nonatomic, strong) NSTextField *ntLabel;
-@property (nonatomic, strong) NSTextField *ntKbd;
 @property (nonatomic, strong) NSScrollView *scrollView;
 @property (nonatomic, strong) AstraFlippedView *tabContainer;
 @property (nonatomic, strong) NSView *footerView;
@@ -231,35 +228,6 @@
 
         [self addSubview:_headerView];
 
-        // "+ New Tab" button
-        _addTabBtn = [[NSButton alloc] initWithFrame:NSMakeRect(12, h - 128, w - 24, 34)];
-        [_addTabBtn setButtonType:NSButtonTypeMomentaryChange];
-        [_addTabBtn setBordered:NO];
-        [_addTabBtn setTitle:@""];
-        [_addTabBtn setWantsLayer:YES];
-        _addTabBtn.layer.cornerRadius = 8.0;
-        _addTabBtn.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.05].CGColor;
-        _addTabBtn.layer.borderWidth = 1.0;
-        _addTabBtn.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
-        [_addTabBtn setAutoresizingMask:NSViewMinYMargin | NSViewWidthSizable];
-
-        _ntLabel = [NSTextField labelWithString:@"+ New Tab"];
-        [_ntLabel setFrame:NSMakeRect(12, 8, 100, 18)];
-        [_ntLabel setFont:[NSFont systemFontOfSize:12.5 weight:NSFontWeightMedium]];
-        [_ntLabel setTextColor:[NSColor colorWithCalibratedWhite:0.92 alpha:1.0]];
-        [_addTabBtn addSubview:_ntLabel];
-
-        _ntKbd = [NSTextField labelWithString:@"⌘T"];
-        [_ntKbd setFrame:NSMakeRect(w - 24 - 36, 8, 28, 18)];
-        [_ntKbd setAlignment:NSTextAlignmentRight];
-        [_ntKbd setFont:[NSFont systemFontOfSize:11 weight:NSFontWeightRegular]];
-        [_ntKbd setTextColor:[NSColor colorWithCalibratedWhite:0.55 alpha:1.0]];
-        [_addTabBtn addSubview:_ntKbd];
-
-        [_addTabBtn setTarget:self];
-        [_addTabBtn setAction:@selector(onNewTabClicked:)];
-        [self addSubview:_addTabBtn];
-
         // Bottom Footer (Settings shortcut)
         _footerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, w, 44)];
         [_footerView setWantsLayer:YES];
@@ -279,7 +247,7 @@
         [self addSubview:_footerView];
 
         // Scrollable Tab Stack
-        NSRect scrollFrame = NSMakeRect(10, 48, w - 20, h - 128 - 56);
+        NSRect scrollFrame = NSMakeRect(10, 48, w - 20, h - 92 - 48);
         _scrollView = [[NSScrollView alloc] initWithFrame:scrollFrame];
         [_scrollView setHasVerticalScroller:YES];
         [_scrollView setHasHorizontalScroller:NO];
@@ -318,21 +286,6 @@
         [_brandLabel setFrame:NSMakeRect(42, 9, 80, 20)];
     }
 
-    if (compact) {
-        [_addTabBtn setFrame:NSMakeRect(8, h - 128, w - 16, 34)];
-        [_ntLabel setStringValue:@"+"];
-        [_ntLabel setFrame:NSMakeRect(0, 7, w - 16, 18)];
-        [_ntLabel setAlignment:NSTextAlignmentCenter];
-        [_ntKbd setHidden:YES];
-    } else {
-        [_addTabBtn setFrame:NSMakeRect(12, h - 128, w - 24, 34)];
-        [_ntLabel setStringValue:@"+ New Tab"];
-        [_ntLabel setFrame:NSMakeRect(12, 8, 100, 18)];
-        [_ntLabel setAlignment:NSTextAlignmentLeft];
-        [_ntKbd setHidden:NO];
-        [_ntKbd setFrame:NSMakeRect(w - 24 - 36, 8, 28, 18)];
-    }
-
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
     if (compact) {
         [_settingsBtn setFrame:NSMakeRect(8, 6, w - 16, 32)];
@@ -344,13 +297,7 @@
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
-    [_scrollView setFrame:NSMakeRect(sx, 48, sw, h - 128 - 56)];
-}
-
-- (void)onNewTabClicked:(id)sender {
-    NSAppleScript *as = [[NSAppleScript alloc] initWithSource:
-        @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://newtab\"}"];
-    [as executeAndReturnError:nil];
+    [_scrollView setFrame:NSMakeRect(sx, 48, sw, h - 92 - 48)];
 }
 
 - (void)onSettingsClicked:(id)sender {
