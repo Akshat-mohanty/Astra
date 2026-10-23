@@ -13,36 +13,7 @@ def patch_resources_pak():
             f_out.write(f_in.read())
         print(f"Created backup at {backup_path}")
 
-    # 1. Read base64 logo and favicon
-    logo_path = '/Users/akshatmohanty/Astra/src/newtab/astra_logo.png'
-    with open(logo_path, 'rb') as f:
-        logo_b64 = base64.b64encode(f.read()).decode('utf-8')
-    data_uri = f"data:image/png;base64,{logo_b64}"
-
-    icon_32_path = '/Users/akshatmohanty/Astra/src/newtab/icons/icon_32.png'
-    with open(icon_32_path, 'rb') as f:
-        favicon_b64 = base64.b64encode(f.read()).decode('utf-8')
-    favicon_uri = f"data:image/png;base64,{favicon_b64}"
-
-    # 2. Build complete self-contained New Tab Page HTML & JS (CSP compliant)
-    newtab_html_path = '/Users/akshatmohanty/Astra/src/newtab/index.html'
-    newtab_js_path = '/Users/akshatmohanty/Astra/src/newtab/newtab.js'
-
-    with open(newtab_html_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
-    with open(newtab_js_path, 'r', encoding='utf-8') as f:
-        js_content = f.read()
-
-    # Replace local asset paths with data URIs and CSP-compliant module script
-    html_content = html_content.replace('href="favicon.png"', f'href="{favicon_uri}"')
-    html_content = html_content.replace('src="astra_logo.png"', f'src="{data_uri}"')
-    html_content = html_content.replace('<script src="newtab.js"></script>', '<script type="module" src="new_tab_page.js"></script>')
-
-    compressed_html = gzip.compress(html_content.encode('utf-8'))
-    compressed_js = gzip.compress(js_content.encode('utf-8'))
-
-    # Read original pak
+    # Read original pak backup
     with open(backup_path, 'rb') as f:
         orig_data = f.read()
 
@@ -66,30 +37,125 @@ def patch_resources_pak():
         next_offset = res_entries[i+1][1]
         payloads[rid] = orig_data[offset:next_offset]
 
-    # Replace Resource ID 23390 (HTML), 23392 (JS), and favicon/logo IDs in resources.pak
-    payloads[23390] = compressed_html
-    payloads[23392] = compressed_js
-    print("Replaced Resource ID 23390 (HTML) and 23392 (JS) with CSP compliance")
+    # 1. New Tab Page (Resource 23390 HTML, 23392 JS)
+    logo_path = '/Users/akshatmohanty/Astra/src/newtab/astra_logo.png'
+    with open(logo_path, 'rb') as f:
+        logo_b64 = base64.b64encode(f.read()).decode('utf-8')
+    data_uri = f"data:image/png;base64,{logo_b64}"
 
-    # Replace Resource ID 25185 (Settings HTML) and 25186 (Settings JS) with Astra Custom Settings
-    settings_dir = '/Users/akshatmohanty/Astra/src/settings'
-    if os.path.exists(f'{settings_dir}/settings.html'):
-        with open(f'{settings_dir}/settings.html', 'r', encoding='utf-8') as f:
-            s_html = f.read()
-        with open(f'{settings_dir}/settings.css', 'r', encoding='utf-8') as f:
-            s_css = f.read()
-        with open(f'{settings_dir}/settings.js', 'r', encoding='utf-8') as f:
-            s_js = f.read()
+    icon_32_path = '/Users/akshatmohanty/Astra/src/newtab/icons/icon_32.png'
+    with open(icon_32_path, 'rb') as f:
+        favicon_b64 = base64.b64encode(f.read()).decode('utf-8')
+    favicon_uri = f"data:image/png;base64,{favicon_b64}"
 
-        # Inline CSS for instant dark mode render and zero CSP issues
-        inlined_s_html = s_html.replace(
-            '<link rel="stylesheet" href="settings.css">',
-            f'<style>\n{s_css}\n</style>'
+    newtab_html_path = '/Users/akshatmohanty/Astra/src/newtab/index.html'
+    newtab_js_path = '/Users/akshatmohanty/Astra/src/newtab/newtab.js'
+
+    with open(newtab_html_path, 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    with open(newtab_js_path, 'r', encoding='utf-8') as f:
+        js_content = f.read()
+
+    html_content = html_content.replace('href="favicon.png"', f'href="{favicon_uri}"')
+    html_content = html_content.replace('src="astra_logo.png"', f'src="{data_uri}"')
+    html_content = html_content.replace('<script src="newtab.js"></script>', '<script type="module" src="new_tab_page.js"></script>')
+
+    payloads[23390] = gzip.compress(html_content.encode('utf-8'))
+    payloads[23392] = gzip.compress(js_content.encode('utf-8'))
+    print("Patched Resource ID 23390 (HTML) and 23392 (JS)")
+
+    # 2. Root-Level Settings WebUI Modifications
+    # Resource 25185: Chromium's Native Root Settings HTML (<settings-ui>)
+    root_settings_html = """<!doctype html>
+<html dir="$i18n{textdirection}" lang="$i18n{language}" class="loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>$i18n{settings}</title>
+  <base href="chrome://settings">
+  <link rel="stylesheet" href="chrome://resources/css/md_colors.css">
+  <style>
+    html {
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      html {
+        background: var(--md-background-color);
+      }
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <link rel="stylesheet" href="chrome://resources/css/text_defaults_md.css">
+  <script type="module" src="settings.js"></script>
+  <settings-ui></settings-ui>
+</body>
+</html>
+"""
+    payloads[25185] = gzip.compress(root_settings_html.encode('utf-8'))
+    print("Restored Resource ID 25185 to native Chromium <settings-ui> root entry point")
+
+    # Resource 25188: shared.rollup.js (Route definitions)
+    orig_shared = gzip.decompress(payloads[25188]).decode('utf-8')
+    target_route = 'r.FONTS=r.APPEARANCE.createChild("/fonts")}'
+    if target_route in orig_shared:
+        patched_shared = orig_shared.replace(
+            target_route,
+            'r.FONTS=r.APPEARANCE.createChild("/fonts")}r.TABS=r.BASIC.createSection("/tabs","tabs","Tabs");'
         )
-        payloads[25185] = gzip.compress(inlined_s_html.encode('utf-8'))
-        payloads[25186] = gzip.compress(s_js.encode('utf-8'))
-        print("Replaced Resource ID 25185 (Settings HTML) and 25186 (Settings JS) with Astra Custom Settings!")
+        payloads[25188] = gzip.compress(patched_shared.encode('utf-8'))
+        print("Patched Resource ID 25188 (shared.rollup.js): Registered native route routes.TABS")
+    else:
+        print("Warning: target_route not found in Resource 25188")
 
+    # Resource 25186: settings.js (Settings Menu, Basic Page, and <settings-tabs-page> Web Component)
+    orig_settings = gzip.decompress(payloads[25186]).decode('utf-8')
+
+    # Read Tabs Component code from src/settings/tabs_page.js
+    tabs_page_path = '/Users/akshatmohanty/Astra/src/settings/tabs_page.js'
+    with open(tabs_page_path, 'r', encoding='utf-8') as f:
+        tabs_component_code = f.read()
+
+    # Inject Tabs menu item into getTemplate$4 (SettingsMenuElement)
+    target_menu = '<a role="menuitem" id="appearance" href="/appearance" hidden="[[!pageVisibility.appearance]]" class="cr-nav-menu-item">'
+    menu_item_html = """        <a role="menuitem" id="tabs" href="/tabs" class="cr-nav-menu-item">
+          <cr-icon icon="settings20:auto-tab-group"></cr-icon>
+          Tabs
+          <cr-ripple></cr-ripple>
+        </a>
+"""
+    patched_settings = orig_settings.replace(target_menu, menu_item_html + target_menu)
+
+    # Inject Tabs section into getTemplate$6 (SettingsBasicPageElement)
+    target_section = '<template is="dom-if" if="[[showPage_(pageVisibility.appearance)]]" restamp>'
+    section_html = """        <settings-section page-title="Tabs" section="tabs">
+          <settings-tabs-page prefs="{{prefs}}"></settings-tabs-page>
+        </settings-section>
+"""
+    patched_settings = patched_settings.replace(target_section, section_html + target_section)
+
+    # Append Tabs custom element definition before exports
+    export_idx = patched_settings.rfind('export{')
+    if export_idx != -1:
+        patched_settings = (
+            patched_settings[:export_idx]
+            + '\n' + tabs_component_code + '\n'
+            + patched_settings[export_idx:]
+        )
+        payloads[25186] = gzip.compress(patched_settings.encode('utf-8'))
+        print("Patched Resource ID 25186 (settings.js): Injected native Tabs menu item, section, and <settings-tabs-page>")
+    else:
+        print("Warning: export statement not found in Resource 25186")
+
+    # Icons in resources.pak
     icons_dir = '/Users/akshatmohanty/Astra/src/newtab/icons'
     if os.path.exists(f'{icons_dir}/icon_16.png') and 17186 in payloads:
         with open(f'{icons_dir}/icon_16.png', 'rb') as f:
