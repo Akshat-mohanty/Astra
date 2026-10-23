@@ -83,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Vertical tabs footer Settings button (opens in a separate new tab)
+  const vtabFooterBtn = document.querySelector('.vtab-footer-btn');
+  if (vtabFooterBtn) {
+    vtabFooterBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('chrome://settings#tabs', '_blank');
+    });
+  }
+
   // Add tabs or files (opens file picker or attaches tab reference)
   if (addBtn && fileInput) {
     addBtn.addEventListener('click', () => {

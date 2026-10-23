@@ -250,7 +250,10 @@ static void open_settings_in_new_tab(void) {
 
     dispatch_async(dispatch_get_main_queue(), ^{
         if (!s_newTabSettingsScript) {
-            NSString *src = @"tell application \"Astra\" to tell window 1 to make new tab with properties {URL:\"chrome://settings\"}";
+            NSString *src = @"tell application \"Astra\" to tell window 1\n"
+                             "set newTab to make new tab with properties {URL:\"chrome://settings\"}\n"
+                             "set active tab index to (count of tabs)\n"
+                             "end tell";
             s_newTabSettingsScript = [[NSAppleScript alloc] initWithSource:src];
             [s_newTabSettingsScript compileAndReturnError:nil];
         }
