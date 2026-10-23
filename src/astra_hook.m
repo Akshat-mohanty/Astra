@@ -698,8 +698,42 @@ static CGFloat read_sidebar_width_setting(void) {
 }
 
 /* ─── Window Layout Manager ───────────────────────────────────────────────── */
+static BOOL s_is_fullscreen_transitioning = NO;
+
+static void configure_fullscreen_toolbar(void) {
+    for (NSWindow *w in [NSApp windows]) {
+        if ([[w className] isEqualToString:@"NSToolbarFullScreenWindow"]) {
+            NSView *cv = [w contentView];
+            if (!cv) continue;
+            NSMutableArray *queue = [NSMutableArray arrayWithObject:cv];
+            while ([queue count] > 0) {
+                NSView *v = [queue firstObject];
+                [queue removeObjectAtIndex:0];
+                if (![v isKindOfClass:[NSView class]]) continue;
+                
+                NSString *cls = [v className];
+                if ([cls isEqualToString:@"ViewsCompositorSuperview"] || [cls isEqualToString:@"BridgedContentView"]) {
+                    if (v.frame.size.height >= 35.0 && v.frame.size.height <= 50.0) {
+                        if (![v isHidden]) {
+                            [v setHidden:YES];
+                        }
+                    }
+                }
+                
+                for (NSView *c in [v subviews]) {
+                    if ([c isKindOfClass:[NSView class]]) {
+                        [queue addObject:c];
+                    }
+                }
+            }
+        }
+    }
+}
+
 static void update_window_layout(NSWindow *win) {
     if (!win) return;
+    if (s_is_fullscreen_transitioning) return;
+    if ([win inLiveResize]) return;
     if (![[win className] isEqualToString:@"BrowserNativeWidgetWindow"]) return;
 
     NSView *cv = [win contentView];
@@ -708,9 +742,13 @@ static void update_window_layout(NSWindow *win) {
     NSRect winBounds = [cv bounds];
     if (winBounds.size.width < 300 || winBounds.size.height < 300) return;
 
+    BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
+    if (isFullscreen) {
+        configure_fullscreen_toolbar();
+    }
     BOOL isVertical = read_tab_orientation_setting();
     CGFloat sidebarWidth = isVertical ? read_sidebar_width_setting() : 220.0;
-    CGFloat topTabHeight = 41.0;
+    CGFloat topTabHeight = isFullscreen ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
     NSView *webContentsView = nil;
@@ -752,15 +790,21 @@ static void update_window_layout(NSWindow *win) {
             }
         }
 
-        // Cover the top horizontal tabs above webContentsView
-        NSRect topCoverFrame = NSMakeRect(sidebarWidth, winBounds.size.height - topTabHeight, winBounds.size.width - sidebarWidth, topTabHeight);
-        if (!topCoverView) {
-            topCoverView = [[AstraTopCoverView alloc] initWithFrame:topCoverFrame];
-            [cv addSubview:topCoverView positioned:NSWindowAbove relativeTo:nil];
+        // Cover the top horizontal tabs above webContentsView only in windowed mode
+        if (!isFullscreen) {
+            NSRect topCoverFrame = NSMakeRect(sidebarWidth, winBounds.size.height - topTabHeight, winBounds.size.width - sidebarWidth, topTabHeight);
+            if (!topCoverView) {
+                topCoverView = [[AstraTopCoverView alloc] initWithFrame:topCoverFrame];
+                [cv addSubview:topCoverView positioned:NSWindowAbove relativeTo:nil];
+            } else {
+                if ([topCoverView isHidden]) [topCoverView setHidden:NO];
+                if (!NSEqualRects([topCoverView frame], topCoverFrame)) {
+                    [topCoverView setFrame:topCoverFrame];
+                }
+            }
         } else {
-            if ([topCoverView isHidden]) [topCoverView setHidden:NO];
-            if (!NSEqualRects([topCoverView frame], topCoverFrame)) {
-                [topCoverView setFrame:topCoverFrame];
+            if (topCoverView && ![topCoverView isHidden]) {
+                [topCoverView setHidden:YES];
             }
         }
 
@@ -814,20 +858,31 @@ static void update_window_layout(NSWindow *win) {
 
 static void configure_window(NSWindow *win) {
     if (!win) return;
+    if (s_is_fullscreen_transitioning) return;
+    if ([win inLiveResize]) return;
+    if (![[win className] isEqualToString:@"BrowserNativeWidgetWindow"]) return;
+
     [win setTitleVisibility:NSWindowTitleHidden];
     [win setTitle:@""];
 
-    NSRect frame = [win frame];
-    if (frame.size.width > 200 && frame.size.height > 200) {
-        BOOL onScreen = NO;
-        for (NSScreen *s in [NSScreen screens]) {
-            if (NSIntersectsRect(frame, [s frame])) {
-                onScreen = YES;
-                break;
+    BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
+    if (!isFullscreen) {
+        static BOOL s_checked_initial_center = NO;
+        if (!s_checked_initial_center) {
+            s_checked_initial_center = YES;
+            NSRect frame = [win frame];
+            if (frame.size.width > 200 && frame.size.height > 200) {
+                BOOL onScreen = NO;
+                for (NSScreen *s in [NSScreen screens]) {
+                    if (NSIntersectsRect(frame, [s frame])) {
+                        onScreen = YES;
+                        break;
+                    }
+                }
+                if (!onScreen && [NSScreen mainScreen]) {
+                    [win center];
+                }
             }
-        }
-        if (!onScreen && [NSScreen mainScreen]) {
-            [win center];
         }
     }
 
@@ -867,6 +922,28 @@ static void install_astra_hook(void) {
         NSWindow *win = note.object;
         configure_window(win);
         configure_menu_items();
+    }];
+
+    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+    [nc addObserverForName:NSWindowWillEnterFullScreenNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        s_is_fullscreen_transitioning = YES;
+    }];
+    [nc addObserverForName:NSWindowDidEnterFullScreenNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        s_is_fullscreen_transitioning = NO;
+        NSWindow *win = note.object;
+        if ([win isKindOfClass:[NSWindow class]]) {
+            configure_window(win);
+        }
+    }];
+    [nc addObserverForName:NSWindowWillExitFullScreenNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        s_is_fullscreen_transitioning = YES;
+    }];
+    [nc addObserverForName:NSWindowDidExitFullScreenNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *note) {
+        s_is_fullscreen_transitioning = NO;
+        NSWindow *win = note.object;
+        if ([win isKindOfClass:[NSWindow class]]) {
+            configure_window(win);
+        }
     }];
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
