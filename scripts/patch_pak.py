@@ -3,6 +3,7 @@ import sys
 import struct
 import gzip
 import base64
+import re
 
 def patch_resources_pak():
     pak_path = '/Applications/Astra.app/Contents/Frameworks/Thorium Framework.framework/Versions/138.0.7204.303/Resources/resources.pak'
@@ -164,6 +165,43 @@ def patch_resources_pak():
     with open(tabs_page_path, 'r', encoding='utf-8') as f:
         tabs_component_code = f.read()
 
+    patched_settings = orig_settings
+
+    # Remove unwanted menu items requested by user: "You and Google", "AI innovations", "System"
+    people_menu = re.search(r'<a role="menuitem" id="people".*?</a>\s*', patched_settings, re.DOTALL)
+    if people_menu:
+        patched_settings = patched_settings.replace(people_menu.group(0), '')
+        print("Removed 'You and Google' menu item from Settings sidebar")
+
+    ai_menu = re.search(r'<a role="menuitem" href="/ai".*?</a>\s*', patched_settings, re.DOTALL)
+    if ai_menu:
+        patched_settings = patched_settings.replace(ai_menu.group(0), '')
+        print("Removed 'AI innovations' menu item from Settings sidebar")
+
+    system_menu = re.search(r'<a role="menuitem" id="system".*?</a>\s*', patched_settings, re.DOTALL)
+    if system_menu:
+        patched_settings = patched_settings.replace(system_menu.group(0), '')
+        print("Removed 'System' menu item from Settings sidebar")
+
+    # Also hide their basic page sections
+    patched_settings = patched_settings.replace(
+        '<template is="dom-if" if="[[showPage_(pageVisibility.people)]]" restamp>',
+        '<template is="dom-if" if="[[false]]" restamp>'
+    )
+    patched_settings = patched_settings.replace(
+        '<template is="dom-if" if="[[showAiPageAiFeatureSection_]]" restamp>',
+        '<template is="dom-if" if="[[false]]" restamp>'
+    )
+    system_sec_pat = re.search(r'<settings-section page-title="\$i18n\{systemPageTitle\}" section="system">.*?</settings-section>', patched_settings, re.DOTALL)
+    if system_sec_pat:
+        patched_settings = patched_settings.replace(system_sec_pat.group(0), f'<template is="dom-if" if="[[false]]" restamp>{system_sec_pat.group(0)}</template>')
+        print("Hidden 'System' section in basic page")
+
+    patched_settings = patched_settings.replace(
+        'TOP_LEVEL_EQUIVALENT_ROUTE=loadTimeData.getBoolean("isGuest")?guestTopLevelRoute:routes.PEOPLE;',
+        'TOP_LEVEL_EQUIVALENT_ROUTE=loadTimeData.getBoolean("isGuest")?guestTopLevelRoute:routes.PRIVACY;'
+    )
+
     # Inject Tabs menu item into getTemplate$4 (SettingsMenuElement)
     target_menu = '<a role="menuitem" id="appearance" href="/appearance" hidden="[[!pageVisibility.appearance]]" class="cr-nav-menu-item">'
     menu_item_html = """        <a role="menuitem" id="tabs" href="/tabs" class="cr-nav-menu-item">
@@ -172,7 +210,7 @@ def patch_resources_pak():
           <cr-ripple></cr-ripple>
         </a>
 """
-    patched_settings = orig_settings.replace(target_menu, menu_item_html + target_menu)
+    patched_settings = patched_settings.replace(target_menu, menu_item_html + target_menu)
 
     # Inject Tabs section into getTemplate$6 (SettingsBasicPageElement)
     target_section = '<template is="dom-if" if="[[showPage_(pageVisibility.appearance)]]" restamp>'
