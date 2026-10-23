@@ -158,35 +158,28 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
     NSRect b = [self bounds];
     BOOL compact = (b.size.width < 100);
 
-    if (compact) {
-        [_closeBtn setHidden:YES];
-        NSRect dotRect = NSMakeRect((b.size.width - 8) / 2.0, (b.size.height - 8) / 2.0, 8, 8);
-        NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:dotRect];
-        if (_isCurrent) {
-            [[NSColor colorWithCalibratedWhite:1.0 alpha:0.95] setFill];
-        } else {
-            [[NSColor colorWithCalibratedWhite:0.6 alpha:0.5] setFill];
-        }
-        [dot fill];
-        return;
-    }
-
-    [_closeBtn setHidden:NO];
-    // Dot indicator
-    NSRect dotRect = NSMakeRect(12, (b.size.height - 7) / 2.0, 7, 7);
-    NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:dotRect];
-    if (_isCurrent) {
-        [[NSColor colorWithCalibratedWhite:1.0 alpha:0.95] setFill];
-    } else {
-        [[NSColor colorWithCalibratedWhite:0.6 alpha:0.5] setFill];
-    }
-    [dot fill];
-
     // Title label
     NSString *t = AstraSanitizeTabTitle(_rawTitle);
 
     NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
     [style setLineBreakMode:NSLineBreakByTruncatingTail];
+
+    if (compact) {
+        [_closeBtn setHidden:YES];
+        [style setAlignment:NSTextAlignmentCenter];
+
+        NSString *disp = (t && [t length] > 0) ? [t substringToIndex:MIN((NSUInteger)2, [t length])] : @"";
+        NSDictionary *attrs = @{
+            NSFontAttributeName: [NSFont systemFontOfSize:12 weight:_isCurrent ? NSFontWeightBold : NSFontWeightMedium],
+            NSForegroundColorAttributeName: _isCurrent ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.7 alpha:1.0],
+            NSParagraphStyleAttributeName: style
+        };
+        NSRect textRect = NSMakeRect(4, (b.size.height - 16) / 2.0, b.size.width - 8, 16);
+        [disp drawInRect:textRect withAttributes:attrs];
+        return;
+    }
+
+    [_closeBtn setHidden:NO];
 
     NSDictionary *attrs = @{
         NSFontAttributeName: [NSFont systemFontOfSize:12.5 weight:_isCurrent ? NSFontWeightSemibold : NSFontWeightRegular],
@@ -194,7 +187,7 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         NSParagraphStyleAttributeName: style
     };
 
-    NSRect textRect = NSMakeRect(27, (b.size.height - 16) / 2.0, b.size.width - 58, 16);
+    NSRect textRect = NSMakeRect(12, (b.size.height - 16) / 2.0, b.size.width - 40, 16);
     [t drawInRect:textRect withAttributes:attrs];
 }
 @end

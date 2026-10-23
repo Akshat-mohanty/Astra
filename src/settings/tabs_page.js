@@ -468,16 +468,9 @@ function getTemplateTabs() {
                   <span class="mock-traffic-dot yellow" style="width: 5px; height: 5px;"></span>
                   <span class="mock-traffic-dot green" style="width: 5px; height: 5px;"></span>
                 </div>
-                <div class="mock-v-new-btn">+ New Tab</div>
-                <div class="mock-v-tab active">
-                  <span class="mock-v-dot"></span>New Tab
-                </div>
-                <div class="mock-v-tab">
-                  <span class="mock-v-dot"></span>GitHub
-                </div>
-                <div class="mock-v-tab">
-                  <span class="mock-v-dot"></span>Google
-                </div>
+                <div class="mock-v-tab active">New Tab</div>
+                <div class="mock-v-tab">GitHub</div>
+                <div class="mock-v-tab">Google</div>
               </div>
               <div class="mock-viewport">
                 <div class="mock-address-bar" style="width: 60%;"></div>
