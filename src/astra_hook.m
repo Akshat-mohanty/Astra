@@ -59,6 +59,20 @@
 }
 @end
 
+/* ─── Tab Title Sanitizer ────────────────────────────────────────────────── */
+static NSString *AstraSanitizeTabTitle(NSString *st) {
+    if (!st) return @"New Tab";
+    st = [st stringByReplacingOccurrencesOfString:@"\u200B" withString:@""];
+    st = [st stringByReplacingOccurrencesOfString:@"\u200C" withString:@""];
+    st = [st stringByReplacingOccurrencesOfString:@"\u200D" withString:@""];
+    st = [st stringByReplacingOccurrencesOfString:@"\uFEFF" withString:@""];
+    st = [st stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([st length] == 0 || [st isEqualToString:@"about:blank"] || [st isEqualToString:@"chrome://newtab"]) {
+        return @"New Tab";
+    }
+    return st;
+}
+
 /* ─── Tab Item Button ─────────────────────────────────────────────────────── */
 @interface AstraTabButton : NSButton
 @property (nonatomic, assign) NSInteger tabIndex;
@@ -75,7 +89,7 @@
     if (self) {
         _tabIndex = idx;
         _isCurrent = current;
-        _rawTitle = [title copy];
+        _rawTitle = [AstraSanitizeTabTitle(title) copy];
 
         [self setButtonType:NSButtonTypeMomentaryChange];
         [self setBordered:NO];
@@ -95,7 +109,7 @@
         [self addSubview:_closeBtn];
 
         [self updateAppearance];
-        [self setToolTip:title ? title : @"New Tab"];
+        [self setToolTip:_rawTitle];
     }
     return self;
 }
@@ -169,8 +183,7 @@
     [dot fill];
 
     // Title label
-    NSString *t = _rawTitle;
-    if (!t || [t length] == 0) t = @"New Tab";
+    NSString *t = AstraSanitizeTabTitle(_rawTitle);
 
     NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
     [style setLineBreakMode:NSLineBreakByTruncatingTail];
@@ -547,7 +560,7 @@ static void update_window_layout(NSWindow *win) {
                 NSMutableArray *titles = [NSMutableArray array];
                 for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
                     NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
-                    [titles addObject:st ? st : @"New Tab"];
+                    [titles addObject:AstraSanitizeTabTitle(st)];
                 }
                 [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
             }
