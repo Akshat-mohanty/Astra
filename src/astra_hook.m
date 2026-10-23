@@ -713,7 +713,9 @@ static void astra_swizzled_orderWindow(NSWindow *self, SEL _cmd, NSWindowOrderin
     if (is_exclusive_access_bubble(self)) {
         if (orig_setAlphaValue) orig_setAlphaValue(self, @selector(setAlphaValue:), 0.0);
         [self setIgnoresMouseEvents:YES];
-        [self orderOut:nil];
+        if (orig_orderWindow) {
+            orig_orderWindow(self, _cmd, NSWindowOut, 0);
+        }
         return;
     }
     if (orig_orderWindow) {
@@ -736,9 +738,15 @@ static void astra_swizzled_setAlphaValue(NSWindow *self, SEL _cmd, CGFloat alpha
 static void suppress_exclusive_access_bubble(void) {
     for (NSWindow *w in [NSApp windows]) {
         if (is_exclusive_access_bubble(w)) {
-            [w setAlphaValue:0.0];
+            if (orig_setAlphaValue) {
+                orig_setAlphaValue(w, @selector(setAlphaValue:), 0.0);
+            } else {
+                [w setAlphaValue:0.0];
+            }
             [w setIgnoresMouseEvents:YES];
-            [w orderOut:nil];
+            if (orig_orderWindow) {
+                orig_orderWindow(w, @selector(orderWindow:relativeTo:), NSWindowOut, 0);
+            }
         }
     }
 }
