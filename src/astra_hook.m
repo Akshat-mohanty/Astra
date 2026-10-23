@@ -3,11 +3,11 @@
 
 static void configure_window(NSWindow *win) {
     if (!win) return;
-    // Hide the title text and any IP/origin from the top center
+    // Hide window title text and keep titlebar area sleek
     [win setTitleVisibility:NSWindowTitleHidden];
     [win setTitle:@""];
 
-    // Ensure window is visible on an active display (avoiding phantom off-screen coordinates)
+    // Ensure window is visible on an active display
     NSRect frame = [win frame];
     if (frame.size.width > 200 && frame.size.height > 200) {
         BOOL onScreen = NO;

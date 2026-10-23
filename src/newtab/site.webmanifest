@@ -4,9 +4,19 @@
   "description": "Astra Browser New Tab",
   "display": "standalone",
   "display_override": [
-    "window-controls-overlay",
+    "tabbed",
     "standalone"
   ],
+  "tab_strip": {
+    "home_tab": {
+      "scope_patterns": [
+        "http://127.0.0.1:4545/*"
+      ]
+    },
+    "new_tab_button": {
+      "url": "http://127.0.0.1:4545/"
+    }
+  },
   "start_url": "http://127.0.0.1:4545/",
   "scope": "http://127.0.0.1:4545/",
   "background_color": "#181819",
