@@ -237,16 +237,6 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
     [self setContentTintColor:[NSColor colorWithCalibratedWhite:0.75 alpha:1.0]];
     [self setNeedsDisplay:YES];
 }
-
-- (void)mouseDown:(NSEvent *)event {
-    [super mouseDown:event];
-    if (self.target && self.action) {
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        [self.target performSelector:self.action withObject:self];
-        #pragma clang diagnostic pop
-    }
-}
 @end
 
 /* ─── Astra Vertical Sidebar View ─────────────────────────────────────────── */
@@ -320,6 +310,13 @@ static void force_refresh_tabs(void) {
 
 /* ─── Settings Helper & Menu Interceptor ──────────────────────────────────── */
 static void open_settings_in_new_tab(void) {
+    static NSTimeInterval s_last_open_settings = 0;
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - s_last_open_settings < 0.4) {
+        return; // Prevent duplicate rapid invocation
+    }
+    s_last_open_settings = now;
+
     astra_log(@"open_settings_in_new_tab called");
     if (s_currentSidebarView) {
         [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
