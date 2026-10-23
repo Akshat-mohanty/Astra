@@ -83,15 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Corner settings button (opens in a new tab)
-  const cornerSettingsBtn = document.querySelector('.corner-settings-btn');
-  if (cornerSettingsBtn) {
-    cornerSettingsBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.open('chrome://settings', '_blank');
-    });
-  }
-
   // Add tabs or files (opens file picker or attaches tab reference)
   if (addBtn && fileInput) {
     addBtn.addEventListener('click', () => {
