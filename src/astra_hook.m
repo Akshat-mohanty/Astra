@@ -201,9 +201,6 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
 /* ─── Astra Vertical Sidebar View ─────────────────────────────────────────── */
 @interface AstraVerticalSidebarView : NSView
-@property (nonatomic, strong) NSView *headerView;
-@property (nonatomic, strong) AstraEmblemView *emblem;
-@property (nonatomic, strong) NSTextField *brandLabel;
 @property (nonatomic, strong) NSScrollView *scrollView;
 @property (nonatomic, strong) AstraFlippedView *tabContainer;
 @property (nonatomic, strong) NSView *footerView;
@@ -226,21 +223,6 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         CGFloat w = frameRect.size.width;
         CGFloat h = frameRect.size.height;
 
-        // Top Header (Leaves 42px for macOS window traffic lights)
-        _headerView = [[NSView alloc] initWithFrame:NSMakeRect(0, h - 84, w, 38)];
-        [_headerView setAutoresizingMask:NSViewMinYMargin | NSViewWidthSizable];
-
-        _emblem = [[AstraEmblemView alloc] initWithFrame:NSMakeRect(14, 8, 22, 22)];
-        [_headerView addSubview:_emblem];
-
-        _brandLabel = [NSTextField labelWithString:@"Astra"];
-        [_brandLabel setFrame:NSMakeRect(42, 9, 80, 20)];
-        [_brandLabel setFont:[NSFont systemFontOfSize:14 weight:NSFontWeightBold]];
-        [_brandLabel setTextColor:[NSColor colorWithCalibratedWhite:0.96 alpha:1.0]];
-        [_headerView addSubview:_brandLabel];
-
-        [self addSubview:_headerView];
-
         // Bottom Footer (Settings shortcut)
         _footerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, w, 44)];
         [_footerView setWantsLayer:YES];
@@ -259,8 +241,10 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         [_footerView addSubview:_settingsBtn];
         [self addSubview:_footerView];
 
-        // Scrollable Tab Stack
-        NSRect scrollFrame = NSMakeRect(10, 48, w - 20, h - 92 - 48);
+        // Scrollable Tab Stack (moved up to top spot where branding was)
+        CGFloat topInset = 48.0;
+        CGFloat bottomInset = 48.0;
+        NSRect scrollFrame = NSMakeRect(10, bottomInset, w - 20, h - topInset - bottomInset);
         _scrollView = [[NSScrollView alloc] initWithFrame:scrollFrame];
         [_scrollView setHasVerticalScroller:YES];
         [_scrollView setHasHorizontalScroller:NO];
@@ -289,16 +273,6 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
     BOOL compact = (w < 100);
 
-    [_headerView setFrame:NSMakeRect(0, h - 84, w, 38)];
-    if (compact) {
-        [_emblem setFrame:NSMakeRect((w - 22) / 2.0, 8, 22, 22)];
-        [_brandLabel setHidden:YES];
-    } else {
-        [_emblem setFrame:NSMakeRect(14, 8, 22, 22)];
-        [_brandLabel setHidden:NO];
-        [_brandLabel setFrame:NSMakeRect(42, 9, 80, 20)];
-    }
-
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
     if (compact) {
         [_settingsBtn setFrame:NSMakeRect(8, 6, w - 16, 32)];
@@ -310,7 +284,9 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
-    [_scrollView setFrame:NSMakeRect(sx, 48, sw, h - 92 - 48)];
+    CGFloat topInset = 48.0;
+    CGFloat bottomInset = 48.0;
+    [_scrollView setFrame:NSMakeRect(sx, bottomInset, sw, h - topInset - bottomInset)];
 }
 
 - (void)onSettingsClicked:(id)sender {
