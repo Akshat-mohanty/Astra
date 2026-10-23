@@ -330,7 +330,7 @@ static void configure_menu_items(void) {
         [_settingsBtn setTitle:@"Settings"];
         [_settingsBtn setFont:[NSFont systemFontOfSize:12 weight:NSFontWeightMedium]];
         [_settingsBtn setContentTintColor:[NSColor colorWithCalibratedWhite:0.7 alpha:1.0]];
-        [_settingsBtn setAlignment:NSTextAlignmentLeft];
+        [_settingsBtn setAlignment:NSTextAlignmentCenter];
         [_settingsBtn setTarget:self];
         [_settingsBtn setAction:@selector(onSettingsClicked:)];
         [_footerView addSubview:_settingsBtn];
@@ -376,7 +376,7 @@ static void configure_menu_items(void) {
     } else {
         [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
         [_settingsBtn setTitle:@"Settings"];
-        [_settingsBtn setAlignment:NSTextAlignmentLeft];
+        [_settingsBtn setAlignment:NSTextAlignmentCenter];
     }
 
     CGFloat sx = compact ? 6.0 : 10.0;
