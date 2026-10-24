@@ -459,7 +459,6 @@ static void open_settings_in_new_tab(void) {
 @interface AstraMenuHandler : NSObject
 + (instancetype)sharedHandler;
 - (void)openSettingsInNewTab:(id)sender;
-- (void)onFloatingExpandClicked:(id)sender;
 @end
 
 @implementation AstraMenuHandler
@@ -473,9 +472,6 @@ static void open_settings_in_new_tab(void) {
 }
 - (void)openSettingsInNewTab:(id)sender {
     open_settings_in_new_tab();
-}
-- (void)onFloatingExpandClicked:(id)sender {
-    toggle_sidebar_collapse();
 }
 @end
 
@@ -561,8 +557,11 @@ static void configure_menu_items(void) {
     if (w <= 0 || h <= 0) return;
 
     BOOL compact = (w < 100);
-    _collapseBtn.isCollapsed = NO;
-    [_collapseBtn setToolTip:@"Collapse sidebar (⌘B)"];
+    _collapseBtn.isCollapsed = compact;
+    [_collapseBtn setToolTip:compact ? @"Expand sidebar (⌘B)" : @"Collapse sidebar (⌘B)"];
+
+    [_footerView setHidden:compact];
+    [_scrollView setHidden:compact];
 
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
     [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
@@ -1333,14 +1332,15 @@ static void update_window_layout(NSWindow *win) {
     if (p > 1.0) p = 1.0;
 
     CGFloat baseSidebarWidth = read_sidebar_width_setting();
-    CGFloat animatedSidebarWidth = isVertical ? (baseSidebarWidth * p) : 0.0;
+    CGFloat minSidebarWidth = 48.0;
+    CGFloat currentSidebarWidth = minSidebarWidth + (baseSidebarWidth - minSidebarWidth) * p;
+    CGFloat animatedSidebarWidth = isVertical ? currentSidebarWidth : 0.0;
     CGFloat vTopBarHeight = isFullscreen ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
     NSMutableArray *allWebContentsViews = [NSMutableArray array];
     AstraVerticalSidebarView *sidebarView = nil;
     AstraTopCoverView *topCoverView = nil;
-    AstraCollapseButton *floatingBtn = nil;
 
     for (NSView *sub in [cv subviews]) {
         NSString *cls = [sub className];
@@ -1352,8 +1352,6 @@ static void update_window_layout(NSWindow *win) {
             sidebarView = (AstraVerticalSidebarView *)sub;
         } else if ([sub isKindOfClass:[AstraTopCoverView class]]) {
             topCoverView = (AstraTopCoverView *)sub;
-        } else if ([sub isKindOfClass:[AstraCollapseButton class]]) {
-            floatingBtn = (AstraCollapseButton *)sub;
         }
     }
 
@@ -1386,57 +1384,24 @@ static void update_window_layout(NSWindow *win) {
             [topCoverView setHidden:YES];
         }
 
-        // Vertical sidebar view positioning & slide animation
-        if (p <= 0.001) {
-            if (sidebarView && ![sidebarView isHidden]) {
-                [sidebarView setHidden:YES];
-            }
-            if (s_currentSidebarView == sidebarView) {
-                s_currentSidebarView = nil;
-            }
+        // Vertical sidebar view positioning & width animation
+        NSRect targetSidebarFrame = NSMakeRect(0.0, 0.0, currentSidebarWidth, winHeight);
+        if (!sidebarView) {
+            sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
+            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
         } else {
-            CGFloat sidebarX = - baseSidebarWidth * (1.0 - p);
-            NSRect targetSidebarFrame = NSMakeRect(sidebarX, 0.0, baseSidebarWidth, winHeight);
-            if (!sidebarView) {
-                sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
-                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
-            } else {
-                if ([sidebarView isHidden]) [sidebarView setHidden:NO];
-                if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
-                    [sidebarView setFrame:targetSidebarFrame];
-                }
-                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
+            if ([sidebarView isHidden]) [sidebarView setHidden:NO];
+            if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
+                [sidebarView setFrame:targetSidebarFrame];
             }
-            [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, p * 1.15))];
-            s_currentSidebarView = sidebarView;
+            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
         }
-
-        // Floating expand button handling (positioned cleanly in top bar next to traffic lights)
-        CGFloat btnX = isFullscreen ? 16.0 : 78.0;
-        NSRect targetBtnFrame = NSMakeRect(btnX, winHeight - 34.0, 26.0, 26.0);
-        if (p >= 0.999) {
-            if (floatingBtn && ![floatingBtn isHidden]) {
-                [floatingBtn setHidden:YES];
-            }
-        } else {
-            if (!floatingBtn) {
-                floatingBtn = [[AstraCollapseButton alloc] initWithFrame:targetBtnFrame];
-                floatingBtn.isFloating = YES;
-                floatingBtn.isCollapsed = YES;
-                [floatingBtn setToolTip:@"Expand sidebar (⌘B)"];
-                [floatingBtn setTarget:[AstraMenuHandler sharedHandler]];
-                [floatingBtn setAction:@selector(onFloatingExpandClicked:)];
-                [cv addSubview:floatingBtn positioned:NSWindowAbove relativeTo:nil];
-            } else {
-                if ([floatingBtn isHidden]) [floatingBtn setHidden:NO];
-                [floatingBtn setFrame:targetBtnFrame];
-                floatingBtn.isFloating = YES;
-                floatingBtn.isCollapsed = YES;
-                [cv addSubview:floatingBtn positioned:NSWindowAbove relativeTo:nil];
-            }
-            CGFloat btnAlpha = MAX(0.0, MIN(1.0, (0.7 - p) / 0.7));
-            [floatingBtn setAlphaValue:btnAlpha];
+        [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, 0.3 + 0.7 * p))];
+        if (sidebarView.collapseBtn) {
+            sidebarView.collapseBtn.isCollapsed = (p < 0.5);
+            [sidebarView.collapseBtn setNeedsDisplay:YES];
         }
+        s_currentSidebarView = sidebarView;
 
         // Query open tabs when expanded and not animating
         if (p >= 0.9 && !s_is_animating_sidebar && sidebarView) {
