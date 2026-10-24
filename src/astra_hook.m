@@ -1364,22 +1364,30 @@ static void update_window_layout(NSWindow *win) {
             }
         }
 
-        // In vertical tabs mode, web contents naturally fill the full height with 0 top tab strip, so topCoverView is hidden
-        if (topCoverView && ![topCoverView isHidden]) {
-            [topCoverView setHidden:YES];
+        // Astra Top Cover Bar to cover horizontal tabs in vertical mode
+        NSRect topCoverFrame = NSMakeRect(0.0, winHeight - 41.0, winWidth, 41.0);
+        if (!topCoverView) {
+            topCoverView = [[AstraTopCoverView alloc] initWithFrame:topCoverFrame];
+            [cv addSubview:topCoverView positioned:NSWindowAbove relativeTo:nil];
+        } else {
+            if ([topCoverView isHidden]) [topCoverView setHidden:NO];
+            if (!NSEqualRects([topCoverView frame], topCoverFrame)) {
+                [topCoverView setFrame:topCoverFrame];
+            }
+            [cv addSubview:topCoverView positioned:NSWindowAbove relativeTo:nil];
         }
 
         // Vertical sidebar view positioning & width animation
         NSRect targetSidebarFrame = NSMakeRect(0.0, 0.0, currentSidebarWidth, winHeight);
         if (!sidebarView) {
             sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
-            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
+            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:topCoverView];
         } else {
             if ([sidebarView isHidden]) [sidebarView setHidden:NO];
             if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
                 [sidebarView setFrame:targetSidebarFrame];
             }
-            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
+            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:topCoverView];
         }
         [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, 0.3 + 0.7 * p))];
         if (sidebarView.collapseBtn) {
