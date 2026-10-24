@@ -563,8 +563,8 @@ static void configure_menu_items(void) {
 
         [self addSubview:_scrollView];
 
-        // Collapse Button in top right of sidebar header
-        _collapseBtn = [[AstraCollapseButton alloc] initWithFrame:NSMakeRect(w - 38, h - 38, 28, 28)];
+        // Collapse Button in sidebar header (positioned below macOS traffic lights)
+        _collapseBtn = [[AstraCollapseButton alloc] initWithFrame:NSMakeRect(w - 38, h - 46, 28, 28)];
         [_collapseBtn setTarget:self];
         [_collapseBtn setAction:@selector(onCollapseClicked:)];
         [_collapseBtn setToolTip:@"Collapse sidebar (⌘B)"];
@@ -598,7 +598,9 @@ static void configure_menu_items(void) {
     [_settingsBtn setAlignment:NSTextAlignmentCenter];
 
     CGFloat btnSize = 28.0;
-    [_collapseBtn setFrame:NSMakeRect(w - btnSize - 10.0, h - 38.0, btnSize, btnSize)];
+    CGFloat bx = compact ? (w - btnSize) / 2.0 : (w - btnSize - 10.0);
+    CGFloat by = h - 46.0;
+    [_collapseBtn setFrame:NSMakeRect(bx, by, btnSize, btnSize)];
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
