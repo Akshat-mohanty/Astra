@@ -1419,7 +1419,7 @@ static void update_window_layout(NSWindow *win) {
         }
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect fullCompFrame = NSMakeRect(0.0, 41.0, winWidth, winHeight - 41.0);
+            NSRect fullCompFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
             if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
                 [viewsCompositor setFrame:fullCompFrame];
             }
@@ -1445,6 +1445,8 @@ static void configure_window(NSWindow *win) {
 
     [win setTitleVisibility:NSWindowTitleHidden];
     [win setTitle:@""];
+    [win setStyleMask:[win styleMask] | NSWindowStyleMaskFullSizeContentView];
+    [win setTitlebarAppearsTransparent:YES];
 
     BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
     if (!isFullscreen) {
