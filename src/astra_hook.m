@@ -607,7 +607,6 @@ static void configure_menu_items(void) {
     [_collapseBtn setToolTip:compact ? @"Expand sidebar (⌘B)" : @"Collapse sidebar (⌘B)"];
 
     [_footerView setHidden:compact];
-    [_scrollView setHidden:compact];
 
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
     [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
@@ -616,13 +615,15 @@ static void configure_menu_items(void) {
 
     CGFloat btnSize = 28.0;
     CGFloat bx = compact ? (w - btnSize) / 2.0 : (w - btnSize - 10.0);
-    CGFloat by = compact ? h - 90.0 : h - 52.0;
+    CGFloat by = compact ? h - 44.0 : h - 44.0;
     [_collapseBtn setFrame:NSMakeRect(bx, by, btnSize, btnSize)];
+    [_collapseBtn setHidden:NO];
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
-    CGFloat topInset = 48.0;
-    CGFloat bottomInset = 48.0;
+    CGFloat topInset = compact ? 52.0 : 48.0;
+    CGFloat bottomInset = compact ? 8.0 : 48.0;
+    [_scrollView setHidden:compact];
     [_scrollView setFrame:NSMakeRect(sx, bottomInset, sw, h - topInset - bottomInset)];
     [_collapseBtn setNeedsDisplay:YES];
 }
@@ -1444,7 +1445,11 @@ static void update_window_layout(NSWindow *win) {
         }
         [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, 0.3 + 0.7 * p))];
         if (sidebarView.collapseBtn) {
-            sidebarView.collapseBtn.isCollapsed = (p < 0.5);
+            BOOL isCollapsedState = (p < 0.5);
+            sidebarView.collapseBtn.isCollapsed = isCollapsedState;
+            [sidebarView.collapseBtn setIsFloating:isCollapsedState];
+            [sidebarView.collapseBtn setHidden:NO];
+            [sidebarView.collapseBtn setAlphaValue:1.0];
             [sidebarView.collapseBtn setNeedsDisplay:YES];
         }
         s_currentSidebarView = sidebarView;

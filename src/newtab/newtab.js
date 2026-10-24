@@ -248,4 +248,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // ─── Active Tab Indicator in Top Bar Tab Strip ───
+  // Mark the current page's tab-pill as active based on URL match
+  const tabPills = document.querySelectorAll('.pinned-tabs-strip .tab-pill');
+  const currentUrl = window.location.href;
+  
+  function updateActiveTabPill() {
+    tabPills.forEach(pill => {
+      const href = pill.getAttribute('href') || '';
+      // The current page is the new tab page
+      const isNewTab = href === 'chrome://newtab' || href === 'about:newtab';
+      const isCurrentPage = currentUrl === href || 
+                            currentUrl.startsWith(href) ||
+                            (isNewTab && (currentUrl.includes('newtab') || currentUrl.includes('chrome://newtab')));
+      
+      if (isCurrentPage) {
+        pill.classList.add('active');
+      }
+    });
+  }
+  updateActiveTabPill();
+
+  // Handle close buttons on tab pills in the top bar strip
+  const tabStrip = document.getElementById('pinned-tabs-strip');
+  if (tabStrip) {
+    tabStrip.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('.tab-close-btn');
+      if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pill = closeBtn.closest('.tab-pill');
+        if (pill) {
+          pill.style.opacity = '0';
+          pill.style.transform = 'translateX(-8px)';
+          pill.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+          setTimeout(() => pill.remove(), 160);
+        }
+      }
+    });
+  }
 });

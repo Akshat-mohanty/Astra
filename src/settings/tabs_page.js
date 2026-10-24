@@ -6,12 +6,16 @@ function getTemplateTabs() {
     <style include="cr-shared-style settings-shared">
       :host {
         display: block;
-        padding-bottom: 32px;
+        padding: 0 0 32px 0;
+        position: relative;
+        min-height: 100%;
       }
 
       .tabs-section-header {
         margin-bottom: 20px;
         padding: 0 4px;
+        position: relative;
+        z-index: 1;
       }
 
       .tabs-main-title {
@@ -22,6 +26,7 @@ function getTemplateTabs() {
         display: flex;
         align-items: center;
         gap: 10px;
+        line-height: 1.3;
       }
 
       .tabs-main-subtitle {
@@ -39,6 +44,8 @@ function getTemplateTabs() {
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        position: relative;
+        transform: translateZ(0);
       }
 
       .group-card-title {
@@ -57,8 +64,9 @@ function getTemplateTabs() {
       /* Orientation Cards Grid */
       .orientation-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 16px;
+        align-items: start;
       }
 
       .orientation-card {
@@ -71,7 +79,7 @@ function getTemplateTabs() {
         display: flex;
         flex-direction: column;
         gap: 14px;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         user-select: none;
       }
 
@@ -82,7 +90,6 @@ function getTemplateTabs() {
       .orientation-card:hover {
         border-color: rgba(255, 255, 255, 0.2);
         background: rgba(255, 255, 255, 0.04);
-        transform: translateY(-2px);
       }
 
       .orientation-card.active,
@@ -102,6 +109,7 @@ function getTemplateTabs() {
         display: flex;
         flex-direction: column;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        flex-shrink: 0;
       }
 
       /* Horizontal Window */
@@ -334,6 +342,7 @@ function getTemplateTabs() {
         justify-content: space-between;
         padding: 14px 0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        min-height: 52px;
       }
 
       .setting-item-row:last-child {
@@ -660,6 +669,11 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
 
   connectedCallback() {
     super.connectedCallback();
+    // Ensure host element has stable positioning within Chromium settings container
+    const host = this;
+    if (host && host.style) {
+      host.style.contain = 'layout style';
+    }
     this.addEventListener('click', (e) => {
       const path = (e.composedPath && e.composedPath()) || [];
       for (const el of path) {
