@@ -1318,16 +1318,12 @@ static void update_window_layout(NSWindow *win) {
     NSView *cv = [win contentView];
     if (!cv) return;
 
-    NSRect bounds = [cv bounds];
-    CGFloat winWidth = bounds.size.width;
-    CGFloat winHeight = bounds.size.height;
+    NSView *rootView = [cv superview];
+    CGFloat winWidth = rootView ? NSWidth([rootView bounds]) : NSWidth([cv bounds]);
+    CGFloat winHeight = rootView ? NSHeight([rootView bounds]) : NSHeight([cv bounds]);
     if (winWidth < 300 || winHeight < 300) {
-        NSRect winRect = [win contentLayoutRect];
-        if (winRect.size.width < 300 || winRect.size.height < 300) {
-            winRect = [win frame];
-        }
-        winWidth = winRect.size.width;
-        winHeight = winRect.size.height;
+        winWidth = [win frame].size.width;
+        winHeight = [win frame].size.height;
     }
     if (winWidth < 300 || winHeight < 300) return;
 
