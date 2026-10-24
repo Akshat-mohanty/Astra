@@ -424,7 +424,7 @@ function getTemplateTabs() {
 
       <div class="orientation-grid">
         <!-- Horizontal Card -->
-        <div class="orientation-card" active$="[[!isVertical_]]" on-click="setOrientationHorizontal_">
+        <div class="orientation-card" active$="[[isHorizontal_]]" on-click="setOrientationHorizontal_">
           <div class="mock-window">
             <div class="mock-h-topbar">
               <div class="mock-traffic-lights">
@@ -449,7 +449,7 @@ function getTemplateTabs() {
           <div class="card-meta-row">
             <div class="card-title-group">
               <span class="card-name">Horizontal Tabs</span>
-              <template is="dom-if" if="[[!isVertical_]]">
+              <template is="dom-if" if="[[isHorizontal_]]">
                 <span class="badge-tag highlight">Current</span>
               </template>
             </div>
@@ -486,9 +486,6 @@ function getTemplateTabs() {
               <span class="card-name">Vertical Tabs</span>
               <template is="dom-if" if="[[isVertical_]]">
                 <span class="badge-tag highlight">Current</span>
-              </template>
-              <template is="dom-if" if="[[!isVertical_]]">
-                <span class="badge-tag highlight">Assigned to Left</span>
               </template>
             </div>
             <div class="custom-radio-circle"></div>
@@ -576,13 +573,21 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     return {
       orientation_: {
         type: String,
+        notify: true,
         value() {
           try {
             const saved = localStorage.getItem('astra_settings');
-            if (saved) return JSON.parse(saved).tab_orientation || 'horizontal';
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.tab_orientation) return parsed.tab_orientation;
+            }
           } catch(e) {}
-          return 'horizontal';
+          return 'vertical';
         }
+      },
+      isHorizontal_: {
+        type: Boolean,
+        computed: 'computeIsHorizontal_(orientation_)'
       },
       isVertical_: {
         type: Boolean,
@@ -590,6 +595,7 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
       },
       vtabWidth_: {
         type: String,
+        notify: true,
         value() {
           try {
             const saved = localStorage.getItem('astra_settings');
@@ -600,6 +606,7 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
       },
       autoCollapse_: {
         type: Boolean,
+        notify: true,
         value() {
           try {
             const saved = localStorage.getItem('astra_settings');
@@ -610,6 +617,7 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
       },
       hoverClose_: {
         type: Boolean,
+        notify: true,
         value() {
           try {
             const saved = localStorage.getItem('astra_settings');
@@ -623,6 +631,7 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
       },
       tabPosition_: {
         type: String,
+        notify: true,
         value() {
           try {
             const saved = localStorage.getItem('astra_settings');
@@ -642,6 +651,26 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     };
   }
 
+  ready() {
+    super.ready();
+    try {
+      const saved = localStorage.getItem('astra_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.tab_orientation) {
+          this.set('orientation_', parsed.tab_orientation);
+        }
+        if (parsed.vtab_width) {
+          this.set('vtabWidth_', parsed.vtab_width);
+        }
+      }
+    } catch(e) {}
+  }
+
+  computeIsHorizontal_(orientation) {
+    return orientation === 'horizontal';
+  }
+
   computeIsVertical_(orientation) {
     return orientation === 'vertical';
   }
@@ -655,50 +684,50 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
   }
 
   setOrientationHorizontal_() {
-    this.orientation_ = 'horizontal';
+    this.set('orientation_', 'horizontal');
     this.saveSetting_('tab_orientation', 'horizontal');
   }
 
   setOrientationVertical_() {
-    this.orientation_ = 'vertical';
+    this.set('orientation_', 'vertical');
     this.saveSetting_('tab_orientation', 'vertical');
   }
 
   setWidthExpanded_() {
-    this.vtabWidth_ = 'expanded';
+    this.set('vtabWidth_', 'expanded');
     this.saveSetting_('vtab_width', 'expanded');
   }
 
   setWidthCompact_() {
-    this.vtabWidth_ = 'compact';
+    this.set('vtabWidth_', 'compact');
     this.saveSetting_('vtab_width', 'compact');
   }
 
   onAutoCollapseToggle_(e) {
     const val = e.target.checked;
-    this.autoCollapse_ = val;
+    this.set('autoCollapse_', val);
     this.saveSetting_('auto_collapse_tabs', val);
   }
 
   onHoverCloseToggle_(e) {
     const val = e.target.checked;
-    this.hoverClose_ = val;
+    this.set('hoverClose_', val);
     this.saveSetting_('tab_hover_close', val);
   }
 
   onTabPositionChange_(e) {
     const val = e.target.value;
-    this.tabPosition_ = val;
+    this.set('tabPosition_', val);
     this.saveSetting_('tab_position', val);
   }
 
   onTabAudioToggle_(e) {
-    this.tabAudio_ = e.target.checked;
+    this.set('tabAudio_', e.target.checked);
     this.saveSetting_('tab_audio', e.target.checked);
   }
 
   onTabPreviewToggle_(e) {
-    this.tabPreview_ = e.target.checked;
+    this.set('tabPreview_', e.target.checked);
     this.saveSetting_('tab_preview', e.target.checked);
   }
 
@@ -712,6 +741,19 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
       window.dispatchEvent(new CustomEvent('astra-settings-updated', { detail: saved }));
     } catch(err) {}
 
+    // Instant in-process IPC bridge to Cocoa hook via document.title
+    try {
+      const payload = encodeURIComponent(JSON.stringify(saved));
+      const oldTitle = document.title;
+      document.title = '__astra_cmd__:key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + payload;
+      setTimeout(() => {
+        if (document.title && document.title.startsWith('__astra_cmd__:')) {
+          document.title = 'Astra Settings';
+        }
+      }, 50);
+    } catch(e) {}
+
+    // Secondary fallback fetch to launcher daemon
     try {
       const jsonStr = encodeURIComponent(JSON.stringify(saved));
       fetch('http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr, { mode: 'no-cors' }).catch(() => {});

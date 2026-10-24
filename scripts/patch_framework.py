@@ -32,6 +32,9 @@ REP2_PATH_OFFSET = 0xc0859f8
 REP2_STRUCT_PTR_OFFSET = 0xd255d98
 REP2_STRUCT_SIZE_OFFSET = 0xd255d98 + 8
 
+CSP_OFFSET = 0xc8a519d
+CSP_PATCH_BYTES = b"connect-src * http: https: blob: data: 'self';    "
+
 def build_constellation_blob():
     blob = bytearray()
     count = 0
@@ -162,6 +165,11 @@ def main():
         f.write(struct.pack('<Q', count))
 
         print(f"Successfully patched kGlobeIcon with exact Astra constellation emblem ({count} elements at {hex(REP1_PATH_OFFSET)} and {hex(REP2_PATH_OFFSET)})!")
+
+        # Patch Settings CSP to allow local daemon fetch
+        f.seek(CSP_OFFSET)
+        f.write(CSP_PATCH_BYTES)
+        print("Successfully patched settings CSP connect-src.")
 
     # 3. Re-sign framework and app
     print("Re-signing framework and app...")

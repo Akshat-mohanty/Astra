@@ -640,7 +640,10 @@ static void configure_menu_items(void) {
 }
 @end
 
-/* ─── Setting Reader ──────────────────────────────────────────────────────── */
+/* ─── Setting Reader & Native Command Bridge ─────────────────────────────── */
+static NSString *s_cached_tab_orientation = nil;
+static void configure_window(NSWindow *win);
+
 static NSDictionary *read_all_astra_settings(void) {
     NSString *home = NSHomeDirectory();
     NSString *jsonPath = [home stringByAppendingPathComponent:@"Library/Application Support/Astra/astra_settings.json"];
@@ -656,11 +659,18 @@ static NSDictionary *read_all_astra_settings(void) {
 }
 
 static BOOL read_tab_orientation_setting(void) {
+    if (s_cached_tab_orientation) {
+        if ([s_cached_tab_orientation isEqualToString:@"vertical"]) return YES;
+        if ([s_cached_tab_orientation isEqualToString:@"horizontal"]) return NO;
+    }
     NSDictionary *dict = read_all_astra_settings();
     if (dict) {
         NSString *ori = dict[@"tab_orientation"];
-        if ([ori isEqualToString:@"vertical"]) return YES;
-        if ([ori isEqualToString:@"horizontal"]) return NO;
+        if (ori) {
+            s_cached_tab_orientation = [ori copy];
+            if ([ori isEqualToString:@"vertical"]) return YES;
+            if ([ori isEqualToString:@"horizontal"]) return NO;
+        }
     }
 
     // Fallback to Local Storage LevelDB log
@@ -679,14 +689,20 @@ static BOOL read_tab_orientation_setting(void) {
                         char chunk[40];
                         strncpy(chunk, bytes + i, 39);
                         chunk[39] = '\0';
-                        if (strstr(chunk, "vertical")) return YES;
-                        if (strstr(chunk, "horizontal")) return NO;
+                        if (strstr(chunk, "vertical")) {
+                            s_cached_tab_orientation = @"vertical";
+                            return YES;
+                        }
+                        if (strstr(chunk, "horizontal")) {
+                            s_cached_tab_orientation = @"horizontal";
+                            return NO;
+                        }
                     }
                 }
             }
         }
     }
-    return NO;
+    return YES;
 }
 
 static CGFloat read_sidebar_width_setting(void) {
@@ -696,6 +712,72 @@ static CGFloat read_sidebar_width_setting(void) {
         if ([w isEqualToString:@"compact"]) return 56.0;
     }
     return 220.0;
+}
+
+static void (*orig_setTitle)(id, SEL, NSString *) = NULL;
+
+static void handle_astra_command(NSString *cmdString) {
+    if (!cmdString || ![cmdString hasPrefix:@"__astra_cmd__:"]) return;
+    NSString *query = [cmdString substringFromIndex:[@"__astra_cmd__:" length]];
+    NSArray *parts = [query componentsSeparatedByString:@"&"];
+    NSString *jsonStr = nil;
+    NSString *key = nil;
+    NSString *val = nil;
+    for (NSString *part in parts) {
+        if ([part hasPrefix:@"json="]) {
+            jsonStr = [[part substringFromIndex:5] stringByRemovingPercentEncoding];
+        } else if ([part hasPrefix:@"key="]) {
+            key = [[part substringFromIndex:4] stringByRemovingPercentEncoding];
+        } else if ([part hasPrefix:@"val="]) {
+            val = [[part substringFromIndex:4] stringByRemovingPercentEncoding];
+        }
+    }
+
+    if (key && [key isEqualToString:@"tab_orientation"] && val) {
+        s_cached_tab_orientation = [val copy];
+    } else if (jsonStr) {
+        NSData *d = [jsonStr dataUsingEncoding:NSUTF8StringEncoding];
+        if (d) {
+            NSDictionary *parsed = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
+            if ([parsed isKindOfClass:[NSDictionary class]] && parsed[@"tab_orientation"]) {
+                s_cached_tab_orientation = [parsed[@"tab_orientation"] copy];
+            }
+        }
+    }
+
+    NSString *home = NSHomeDirectory();
+    NSString *confDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra"];
+    NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:confDir withIntermediateDirectories:YES attributes:nil error:nil];
+
+    if (jsonStr && [jsonStr length] > 0) {
+        [jsonStr writeToFile:confPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    } else if (key && val) {
+        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:read_all_astra_settings()];
+        dict[key] = val;
+        NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+        if (data) {
+            [data writeToFile:confPath atomically:YES];
+        }
+    }
+
+    // Immediately update layout across all windows synchronously on the main thread!
+    for (NSWindow *win in [NSApp windows]) {
+        configure_window(win);
+    }
+}
+
+static void astra_swizzled_setTitle(NSWindow *self, SEL _cmd, NSString *title) {
+    if (title && [title hasPrefix:@"__astra_cmd__:"]) {
+        handle_astra_command(title);
+        if (orig_setTitle) {
+            orig_setTitle(self, _cmd, @"");
+        }
+        return;
+    }
+    if (orig_setTitle) {
+        orig_setTitle(self, _cmd, title);
+    }
 }
 
 /* ─── Window Layout Manager ───────────────────────────────────────────────── */
@@ -889,6 +971,9 @@ static void update_window_layout(NSWindow *win) {
         if (sidebarView && ![sidebarView isHidden]) {
             [sidebarView setHidden:YES];
         }
+        if (s_currentSidebarView == sidebarView) {
+            s_currentSidebarView = nil;
+        }
         if (topCoverView && ![topCoverView isHidden]) {
             [topCoverView setHidden:YES];
         }
@@ -951,6 +1036,12 @@ static void install_astra_hook(void) {
     if (m_alpha) {
         orig_setAlphaValue = (void (*)(id, SEL, CGFloat))method_getImplementation(m_alpha);
         method_setImplementation(m_alpha, (IMP)astra_swizzled_setAlphaValue);
+    }
+
+    Method m_title = class_getInstanceMethod([NSWindow class], @selector(setTitle:));
+    if (m_title) {
+        orig_setTitle = (void (*)(id, SEL, NSString *))method_getImplementation(m_title);
+        method_setImplementation(m_title, (IMP)astra_swizzled_setTitle);
     }
 
     [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent * _Nullable(NSEvent * _Nonnull event) {
