@@ -1383,8 +1383,8 @@ static void update_window_layout(NSWindow *win) {
                 [wc setFrame:contentFrame];
             }
             for (NSView *sub in [wc subviews]) {
-                if (!NSEqualRects([sub frame], NSMakeRect(0, 0, contentFrame.size.width, contentFrame.size.height))) {
-                    [sub setFrame:NSMakeRect(0, 0, contentFrame.size.width, contentFrame.size.height)];
+                if (!NSEqualRects([sub frame], NSMakeRect(0, 28.0, contentFrame.size.width, contentFrame.size.height))) {
+                    [sub setFrame:NSMakeRect(0, 28.0, contentFrame.size.width, contentFrame.size.height)];
                 }
             }
         }
@@ -1455,7 +1455,7 @@ static void update_window_layout(NSWindow *win) {
             if (!NSEqualRects([wc frame], targetFrame)) {
                 [wc setFrame:targetFrame];
                 for (NSView *sub in [wc subviews]) {
-                    [sub setFrame:NSMakeRect(0.0, 0.0, targetFrame.size.width, targetFrame.size.height)];
+                    [sub setFrame:NSMakeRect(0.0, 28.0, targetFrame.size.width, targetFrame.size.height)];
                 }
             }
         }
