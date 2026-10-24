@@ -902,31 +902,16 @@ static NSString *read_leveldb_setting(NSString *key) {
 }
 
 static BOOL read_tab_orientation_setting(void) {
-    NSString *fromDb = read_leveldb_setting(@"tab_orientation");
-    if (fromDb) {
-        static NSString *s_last_synced_orientation = nil;
-        if (![fromDb isEqualToString:s_last_synced_orientation]) {
-            s_last_synced_orientation = [fromDb copy];
-            dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-                NSString *home = NSHomeDirectory();
-                NSString *confDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra"];
-                NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
-                NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:read_all_astra_settings()];
-                dict[@"tab_orientation"] = fromDb;
-                NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
-                if (data) {
-                    [data writeToFile:confPath atomically:YES];
-                }
-            });
-        }
-        if ([fromDb isEqualToString:@"horizontal"]) return NO;
-        if ([fromDb isEqualToString:@"vertical"]) return YES;
-    }
     NSDictionary *dict = read_all_astra_settings();
     if (dict && dict[@"tab_orientation"]) {
         NSString *ori = dict[@"tab_orientation"];
         if ([ori isEqualToString:@"horizontal"]) return NO;
         if ([ori isEqualToString:@"vertical"]) return YES;
+    }
+    NSString *fromDb = read_leveldb_setting(@"tab_orientation");
+    if (fromDb) {
+        if ([fromDb isEqualToString:@"horizontal"]) return NO;
+        if ([fromDb isEqualToString:@"vertical"]) return YES;
     }
     return YES;
 }
