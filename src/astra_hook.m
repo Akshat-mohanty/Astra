@@ -616,7 +616,7 @@ static void configure_menu_items(void) {
 
     CGFloat btnSize = 28.0;
     CGFloat bx = compact ? (w - btnSize) / 2.0 : (w - btnSize - 10.0);
-    CGFloat by = compact ? h - 78.0 : h - 46.0;
+    CGFloat by = compact ? h - 90.0 : h - 52.0;
     [_collapseBtn setFrame:NSMakeRect(bx, by, btnSize, btnSize)];
 
     CGFloat sx = compact ? 6.0 : 10.0;
