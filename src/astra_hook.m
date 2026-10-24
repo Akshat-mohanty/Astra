@@ -1419,7 +1419,7 @@ static void update_window_layout(NSWindow *win) {
         }
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect fullCompFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
+            NSRect fullCompFrame = NSMakeRect(0.0, -32.0, winWidth, winHeight + 32.0);
             if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
                 [viewsCompositor setFrame:fullCompFrame];
             }
