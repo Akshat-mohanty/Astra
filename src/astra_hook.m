@@ -1370,14 +1370,14 @@ static void update_window_layout(NSWindow *win) {
         // while starting at y = 0.0 to fill all the way to the bottom with 0px gap!
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect compFrame = NSMakeRect(animatedSidebarWidth, 0.0, winWidth - animatedSidebarWidth, winHeight + 41.0);
+            NSRect compFrame = NSMakeRect(animatedSidebarWidth, -28.0, winWidth - animatedSidebarWidth, winHeight + 41.0 + 28.0);
             if (!NSEqualRects([viewsCompositor frame], compFrame)) {
                 [viewsCompositor setFrame:compFrame];
             }
         }
 
         // Adjust WebContentsViewCocoa to start at animatedSidebarWidth and fill 100% height from bottom to top
-        NSRect contentFrame = NSMakeRect(animatedSidebarWidth, 0.0, winWidth - animatedSidebarWidth, winHeight);
+        NSRect contentFrame = NSMakeRect(animatedSidebarWidth, -28.0, winWidth - animatedSidebarWidth, winHeight + 28.0);
         for (NSView *wc in allWebContentsViews) {
             if (!NSEqualRects([wc frame], contentFrame)) {
                 [wc setFrame:contentFrame];
@@ -1403,7 +1403,7 @@ static void update_window_layout(NSWindow *win) {
         }
 
         // Vertical sidebar view positioning & width animation
-        NSRect targetSidebarFrame = NSMakeRect(0.0, 0.0, currentSidebarWidth, winHeight);
+        NSRect targetSidebarFrame = NSMakeRect(0.0, -28.0, currentSidebarWidth, winHeight + 28.0);
         if (!sidebarView) {
             sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
             [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:topCoverView];
@@ -1444,14 +1444,14 @@ static void update_window_layout(NSWindow *win) {
         }
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect fullCompFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
+            NSRect fullCompFrame = NSMakeRect(0.0, -28.0, winWidth, winHeight + 28.0);
             if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
                 [viewsCompositor setFrame:fullCompFrame];
             }
         }
         CGFloat hTopTabHeight = isFullscreen ? 0.0 : 41.0;
         for (NSView *wc in allWebContentsViews) {
-            NSRect targetFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
+            NSRect targetFrame = NSMakeRect(0.0, -28.0, winWidth, winHeight + 28.0);
             if (!NSEqualRects([wc frame], targetFrame)) {
                 [wc setFrame:targetFrame];
                 for (NSView *sub in [wc subviews]) {
