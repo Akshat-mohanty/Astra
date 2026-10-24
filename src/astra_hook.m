@@ -430,15 +430,52 @@ static void force_refresh_tabs(void) {
 static void open_settings_in_new_tab(void) {
     static NSTimeInterval s_last_open_settings = 0;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
-    if (now - s_last_open_settings < 0.6) {
+    if (now - s_last_open_settings < 1.0) {
         return; // Prevent duplicate rapid invocation
     }
     s_last_open_settings = now;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://127.0.0.1:4545/#settings"]];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(150 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            force_refresh_tabs();
+        // 1. Simulate Cmd+T (New tab in current window)
+        CGKeyCode kc_t = 17; // 't'
+        CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, kc_t, true);
+        CGEventSetFlags(keyDown, kCGEventFlagMaskCommand);
+        CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, kc_t, false);
+        CGEventSetFlags(keyUp, kCGEventFlagMaskCommand);
+        CGEventPost(kCGHIDEventTap, keyDown);
+        CGEventPost(kCGHIDEventTap, keyUp);
+        CFRelease(keyDown);
+        CFRelease(keyUp);
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(120 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            // 2. Type "http://127.0.0.1:4545/#settings" into the new tab's omnibox
+            NSString *urlStr = @"http://127.0.0.1:4545/#settings";
+            for (NSUInteger i = 0; i < [urlStr length]; i++) {
+                unichar c = [urlStr characterAtIndex:i];
+                CGEventRef charEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
+                CGEventKeyboardSetUnicodeString(charEvent, 1, &c);
+                CGEventRef charUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
+                CGEventKeyboardSetUnicodeString(charUpEvent, 1, &c);
+                CGEventPost(kCGHIDEventTap, charEvent);
+                CGEventPost(kCGHIDEventTap, charUpEvent);
+                CFRelease(charEvent);
+                CFRelease(charUpEvent);
+            }
+
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                // 3. Press Return (keycode 36)
+                CGKeyCode kc_ret = 36;
+                CGEventRef kd_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, true);
+                CGEventRef ku_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, false);
+                CGEventPost(kCGHIDEventTap, kd_ret);
+                CGEventPost(kCGHIDEventTap, ku_ret);
+                CFRelease(kd_ret);
+                CFRelease(ku_ret);
+
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
+                });
+            });
         });
     });
 }
