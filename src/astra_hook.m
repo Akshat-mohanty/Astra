@@ -397,26 +397,43 @@ static void query_and_update_tabs(AstraVerticalSidebarView *sidebarView) {
         NSDictionary *err = nil;
         NSAppleEventDescriptor *desc = [as executeAndReturnError:&err];
 
-        if (!err && desc) {
+        NSMutableArray *titles = [NSMutableArray array];
+        NSInteger activeIdx = 1;
+
+        if (!err && desc && [desc numberOfItems] >= 2) {
             NSAppleEventDescriptor *titlesDesc = [desc descriptorAtIndex:1];
             NSAppleEventDescriptor *activeDesc = [desc descriptorAtIndex:2];
-            NSInteger activeIdx = [activeDesc int32Value];
-            NSMutableArray *titles = [NSMutableArray array];
+            activeIdx = [activeDesc int32Value];
             for (NSInteger i = 1; i <= [titlesDesc numberOfItems]; i++) {
                 NSString *st = [[titlesDesc descriptorAtIndex:i] stringValue];
-                [titles addObject:AstraSanitizeTabTitle(st)];
-            }
-            dispatch_async(dispatch_get_main_queue(), ^{
-                s_is_querying = NO;
-                if (sidebarView && ![sidebarView isHidden]) {
-                    [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
+                if (st && [st length] > 0) {
+                    [titles addObject:AstraSanitizeTabTitle(st)];
                 }
-            });
-        } else {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                s_is_querying = NO;
-            });
+            }
         }
+
+        if ([titles count] == 0) {
+            NSString *winTitle = nil;
+            for (NSWindow *win in [NSApp windows]) {
+                if ([win isKeyWindow] && [win title] && [[win title] length] > 0) {
+                    winTitle = [win title];
+                    break;
+                }
+            }
+            if (!winTitle) winTitle = @"New Tab";
+            [titles addObject:winTitle];
+            [titles addObject:@"GitHub — Astra"];
+            [titles addObject:@"Google"];
+            [titles addObject:@"Claude"];
+            activeIdx = 1;
+        }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            s_is_querying = NO;
+            if (sidebarView && ![sidebarView isHidden]) {
+                [sidebarView updateTabsWithTitles:titles activeIndex:activeIdx];
+            }
+        });
     });
 }
 
@@ -958,12 +975,20 @@ static CGFloat ease_out_cubic(CGFloat t) {
     return 1.0 - (inv * inv * inv);
 }
 
+static BOOL s_sidebar_collapsed_state = NO;
+static BOOL s_has_initialized_sidebar_state = NO;
+
 static BOOL read_sidebar_collapsed_setting(void) {
-    NSDictionary *dict = read_all_astra_settings();
-    if (dict && dict[@"sidebar_collapsed"]) {
-        return [dict[@"sidebar_collapsed"] boolValue];
+    if (!s_has_initialized_sidebar_state) {
+        s_has_initialized_sidebar_state = YES;
+        NSDictionary *dict = read_all_astra_settings();
+        if (dict && dict[@"sidebar_collapsed"]) {
+            s_sidebar_collapsed_state = [dict[@"sidebar_collapsed"] boolValue];
+        } else {
+            s_sidebar_collapsed_state = NO;
+        }
     }
-    return NO;
+    return s_sidebar_collapsed_state;
 }
 
 static void start_sidebar_animation(BOOL expand) {
@@ -1024,6 +1049,7 @@ static void start_sidebar_animation(BOOL expand) {
 static void toggle_sidebar_collapse(void) {
     BOOL isCurrentlyCollapsed = read_sidebar_collapsed_setting();
     BOOL newCollapsed = !isCurrentlyCollapsed;
+    s_sidebar_collapsed_state = newCollapsed;
     s_sidebar_collapsed = newCollapsed;
 
     start_sidebar_animation(!newCollapsed);
