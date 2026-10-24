@@ -430,14 +430,10 @@ static void force_refresh_tabs(void) {
 static void open_settings_in_new_tab(void) {
     static NSTimeInterval s_last_open_settings = 0;
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
-    if (now - s_last_open_settings < 0.4) {
+    if (now - s_last_open_settings < 1.0) {
         return; // Prevent duplicate rapid invocation
     }
     s_last_open_settings = now;
-
-    if (s_currentSidebarView) {
-        [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
-    }
 
     dispatch_async(dispatch_get_main_queue(), ^{
         // 1. Simulate Cmd+T (New tab)
@@ -451,46 +447,33 @@ static void open_settings_in_new_tab(void) {
         CFRelease(keyDown);
         CFRelease(keyUp);
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            // 2. Simulate Cmd+L (Focus location bar)
-            CGKeyCode kc_l = 37; // 'l'
-            CGEventRef kd_l = CGEventCreateKeyboardEvent(NULL, kc_l, true);
-            CGEventSetFlags(kd_l, kCGEventFlagMaskCommand);
-            CGEventRef ku_l = CGEventCreateKeyboardEvent(NULL, kc_l, false);
-            CGEventSetFlags(ku_l, kCGEventFlagMaskCommand);
-            CGEventPost(kCGHIDEventTap, kd_l);
-            CGEventPost(kCGHIDEventTap, ku_l);
-            CFRelease(kd_l);
-            CFRelease(ku_l);
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            // 2. Type "chrome://settings" (since Cmd+T already focuses the new tab's omnibox)
+            NSString *urlStr = @"chrome://settings";
+            for (NSUInteger i = 0; i < [urlStr length]; i++) {
+                unichar c = [urlStr characterAtIndex:i];
+                CGEventRef charEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
+                CGEventKeyboardSetUnicodeString(charEvent, 1, &c);
+                CGEventRef charUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
+                CGEventKeyboardSetUnicodeString(charUpEvent, 1, &c);
+                CGEventPost(kCGHIDEventTap, charEvent);
+                CGEventPost(kCGHIDEventTap, charUpEvent);
+                CFRelease(charEvent);
+                CFRelease(charUpEvent);
+            }
 
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                // 3. Type "chrome://settings"
-                NSString *urlStr = @"chrome://settings";
-                for (NSUInteger i = 0; i < [urlStr length]; i++) {
-                    unichar c = [urlStr characterAtIndex:i];
-                    CGEventRef charEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
-                    CGEventKeyboardSetUnicodeString(charEvent, 1, &c);
-                    CGEventRef charUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
-                    CGEventKeyboardSetUnicodeString(charUpEvent, 1, &c);
-                    CGEventPost(kCGHIDEventTap, charEvent);
-                    CGEventPost(kCGHIDEventTap, charUpEvent);
-                    CFRelease(charEvent);
-                    CFRelease(charUpEvent);
-                }
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                // 3. Press Return (keycode 36)
+                CGKeyCode kc_ret = 36;
+                CGEventRef kd_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, true);
+                CGEventRef ku_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, false);
+                CGEventPost(kCGHIDEventTap, kd_ret);
+                CGEventPost(kCGHIDEventTap, ku_ret);
+                CFRelease(kd_ret);
+                CFRelease(ku_ret);
 
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                    // 4. Press Return (keycode 36)
-                    CGKeyCode kc_ret = 36;
-                    CGEventRef kd_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, true);
-                    CGEventRef ku_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, false);
-                    CGEventPost(kCGHIDEventTap, kd_ret);
-                    CGEventPost(kCGHIDEventTap, ku_ret);
-                    CFRelease(kd_ret);
-                    CFRelease(ku_ret);
-
-                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                        force_refresh_tabs();
-                    });
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    force_refresh_tabs();
                 });
             });
         });
