@@ -777,18 +777,21 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     const url = 'http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr + '&t=' + Date.now();
 
     try {
-      fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+      fetch(url, { method: 'GET', mode: 'cors', cache: 'no-store' }).catch(() => {
+        fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+      });
+    } catch(e) {}
+
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+      }
     } catch(e) {}
 
     try {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', url, true);
       xhr.send();
-    } catch(e) {}
-
-    try {
-      const img = new Image();
-      img.src = url;
     } catch(e) {}
   }
 }
