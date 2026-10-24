@@ -1415,9 +1415,6 @@ static void update_window_layout(NSWindow *win) {
     } else {
         // Horizontal Tabs mode: restore native top tab strip
         s_sidebar_anim_progress = 1.0;
-        if (floatingBtn && ![floatingBtn isHidden]) {
-            [floatingBtn setHidden:YES];
-        }
         if (sidebarView && ![sidebarView isHidden]) {
             [sidebarView setHidden:YES];
         }
