@@ -18,6 +18,10 @@ build_workspace
 # Engine downloads
 engine/*.dmg
 
+# Python cache
+__pycache__/
+*.pyc
+
 # User profile data & caches
 /tmp/Astra*
 user_data/
