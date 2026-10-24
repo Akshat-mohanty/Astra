@@ -766,6 +766,7 @@ static void configure_menu_items(void) {
 
 /* ─── Astra Top Cover Bar (Covers horizontal tabs in vertical mode) ────────── */
 @interface AstraTopCoverView : NSView
+@property (nonatomic, strong) CALayer *bottomBorder;
 @end
 
 @implementation AstraTopCoverView
@@ -773,15 +774,27 @@ static void configure_menu_items(void) {
     self = [super initWithFrame:frameRect];
     if (self) {
         [self setWantsLayer:YES];
-        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.07 green:0.07 blue:0.08 alpha:1.0].CGColor; // #121214
-        self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.071 green:0.071 blue:0.078 alpha:1.0].CGColor; // #121214
+        _bottomBorder = [CALayer layer];
+        _bottomBorder.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
+        [self.layer addSublayer:_bottomBorder];
         [self setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
     }
     return self;
 }
 
+- (void)layout {
+    [super layout];
+    if (_bottomBorder) {
+        _bottomBorder.frame = CGRectMake(0, 0, self.bounds.size.width, 1.0);
+    }
+}
+
 - (void)mouseDown:(NSEvent *)event {
+    if ([event clickCount] == 2) {
+        [self.window zoom:nil];
+        return;
+    }
     [self.window performWindowDragWithEvent:event];
 }
 @end
@@ -804,8 +817,112 @@ static NSDictionary *read_all_astra_settings(void) {
 }
 
 static NSString *s_cached_tab_orientation = nil;
+static NSString *s_cached_vtab_width = nil;
+static NSDate *s_last_leveldb_mtime = nil;
+static unsigned long long s_last_leveldb_size = 0;
+
+static NSString *read_leveldb_setting(NSString *key) {
+    NSString *home = NSHomeDirectory();
+    NSString *dbDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra/Default/Local Storage/leveldb"];
+    NSArray *files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dbDir error:nil];
+    if (!files || [files count] == 0) return nil;
+    
+    NSMutableArray *sortedLogs = [NSMutableArray array];
+    for (NSString *fname in files) {
+        if ([fname hasSuffix:@".log"] || [fname hasSuffix:@".ldb"]) {
+            NSString *fpath = [dbDir stringByAppendingPathComponent:fname];
+            [sortedLogs addObject:fpath];
+        }
+    }
+    
+    [sortedLogs sortUsingComparator:^NSComparisonResult(NSString *p1, NSString *p2) {
+        NSDictionary *a1 = [[NSFileManager defaultManager] attributesOfItemAtPath:p1 error:nil];
+        NSDictionary *a2 = [[NSFileManager defaultManager] attributesOfItemAtPath:p2 error:nil];
+        NSDate *d1 = a1[NSFileModificationDate];
+        NSDate *d2 = a2[NSFileModificationDate];
+        return [d2 compare:d1];
+    }];
+
+    if ([sortedLogs count] > 0) {
+        NSString *newest = sortedLogs[0];
+        NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:newest error:nil];
+        NSDate *curMtime = attrs[NSFileModificationDate];
+        unsigned long long curSize = [attrs[NSFileSize] unsignedLongLongValue];
+        if (s_last_leveldb_mtime && [s_last_leveldb_mtime isEqualToDate:curMtime] && s_last_leveldb_size == curSize) {
+            if ([key isEqualToString:@"tab_orientation"]) return s_cached_tab_orientation;
+            if ([key isEqualToString:@"vtab_width"]) return s_cached_vtab_width;
+        }
+        s_last_leveldb_mtime = curMtime;
+        s_last_leveldb_size = curSize;
+    }
+
+    NSString *needle = [NSString stringWithFormat:@"\"%@\":", key];
+    const char *target = [needle UTF8String];
+    size_t targetLen = strlen(target);
+
+    for (NSString *fpath in sortedLogs) {
+        NSData *d = [NSData dataWithContentsOfFile:fpath];
+        if (!d) continue;
+        const char *bytes = (const char *)[d bytes];
+        NSUInteger len = [d length];
+        if (len < targetLen + 5) continue;
+        for (NSInteger i = (NSInteger)len - (NSInteger)targetLen - 5; i >= 0; i--) {
+            if (strncmp(bytes + i, target, targetLen) == 0) {
+                const char *p = bytes + i + targetLen;
+                while (*p == ' ' || *p == '\t') p++;
+                if (*p == '"') {
+                    p++;
+                    char valBuf[64];
+                    int vi = 0;
+                    while (*p != '"' && *p != '\n' && *p != '\r' && vi < 63) {
+                        valBuf[vi++] = *p++;
+                    }
+                    valBuf[vi] = '\0';
+                    NSString *res = [NSString stringWithUTF8String:valBuf];
+                    if ([key isEqualToString:@"tab_orientation"]) s_cached_tab_orientation = res;
+                    if ([key isEqualToString:@"vtab_width"]) s_cached_vtab_width = res;
+                    return res;
+                } else {
+                    char valBuf[64];
+                    int vi = 0;
+                    while (*p != ',' && *p != '}' && *p != ' ' && *p != '\n' && *p != '\r' && vi < 63) {
+                        valBuf[vi++] = *p++;
+                    }
+                    valBuf[vi] = '\0';
+                    NSString *res = [NSString stringWithUTF8String:valBuf];
+                    if ([key isEqualToString:@"tab_orientation"]) s_cached_tab_orientation = res;
+                    if ([key isEqualToString:@"vtab_width"]) s_cached_vtab_width = res;
+                    return res;
+                }
+            }
+        }
+    }
+    if ([key isEqualToString:@"tab_orientation"]) return s_cached_tab_orientation;
+    if ([key isEqualToString:@"vtab_width"]) return s_cached_vtab_width;
+    return nil;
+}
 
 static BOOL read_tab_orientation_setting(void) {
+    NSString *fromDb = read_leveldb_setting(@"tab_orientation");
+    if (fromDb) {
+        static NSString *s_last_synced_orientation = nil;
+        if (![fromDb isEqualToString:s_last_synced_orientation]) {
+            s_last_synced_orientation = [fromDb copy];
+            dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+                NSString *home = NSHomeDirectory();
+                NSString *confDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra"];
+                NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
+                NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:read_all_astra_settings()];
+                dict[@"tab_orientation"] = fromDb;
+                NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+                if (data) {
+                    [data writeToFile:confPath atomically:YES];
+                }
+            });
+        }
+        if ([fromDb isEqualToString:@"horizontal"]) return NO;
+        if ([fromDb isEqualToString:@"vertical"]) return YES;
+    }
     NSDictionary *dict = read_all_astra_settings();
     if (dict && dict[@"tab_orientation"]) {
         NSString *ori = dict[@"tab_orientation"];
@@ -1014,11 +1131,12 @@ static void start_settings_watcher(void) {
 }
 
 static CGFloat read_sidebar_width_setting(void) {
-    NSDictionary *dict = read_all_astra_settings();
-    if (dict) {
-        NSString *w = dict[@"vtab_width"];
-        if ([w isEqualToString:@"compact"]) return 56.0;
+    NSString *w = read_leveldb_setting(@"vtab_width");
+    if (!w) {
+        NSDictionary *dict = read_all_astra_settings();
+        if (dict) w = dict[@"vtab_width"];
     }
+    if ([w isEqualToString:@"compact"]) return 56.0;
     return 220.0;
 }
 
@@ -1192,8 +1310,13 @@ static void update_window_layout(NSWindow *win) {
     NSView *cv = [win contentView];
     if (!cv) return;
 
-    NSRect winBounds = [cv bounds];
-    if (winBounds.size.width < 300 || winBounds.size.height < 300) return;
+    NSRect winRect = [win contentLayoutRect];
+    if (winRect.size.width < 300 || winRect.size.height < 300) {
+        winRect = [win frame];
+    }
+    CGFloat winWidth = winRect.size.width;
+    CGFloat winHeight = winRect.size.height;
+    if (winWidth < 300 || winHeight < 300) return;
 
     BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
     if (isFullscreen) {
@@ -1211,10 +1334,10 @@ static void update_window_layout(NSWindow *win) {
 
     CGFloat baseSidebarWidth = read_sidebar_width_setting();
     CGFloat animatedSidebarWidth = isVertical ? (baseSidebarWidth * p) : 0.0;
-    CGFloat topTabHeight = (isVertical || isFullscreen) ? 0.0 : 41.0;
+    CGFloat vTopBarHeight = isFullscreen ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
-    NSView *webContentsView = nil;
+    NSMutableArray *allWebContentsViews = [NSMutableArray array];
     AstraVerticalSidebarView *sidebarView = nil;
     AstraTopCoverView *topCoverView = nil;
     AstraCollapseButton *floatingBtn = nil;
@@ -1224,7 +1347,7 @@ static void update_window_layout(NSWindow *win) {
         if ([cls isEqualToString:@"ViewsCompositorSuperview"]) {
             viewsCompositor = sub;
         } else if ([cls isEqualToString:@"WebContentsViewCocoa"]) {
-            webContentsView = sub;
+            [allWebContentsViews addObject:sub];
         } else if ([sub isKindOfClass:[AstraVerticalSidebarView class]]) {
             sidebarView = (AstraVerticalSidebarView *)sub;
         } else if ([sub isKindOfClass:[AstraTopCoverView class]]) {
@@ -1235,34 +1358,35 @@ static void update_window_layout(NSWindow *win) {
     }
 
     if (isVertical) {
-        CGFloat topShift = isFullscreen ? 0.0 : 41.0;
-        NSRect contentFrame = NSMakeRect(animatedSidebarWidth, 0, winBounds.size.width - animatedSidebarWidth, winBounds.size.height);
-
-        // Position ViewsCompositorSuperview so it starts at y=0 (NO dead space below) and extends up past top by 41pt (pushing horizontal tabs off-screen)
+        // Position ViewsCompositorSuperview so it extends 41pt above window to push tab strip off-screen,
+        // while starting at y = 0.0 to fill all the way to the bottom with 0px gap!
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect compFrame = NSMakeRect(animatedSidebarWidth, 0.0, winBounds.size.width - animatedSidebarWidth, winBounds.size.height + topShift);
+            NSRect compFrame = NSMakeRect(animatedSidebarWidth, 0.0, winWidth - animatedSidebarWidth, winHeight + 41.0);
             if (!NSEqualRects([viewsCompositor frame], compFrame)) {
                 [viewsCompositor setFrame:compFrame];
             }
         }
 
-        // Adjust WebContentsViewCocoa to start at animatedSidebarWidth and fill 100% height to the top edge
-        if (webContentsView) {
-            if (!NSEqualRects([webContentsView frame], contentFrame)) {
-                [webContentsView setFrame:contentFrame];
-                for (NSView *sub in [webContentsView subviews]) {
+        // Adjust WebContentsViewCocoa to start at animatedSidebarWidth and fill 100% height from bottom to top
+        NSRect contentFrame = NSMakeRect(animatedSidebarWidth, 0.0, winWidth - animatedSidebarWidth, winHeight);
+        for (NSView *wc in allWebContentsViews) {
+            if (!NSEqualRects([wc frame], contentFrame)) {
+                [wc setFrame:contentFrame];
+            }
+            for (NSView *sub in [wc subviews]) {
+                if (!NSEqualRects([sub frame], NSMakeRect(0, 0, contentFrame.size.width, contentFrame.size.height))) {
                     [sub setFrame:NSMakeRect(0, 0, contentFrame.size.width, contentFrame.size.height)];
                 }
             }
         }
 
-        // In vertical tabs mode, web contents fill the full height, so topCoverView is hidden
+        // In vertical tabs mode, web contents naturally fill the full height with 0 top tab strip, so topCoverView is hidden
         if (topCoverView && ![topCoverView isHidden]) {
             [topCoverView setHidden:YES];
         }
 
-        // Sidebar View positioning & slide animation
+        // Vertical sidebar view positioning & slide animation
         if (p <= 0.001) {
             if (sidebarView && ![sidebarView isHidden]) {
                 [sidebarView setHidden:YES];
@@ -1272,7 +1396,7 @@ static void update_window_layout(NSWindow *win) {
             }
         } else {
             CGFloat sidebarX = - baseSidebarWidth * (1.0 - p);
-            NSRect targetSidebarFrame = NSMakeRect(sidebarX, 0, baseSidebarWidth, winBounds.size.height);
+            NSRect targetSidebarFrame = NSMakeRect(sidebarX, 0.0, baseSidebarWidth, winHeight);
             if (!sidebarView) {
                 sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
                 [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
@@ -1281,14 +1405,15 @@ static void update_window_layout(NSWindow *win) {
                 if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
                     [sidebarView setFrame:targetSidebarFrame];
                 }
+                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
             }
             [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, p * 1.15))];
             s_currentSidebarView = sidebarView;
         }
 
-        // Floating expand button handling
+        // Floating expand button handling (positioned cleanly in top bar next to traffic lights)
         CGFloat btnX = isFullscreen ? 16.0 : 78.0;
-        NSRect targetBtnFrame = NSMakeRect(btnX, winBounds.size.height - 38.0, 28.0, 28.0);
+        NSRect targetBtnFrame = NSMakeRect(btnX, winHeight - 34.0, 26.0, 26.0);
         if (p >= 0.999) {
             if (floatingBtn && ![floatingBtn isHidden]) {
                 [floatingBtn setHidden:YES];
@@ -1313,7 +1438,7 @@ static void update_window_layout(NSWindow *win) {
             [floatingBtn setAlphaValue:btnAlpha];
         }
 
-        // Query open tabs and update sidebar with fast, responsive interval
+        // Query open tabs when expanded and not animating
         if (p >= 0.9 && !s_is_animating_sidebar && sidebarView) {
             static NSTimeInterval s_last_query = 0;
             NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
@@ -1328,13 +1453,6 @@ static void update_window_layout(NSWindow *win) {
         if (floatingBtn && ![floatingBtn isHidden]) {
             [floatingBtn setHidden:YES];
         }
-        if (viewsCompositor) {
-            if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect fullCompFrame = NSMakeRect(0, 0, winBounds.size.width, winBounds.size.height);
-            if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
-                [viewsCompositor setFrame:fullCompFrame];
-            }
-        }
         if (sidebarView && ![sidebarView isHidden]) {
             [sidebarView setHidden:YES];
         }
@@ -1344,12 +1462,20 @@ static void update_window_layout(NSWindow *win) {
         if (topCoverView && ![topCoverView isHidden]) {
             [topCoverView setHidden:YES];
         }
-        if (webContentsView) {
-            NSRect targetFrame = NSMakeRect(0, 0, winBounds.size.width, winBounds.size.height - topTabHeight);
-            if (!NSEqualRects([webContentsView frame], targetFrame)) {
-                [webContentsView setFrame:targetFrame];
-                for (NSView *sub in [webContentsView subviews]) {
-                    [sub setFrame:NSMakeRect(0, 0, targetFrame.size.width, targetFrame.size.height)];
+        if (viewsCompositor) {
+            if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
+            NSRect fullCompFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
+            if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
+                [viewsCompositor setFrame:fullCompFrame];
+            }
+        }
+        CGFloat hTopTabHeight = isFullscreen ? 0.0 : 41.0;
+        for (NSView *wc in allWebContentsViews) {
+            NSRect targetFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight - hTopTabHeight);
+            if (!NSEqualRects([wc frame], targetFrame)) {
+                [wc setFrame:targetFrame];
+                for (NSView *sub in [wc subviews]) {
+                    [sub setFrame:NSMakeRect(0.0, 0.0, targetFrame.size.width, targetFrame.size.height)];
                 }
             }
         }
@@ -1412,7 +1538,8 @@ static void install_astra_hook(void) {
     }
 
     [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent * _Nullable(NSEvent * _Nonnull event) {
-        if (([event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask) == NSEventModifierFlagCommand) {
+        NSEventModifierFlags flags = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+        if (flags & NSEventModifierFlagCommand) {
             NSString *chars = [event charactersIgnoringModifiers];
             if ([chars isEqualToString:@","]) {
                 open_settings_in_new_tab();
@@ -1442,7 +1569,7 @@ static void install_astra_hook(void) {
             } else if ([chars isEqualToString:@"b"]) {
                 toggle_sidebar_collapse();
                 return nil;
-            } else if ([chars isEqualToString:@"s"] && ([event modifierFlags] & NSEventModifierFlagShift)) {
+            } else if ([chars isEqualToString:@"s"] && (flags & NSEventModifierFlagShift)) {
                 toggle_sidebar_collapse();
                 return nil;
             }

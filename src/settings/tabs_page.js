@@ -75,6 +75,10 @@ function getTemplateTabs() {
         user-select: none;
       }
 
+      .orientation-card * {
+        pointer-events: none;
+      }
+
       .orientation-card:hover {
         border-color: rgba(255, 255, 255, 0.2);
         background: rgba(255, 255, 255, 0.04);
