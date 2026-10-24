@@ -1511,6 +1511,7 @@ static void configure_window(NSWindow *win) {
     [win setTitle:@""];
     [win setStyleMask:[win styleMask] | NSWindowStyleMaskFullSizeContentView];
     [win setTitlebarAppearsTransparent:YES];
+    [win setBackgroundColor:[NSColor colorWithCalibratedRed:0.098 green:0.098 blue:0.098 alpha:1.0]];
 
     BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
     if (!isFullscreen) {
