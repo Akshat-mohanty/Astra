@@ -440,9 +440,59 @@ static void open_settings_in_new_tab(void) {
     }
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"chrome://settings"]];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            force_refresh_tabs();
+        // 1. Simulate Cmd+T (New tab)
+        CGKeyCode kc_t = 17; // 't'
+        CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, kc_t, true);
+        CGEventSetFlags(keyDown, kCGEventFlagMaskCommand);
+        CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, kc_t, false);
+        CGEventSetFlags(keyUp, kCGEventFlagMaskCommand);
+        CGEventPost(kCGHIDEventTap, keyDown);
+        CGEventPost(kCGHIDEventTap, keyUp);
+        CFRelease(keyDown);
+        CFRelease(keyUp);
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+            // 2. Simulate Cmd+L (Focus location bar)
+            CGKeyCode kc_l = 37; // 'l'
+            CGEventRef kd_l = CGEventCreateKeyboardEvent(NULL, kc_l, true);
+            CGEventSetFlags(kd_l, kCGEventFlagMaskCommand);
+            CGEventRef ku_l = CGEventCreateKeyboardEvent(NULL, kc_l, false);
+            CGEventSetFlags(ku_l, kCGEventFlagMaskCommand);
+            CGEventPost(kCGHIDEventTap, kd_l);
+            CGEventPost(kCGHIDEventTap, ku_l);
+            CFRelease(kd_l);
+            CFRelease(ku_l);
+
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                // 3. Type "chrome://settings"
+                NSString *urlStr = @"chrome://settings";
+                for (NSUInteger i = 0; i < [urlStr length]; i++) {
+                    unichar c = [urlStr characterAtIndex:i];
+                    CGEventRef charEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
+                    CGEventKeyboardSetUnicodeString(charEvent, 1, &c);
+                    CGEventRef charUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
+                    CGEventKeyboardSetUnicodeString(charUpEvent, 1, &c);
+                    CGEventPost(kCGHIDEventTap, charEvent);
+                    CGEventPost(kCGHIDEventTap, charUpEvent);
+                    CFRelease(charEvent);
+                    CFRelease(charUpEvent);
+                }
+
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(50 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    // 4. Press Return (keycode 36)
+                    CGKeyCode kc_ret = 36;
+                    CGEventRef kd_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, true);
+                    CGEventRef ku_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, false);
+                    CGEventPost(kCGHIDEventTap, kd_ret);
+                    CGEventPost(kCGHIDEventTap, ku_ret);
+                    CFRelease(kd_ret);
+                    CFRelease(ku_ret);
+
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                        force_refresh_tabs();
+                    });
+                });
+            });
         });
     });
 }
