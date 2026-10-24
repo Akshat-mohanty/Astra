@@ -796,6 +796,11 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     } catch(err) {}
 
     const jsonStr = encodeURIComponent(JSON.stringify(saved));
+    const cmd = '__astra_cmd__:key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr;
+    try {
+      document.title = cmd;
+    } catch(e) {}
+
     const url = 'http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr + '&t=' + Date.now();
 
     try {
