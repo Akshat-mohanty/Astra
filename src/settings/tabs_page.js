@@ -654,6 +654,24 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     };
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.addEventListener('click', (e) => {
+      const path = (e.composedPath && e.composedPath()) || [];
+      for (const el of path) {
+        if (!el || !el.getAttribute) continue;
+        const id = el.getAttribute('id');
+        if (id === 'cardHorizontal') {
+          this.setOrientationHorizontal_();
+          break;
+        } else if (id === 'cardVertical') {
+          this.setOrientationVertical_();
+          break;
+        }
+      }
+    });
+  }
+
   ready() {
     super.ready();
     const syncFromStorage = () => {

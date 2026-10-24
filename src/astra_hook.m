@@ -803,6 +803,8 @@ static NSDictionary *read_all_astra_settings(void) {
     return nil;
 }
 
+static NSString *s_cached_tab_orientation = nil;
+
 static BOOL read_tab_orientation_setting(void) {
     NSDictionary *dict = read_all_astra_settings();
     if (dict && dict[@"tab_orientation"]) {
@@ -814,6 +816,20 @@ static BOOL read_tab_orientation_setting(void) {
 }
 
 static BOOL s_sidebar_collapsed = NO;
+static BOOL s_is_animating_sidebar = NO;
+static dispatch_source_t s_sidebar_anim_timer = nil;
+static NSTimeInterval s_anim_start_time = 0.0;
+static CGFloat s_anim_start_progress = 1.0;
+static CGFloat s_anim_target_progress = 0.0;
+static CGFloat s_sidebar_anim_progress = -1.0;
+static const NSTimeInterval kSidebarAnimDuration = 0.22;
+
+static CGFloat ease_out_cubic(CGFloat t) {
+    if (t <= 0.0) return 0.0;
+    if (t >= 1.0) return 1.0;
+    CGFloat inv = 1.0 - t;
+    return 1.0 - (inv * inv * inv);
+}
 
 static BOOL read_sidebar_collapsed_setting(void) {
     NSDictionary *dict = read_all_astra_settings();
@@ -823,8 +839,67 @@ static BOOL read_sidebar_collapsed_setting(void) {
     return NO;
 }
 
+static void start_sidebar_animation(BOOL expand) {
+    if (s_sidebar_anim_timer) {
+        dispatch_source_cancel(s_sidebar_anim_timer);
+        s_sidebar_anim_timer = nil;
+    }
+
+    if (s_sidebar_anim_progress < 0.0) {
+        s_sidebar_anim_progress = expand ? 0.0 : 1.0;
+    }
+
+    s_anim_start_time = [NSDate timeIntervalSinceReferenceDate];
+    s_anim_start_progress = s_sidebar_anim_progress;
+    s_anim_target_progress = expand ? 1.0 : 0.0;
+    s_is_animating_sidebar = YES;
+
+    s_sidebar_anim_timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    if (!s_sidebar_anim_timer) return;
+
+    dispatch_source_set_timer(s_sidebar_anim_timer,
+                              dispatch_time(DISPATCH_TIME_NOW, 0),
+                              8 * NSEC_PER_MSEC,
+                              1 * NSEC_PER_MSEC);
+
+    dispatch_source_set_event_handler(s_sidebar_anim_timer, ^{
+        NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+        NSTimeInterval elapsed = now - s_anim_start_time;
+        CGFloat t = (CGFloat)(elapsed / kSidebarAnimDuration);
+
+        if (t >= 1.0) {
+            s_sidebar_anim_progress = s_anim_target_progress;
+            s_is_animating_sidebar = NO;
+            if (s_sidebar_anim_timer) {
+                dispatch_source_cancel(s_sidebar_anim_timer);
+                s_sidebar_anim_timer = nil;
+            }
+            for (NSWindow *win in [NSApp windows]) {
+                configure_window(win);
+            }
+            if (s_anim_target_progress > 0.5 && s_currentSidebarView) {
+                query_and_update_tabs(s_currentSidebarView);
+            }
+            return;
+        }
+
+        CGFloat eased = ease_out_cubic(t);
+        s_sidebar_anim_progress = s_anim_start_progress + (s_anim_target_progress - s_anim_start_progress) * eased;
+
+        for (NSWindow *win in [NSApp windows]) {
+            configure_window(win);
+        }
+    });
+
+    dispatch_resume(s_sidebar_anim_timer);
+}
+
 static void toggle_sidebar_collapse(void) {
-    s_sidebar_collapsed = !s_sidebar_collapsed;
+    BOOL isCurrentlyCollapsed = read_sidebar_collapsed_setting();
+    BOOL newCollapsed = !isCurrentlyCollapsed;
+    s_sidebar_collapsed = newCollapsed;
+
+    start_sidebar_animation(!newCollapsed);
 
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
         NSString *home = NSHomeDirectory();
@@ -832,38 +907,35 @@ static void toggle_sidebar_collapse(void) {
         NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
         [[NSFileManager defaultManager] createDirectoryAtPath:confDir withIntermediateDirectories:YES attributes:nil error:nil];
         NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:read_all_astra_settings()];
-        dict[@"sidebar_collapsed"] = @(s_sidebar_collapsed);
-        dict[@"vtab_width"] = @"expanded";
+        dict[@"sidebar_collapsed"] = @(newCollapsed);
         NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
         if (data) {
             [data writeToFile:confPath atomically:YES];
         }
     });
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (s_currentSidebarView) {
-            s_currentSidebarView.lastTitles = nil;
-        }
-        for (NSWindow *win in [NSApp windows]) {
-            configure_window(win);
-        }
-        if (!s_sidebar_collapsed && s_currentSidebarView) {
-            query_and_update_tabs(s_currentSidebarView);
-        }
-    });
 }
 
 static dispatch_source_t s_settings_file_source = nil;
+static dispatch_source_t s_leveldb_dir_source = nil;
 static int s_settings_fd = -1;
+static int s_leveldb_fd = -1;
 
 static void start_settings_watcher(void) {
     if (s_settings_file_source) {
         dispatch_source_cancel(s_settings_file_source);
         s_settings_file_source = nil;
     }
+    if (s_leveldb_dir_source) {
+        dispatch_source_cancel(s_leveldb_dir_source);
+        s_leveldb_dir_source = nil;
+    }
     if (s_settings_fd >= 0) {
         close(s_settings_fd);
         s_settings_fd = -1;
+    }
+    if (s_leveldb_fd >= 0) {
+        close(s_leveldb_fd);
+        s_leveldb_fd = -1;
     }
 
     NSString *home = NSHomeDirectory();
@@ -875,39 +947,69 @@ static void start_settings_watcher(void) {
         [@"{\"tab_orientation\":\"vertical\"}\n" writeToFile:confPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
     }
 
+    // 1. Watch astra_settings.json
     s_settings_fd = open([confPath UTF8String], O_EVTONLY);
-    if (s_settings_fd < 0) return;
+    if (s_settings_fd >= 0) {
+        s_settings_file_source = dispatch_source_create(
+            DISPATCH_SOURCE_TYPE_VNODE,
+            s_settings_fd,
+            DISPATCH_VNODE_WRITE | DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_ATTRIB | DISPATCH_VNODE_REVOKE,
+            dispatch_get_main_queue()
+        );
+        if (s_settings_file_source) {
+            dispatch_source_set_event_handler(s_settings_file_source, ^{
+                unsigned long flags = dispatch_source_get_data(s_settings_file_source);
+                if (!s_is_animating_sidebar) {
+                    read_tab_orientation_setting();
+                    s_sidebar_collapsed = read_sidebar_collapsed_setting();
+                    for (NSWindow *win in [NSApp windows]) {
+                        configure_window(win);
+                    }
+                }
+                if (flags & (DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_REVOKE)) {
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                        start_settings_watcher();
+                    });
+                }
+            });
+            dispatch_source_set_cancel_handler(s_settings_file_source, ^{
+                if (s_settings_fd >= 0) {
+                    close(s_settings_fd);
+                    s_settings_fd = -1;
+                }
+            });
+            dispatch_resume(s_settings_file_source);
+        }
+    }
 
-    s_settings_file_source = dispatch_source_create(
-        DISPATCH_SOURCE_TYPE_VNODE,
-        s_settings_fd,
-        DISPATCH_VNODE_WRITE | DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_ATTRIB | DISPATCH_VNODE_REVOKE,
-        dispatch_get_main_queue()
-    );
-
-    if (s_settings_file_source) {
-        dispatch_source_set_event_handler(s_settings_file_source, ^{
-            unsigned long flags = dispatch_source_get_data(s_settings_file_source);
-            read_tab_orientation_setting();
-            s_sidebar_collapsed = read_sidebar_collapsed_setting();
-            for (NSWindow *win in [NSApp windows]) {
-                configure_window(win);
-            }
-            if (flags & (DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_REVOKE)) {
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                    start_settings_watcher();
-                });
-            }
-        });
-
-        dispatch_source_set_cancel_handler(s_settings_file_source, ^{
-            if (s_settings_fd >= 0) {
-                close(s_settings_fd);
-                s_settings_fd = -1;
-            }
-        });
-
-        dispatch_resume(s_settings_file_source);
+    // 2. Watch LevelDB directory (kernel sends VNODE_WRITE when localStorage log updates)
+    NSString *dbDir = [confDir stringByAppendingPathComponent:@"Default/Local Storage/leveldb"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dbDir withIntermediateDirectories:YES attributes:nil error:nil];
+    s_leveldb_fd = open([dbDir UTF8String], O_EVTONLY);
+    if (s_leveldb_fd >= 0) {
+        s_leveldb_dir_source = dispatch_source_create(
+            DISPATCH_SOURCE_TYPE_VNODE,
+            s_leveldb_fd,
+            DISPATCH_VNODE_WRITE | DISPATCH_VNODE_ATTRIB,
+            dispatch_get_main_queue()
+        );
+        if (s_leveldb_dir_source) {
+            dispatch_source_set_event_handler(s_leveldb_dir_source, ^{
+                if (!s_is_animating_sidebar) {
+                    read_tab_orientation_setting();
+                    for (NSWindow *win in [NSApp windows]) {
+                        configure_window(win);
+                    }
+                }
+            });
+            dispatch_source_set_cancel_handler(s_leveldb_dir_source, ^{
+                if (s_leveldb_fd >= 0) {
+                    close(s_leveldb_fd);
+                    s_leveldb_fd = -1;
+                }
+            });
+            dispatch_resume(s_leveldb_dir_source);
+        }
     }
 }
 
@@ -1098,9 +1200,17 @@ static void update_window_layout(NSWindow *win) {
         configure_fullscreen_toolbar();
     }
     BOOL isVertical = read_tab_orientation_setting();
-    BOOL isCollapsed = read_sidebar_collapsed_setting();
+    BOOL isCollapsedSetting = read_sidebar_collapsed_setting();
+
+    if (!s_is_animating_sidebar) {
+        s_sidebar_anim_progress = isCollapsedSetting ? 0.0 : 1.0;
+    }
+    CGFloat p = s_sidebar_anim_progress;
+    if (p < 0.0) p = 0.0;
+    if (p > 1.0) p = 1.0;
+
     CGFloat baseSidebarWidth = read_sidebar_width_setting();
-    CGFloat sidebarWidth = (isVertical && !isCollapsed) ? baseSidebarWidth : 0.0;
+    CGFloat animatedSidebarWidth = isVertical ? (baseSidebarWidth * p) : 0.0;
     CGFloat topTabHeight = (isVertical || isFullscreen) ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
@@ -1126,18 +1236,18 @@ static void update_window_layout(NSWindow *win) {
 
     if (isVertical) {
         CGFloat topShift = isFullscreen ? 0.0 : 41.0;
-        NSRect contentFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height);
+        NSRect contentFrame = NSMakeRect(animatedSidebarWidth, 0, winBounds.size.width - animatedSidebarWidth, winBounds.size.height);
 
         // Position ViewsCompositorSuperview so it starts at y=0 (NO dead space below) and extends up past top by 41pt (pushing horizontal tabs off-screen)
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect compFrame = NSMakeRect(sidebarWidth, 0.0, winBounds.size.width - sidebarWidth, winBounds.size.height + topShift);
+            NSRect compFrame = NSMakeRect(animatedSidebarWidth, 0.0, winBounds.size.width - animatedSidebarWidth, winBounds.size.height + topShift);
             if (!NSEqualRects([viewsCompositor frame], compFrame)) {
                 [viewsCompositor setFrame:compFrame];
             }
         }
 
-        // Adjust WebContentsViewCocoa to start at sidebarWidth and fill 100% height to the top edge
+        // Adjust WebContentsViewCocoa to start at animatedSidebarWidth and fill 100% height to the top edge
         if (webContentsView) {
             if (!NSEqualRects([webContentsView frame], contentFrame)) {
                 [webContentsView setFrame:contentFrame];
@@ -1152,15 +1262,38 @@ static void update_window_layout(NSWindow *win) {
             [topCoverView setHidden:YES];
         }
 
-        if (isCollapsed) {
-            // Collapsed: hide the vertical sidebar view
+        // Sidebar View positioning & slide animation
+        if (p <= 0.001) {
             if (sidebarView && ![sidebarView isHidden]) {
                 [sidebarView setHidden:YES];
             }
+            if (s_currentSidebarView == sidebarView) {
+                s_currentSidebarView = nil;
+            }
+        } else {
+            CGFloat sidebarX = - baseSidebarWidth * (1.0 - p);
+            NSRect targetSidebarFrame = NSMakeRect(sidebarX, 0, baseSidebarWidth, winBounds.size.height);
+            if (!sidebarView) {
+                sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
+                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
+            } else {
+                if ([sidebarView isHidden]) [sidebarView setHidden:NO];
+                if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
+                    [sidebarView setFrame:targetSidebarFrame];
+                }
+            }
+            [sidebarView setAlphaValue:MAX(0.0, MIN(1.0, p * 1.15))];
+            s_currentSidebarView = sidebarView;
+        }
 
-            // Show floating expand button at top left next to traffic lights
-            CGFloat btnX = isFullscreen ? 16.0 : 78.0;
-            NSRect targetBtnFrame = NSMakeRect(btnX, winBounds.size.height - 38.0, 28.0, 28.0);
+        // Floating expand button handling
+        CGFloat btnX = isFullscreen ? 16.0 : 78.0;
+        NSRect targetBtnFrame = NSMakeRect(btnX, winBounds.size.height - 38.0, 28.0, 28.0);
+        if (p >= 0.999) {
+            if (floatingBtn && ![floatingBtn isHidden]) {
+                [floatingBtn setHidden:YES];
+            }
+        } else {
             if (!floatingBtn) {
                 floatingBtn = [[AstraCollapseButton alloc] initWithFrame:targetBtnFrame];
                 floatingBtn.isFloating = YES;
@@ -1174,30 +1307,14 @@ static void update_window_layout(NSWindow *win) {
                 [floatingBtn setFrame:targetBtnFrame];
                 floatingBtn.isFloating = YES;
                 floatingBtn.isCollapsed = YES;
-                [floatingBtn setNeedsDisplay:YES];
                 [cv addSubview:floatingBtn positioned:NSWindowAbove relativeTo:nil];
             }
-        } else {
-            // Expanded: hide the floating button
-            if (floatingBtn && ![floatingBtn isHidden]) {
-                [floatingBtn setHidden:YES];
-            }
+            CGFloat btnAlpha = MAX(0.0, MIN(1.0, (0.7 - p) / 0.7));
+            [floatingBtn setAlphaValue:btnAlpha];
+        }
 
-            // Create or update vertical sidebar on the left
-            NSRect targetSidebarFrame = NSMakeRect(0, 0, sidebarWidth, winBounds.size.height);
-            if (!sidebarView) {
-                sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
-                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
-            } else {
-                if ([sidebarView isHidden]) [sidebarView setHidden:NO];
-                if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
-                    [sidebarView setFrame:targetSidebarFrame];
-                    sidebarView.lastTitles = nil;
-                }
-            }
-            s_currentSidebarView = sidebarView;
-
-            // Query open tabs and update sidebar with fast, responsive interval
+        // Query open tabs and update sidebar with fast, responsive interval
+        if (p >= 0.9 && !s_is_animating_sidebar && sidebarView) {
             static NSTimeInterval s_last_query = 0;
             NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
             if (now - s_last_query > 0.08) {
@@ -1207,6 +1324,7 @@ static void update_window_layout(NSWindow *win) {
         }
     } else {
         // Horizontal Tabs mode: restore native top tab strip
+        s_sidebar_anim_progress = 1.0;
         if (floatingBtn && ![floatingBtn isHidden]) {
             [floatingBtn setHidden:YES];
         }
