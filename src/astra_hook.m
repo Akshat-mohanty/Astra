@@ -439,17 +439,8 @@ static void open_settings_in_new_tab(void) {
         [s_currentSidebarView addOptimisticTabWithTitle:@"Settings"];
     }
 
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        NSString *src = @"tell application \"Astra\" to tell window 1\n"
-                         "set newTab to make new tab with properties {URL:\"chrome://settings\"}\n"
-                         "set active tab index to (count of tabs)\n"
-                         "end tell";
-        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-        [as executeAndReturnError:nil];
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(35 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            force_refresh_tabs();
-        });
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"chrome://settings"]];
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
             force_refresh_tabs();
         });
@@ -460,6 +451,39 @@ static void open_settings_in_new_tab(void) {
 + (instancetype)sharedHandler;
 - (void)openSettingsInNewTab:(id)sender;
 @end
+
+static void simulate_cmd_number(NSInteger num) {
+    CGKeyCode kc = 18; // '1'
+    if (num == 2) kc = 19;
+    else if (num == 3) kc = 20;
+    else if (num == 4) kc = 21;
+    else if (num == 5) kc = 23;
+    else if (num == 6) kc = 22;
+    else if (num == 7) kc = 26;
+    else if (num == 8) kc = 28;
+    else if (num >= 9) kc = 25; // '9'
+
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, kc, true);
+    CGEventSetFlags(keyDown, kCGEventFlagMaskCommand);
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, kc, false);
+    CGEventSetFlags(keyUp, kCGEventFlagMaskCommand);
+    CGEventPost(kCGHIDEventTap, keyDown);
+    CGEventPost(kCGHIDEventTap, keyUp);
+    CFRelease(keyDown);
+    CFRelease(keyUp);
+}
+
+static void simulate_cmd_w(void) {
+    CGKeyCode kc = 13; // 'w'
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, kc, true);
+    CGEventSetFlags(keyDown, kCGEventFlagMaskCommand);
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, kc, false);
+    CGEventSetFlags(keyUp, kCGEventFlagMaskCommand);
+    CGEventPost(kCGHIDEventTap, keyDown);
+    CGEventPost(kCGHIDEventTap, keyUp);
+    CFRelease(keyDown);
+    CFRelease(keyUp);
+}
 
 @implementation AstraMenuHandler
 + (instancetype)sharedHandler {
@@ -591,13 +615,9 @@ static void configure_menu_items(void) {
     NSInteger idx = sender.tabIndex;
     [self setActiveTabIndexLocally:idx];
 
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        NSString *src = [NSString stringWithFormat:
-            @"tell application \"Astra\" to tell window 1 to set active tab index to %ld", (long)idx];
-        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-        [as executeAndReturnError:nil];
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        simulate_cmd_number(idx);
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(40 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
             force_refresh_tabs();
         });
     });
@@ -609,14 +629,13 @@ static void configure_menu_items(void) {
     NSInteger idx = parent.tabIndex;
     [self removeTabLocallyAtIndex:idx];
 
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        NSString *src = [NSString stringWithFormat:
-            @"tell application \"Astra\" to close tab %ld of window 1", (long)idx];
-        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
-        [as executeAndReturnError:nil];
-
+    dispatch_async(dispatch_get_main_queue(), ^{
+        simulate_cmd_number(idx);
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            force_refresh_tabs();
+            simulate_cmd_w();
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(40 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                force_refresh_tabs();
+            });
         });
     });
 }
