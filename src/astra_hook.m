@@ -615,13 +615,14 @@ static void configure_menu_items(void) {
 
     CGFloat btnSize = 28.0;
     CGFloat bx = compact ? (w - btnSize) / 2.0 : (w - btnSize - 10.0);
-    CGFloat by = compact ? h - 44.0 : h - 44.0;
+    // In compact mode, position below macOS traffic lights (traffic lights are at y: h - 16..28)
+    CGFloat by = compact ? h - 72.0 : h - 44.0;
     [_collapseBtn setFrame:NSMakeRect(bx, by, btnSize, btnSize)];
     [_collapseBtn setHidden:NO];
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
-    CGFloat topInset = compact ? 52.0 : 48.0;
+    CGFloat topInset = compact ? 76.0 : 48.0;
     CGFloat bottomInset = compact ? 8.0 : 48.0;
     [_scrollView setHidden:compact];
     [_scrollView setFrame:NSMakeRect(sx, bottomInset, sw, h - topInset - bottomInset)];
@@ -799,7 +800,12 @@ static void configure_menu_items(void) {
         [_collapseBtn performClick:nil];
         return;
     }
+    // Allow dragging only on areas that don't overlap interactive controls
     if (loc.y >= self.bounds.size.height - 48.0) {
+        if (_collapseBtn && NSPointInRect(loc, NSInsetRect(_collapseBtn.frame, -4, -4))) {
+            [_collapseBtn performClick:nil];
+            return;
+        }
         [self.window performWindowDragWithEvent:event];
         return;
     }
