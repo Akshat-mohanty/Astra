@@ -435,47 +435,19 @@ static void open_settings_in_new_tab(void) {
     }
     s_last_open_settings = now;
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // 1. Simulate Cmd+T (New tab in current window)
-        CGKeyCode kc_t = 17; // 't'
-        CGEventRef keyDown = CGEventCreateKeyboardEvent(NULL, kc_t, true);
-        CGEventSetFlags(keyDown, kCGEventFlagMaskCommand);
-        CGEventRef keyUp = CGEventCreateKeyboardEvent(NULL, kc_t, false);
-        CGEventSetFlags(keyUp, kCGEventFlagMaskCommand);
-        CGEventPost(kCGHIDEventTap, keyDown);
-        CGEventPost(kCGHIDEventTap, keyUp);
-        CFRelease(keyDown);
-        CFRelease(keyUp);
+    // Ask the browser directly for a new Settings tab. Routing through the
+    // omnibox with synthetic keystrokes only worked while the address bar
+    // happened to be focused, and the previous target
+    // (http://127.0.0.1:4545/#settings) was never handled by anything, so it
+    // silently reloaded the new tab page instead of opening Settings.
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSString *src = @"tell application \"Astra\" to tell window 1 to make new tab at end of tabs with properties {URL:\"chrome://settings\"}";
+        NSAppleScript *as = [[NSAppleScript alloc] initWithSource:src];
+        NSDictionary *err = nil;
+        [as executeAndReturnError:&err];
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(120 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-            // 2. Type "http://127.0.0.1:4545/#settings" into the new tab's omnibox
-            NSString *urlStr = @"http://127.0.0.1:4545/#settings";
-            for (NSUInteger i = 0; i < [urlStr length]; i++) {
-                unichar c = [urlStr characterAtIndex:i];
-                CGEventRef charEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
-                CGEventKeyboardSetUnicodeString(charEvent, 1, &c);
-                CGEventRef charUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
-                CGEventKeyboardSetUnicodeString(charUpEvent, 1, &c);
-                CGEventPost(kCGHIDEventTap, charEvent);
-                CGEventPost(kCGHIDEventTap, charUpEvent);
-                CFRelease(charEvent);
-                CFRelease(charUpEvent);
-            }
-
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(100 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                // 3. Press Return (keycode 36)
-                CGKeyCode kc_ret = 36;
-                CGEventRef kd_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, true);
-                CGEventRef ku_ret = CGEventCreateKeyboardEvent(NULL, kc_ret, false);
-                CGEventPost(kCGHIDEventTap, kd_ret);
-                CGEventPost(kCGHIDEventTap, ku_ret);
-                CFRelease(kd_ret);
-                CFRelease(ku_ret);
-
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
-                    force_refresh_tabs();
-                });
-            });
+        dispatch_async(dispatch_get_main_queue(), ^{
+            force_refresh_tabs();
         });
     });
 }
@@ -1346,12 +1318,17 @@ static void update_window_layout(NSWindow *win) {
     NSView *cv = [win contentView];
     if (!cv) return;
 
-    NSRect winRect = [win contentLayoutRect];
-    if (winRect.size.width < 300 || winRect.size.height < 300) {
-        winRect = [win frame];
+    NSRect bounds = [cv bounds];
+    CGFloat winWidth = bounds.size.width;
+    CGFloat winHeight = bounds.size.height;
+    if (winWidth < 300 || winHeight < 300) {
+        NSRect winRect = [win contentLayoutRect];
+        if (winRect.size.width < 300 || winRect.size.height < 300) {
+            winRect = [win frame];
+        }
+        winWidth = winRect.size.width;
+        winHeight = winRect.size.height;
     }
-    CGFloat winWidth = winRect.size.width;
-    CGFloat winHeight = winRect.size.height;
     if (winWidth < 300 || winHeight < 300) return;
 
     BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
@@ -1471,14 +1448,14 @@ static void update_window_layout(NSWindow *win) {
         }
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect fullCompFrame = NSMakeRect(0.0, 32.0, winWidth, winHeight - 32.0);
+            NSRect fullCompFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
             if (!NSEqualRects([viewsCompositor frame], fullCompFrame)) {
                 [viewsCompositor setFrame:fullCompFrame];
             }
         }
         CGFloat hTopTabHeight = isFullscreen ? 0.0 : 41.0;
         for (NSView *wc in allWebContentsViews) {
-            NSRect targetFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight - hTopTabHeight);
+            NSRect targetFrame = NSMakeRect(0.0, 0.0, winWidth, winHeight);
             if (!NSEqualRects([wc frame], targetFrame)) {
                 [wc setFrame:targetFrame];
                 for (NSView *sub in [wc subviews]) {
