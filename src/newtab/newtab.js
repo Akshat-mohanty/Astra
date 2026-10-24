@@ -198,12 +198,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toggle compact vertical tabs sidebar
   if (vtabToggleBtn) {
     vtabToggleBtn.addEventListener('click', () => {
-      document.body.classList.toggle('vtab-compact');
+      const isCompact = document.body.classList.toggle('vtab-compact');
       try {
         const saved = localStorage.getItem('astra_settings');
         const settings = saved ? JSON.parse(saved) : {};
-        settings.vtab_width = document.body.classList.contains('vtab-compact') ? 'compact' : 'expanded';
+        settings.vtab_width = isCompact ? 'compact' : 'expanded';
         localStorage.setItem('astra_settings', JSON.stringify(settings));
+        window.dispatchEvent(new CustomEvent('astra-settings-updated', { detail: settings }));
+
+        const payload = encodeURIComponent(JSON.stringify(settings));
+        const url = 'http://127.0.0.1:4545/api/setting?key=vtab_width&val=' + encodeURIComponent(isCompact ? 'compact' : 'expanded') + '&json=' + payload + '&t=' + Date.now();
+        fetch(url, { mode: 'no-cors' }).catch(() => {});
+        new Image().src = url;
       } catch (e) {}
     });
   }
