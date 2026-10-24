@@ -26,10 +26,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (reloadBtn) reloadBtn.addEventListener('click', () => window.location.reload());
   if (sidebarBtn) {
     sidebarBtn.addEventListener('click', () => {
-      if (input) {
-        input.focus();
-        input.select();
-      }
+      try {
+        let saved = {};
+        try {
+          const raw = localStorage.getItem('astra_settings');
+          if (raw) saved = JSON.parse(raw);
+        } catch(e) {}
+        const currentCollapsed = !!saved.sidebar_collapsed;
+        const nextCollapsed = !currentCollapsed;
+        saved.sidebar_collapsed = nextCollapsed;
+        saved.vtab_width = 'expanded';
+        localStorage.setItem('astra_settings', JSON.stringify(saved));
+        const payload = encodeURIComponent(JSON.stringify(saved));
+        const url = 'http://127.0.0.1:4545/api/setting?key=sidebar_collapsed&val=' + encodeURIComponent(nextCollapsed ? '1' : '0') + '&json=' + payload + '&t=' + Date.now();
+        fetch(url, { mode: 'no-cors' }).catch(() => {});
+        new Image().src = url;
+      } catch(err) {}
     });
   }
 

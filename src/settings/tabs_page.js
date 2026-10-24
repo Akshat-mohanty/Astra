@@ -81,7 +81,8 @@ function getTemplateTabs() {
         transform: translateY(-2px);
       }
 
-      .orientation-card[active] {
+      .orientation-card.active,
+      .orientation-card[active="true"] {
         border-color: rgba(255, 255, 255, 0.4);
         background: rgba(255, 255, 255, 0.08);
         box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
@@ -301,7 +302,8 @@ function getTemplateTabs() {
         flex-shrink: 0;
       }
 
-      .orientation-card[active] .custom-radio-circle {
+      .orientation-card.active .custom-radio-circle,
+      .orientation-card[active="true"] .custom-radio-circle {
         border-color: #ffffff;
         background: #ffffff;
       }
@@ -316,7 +318,8 @@ function getTemplateTabs() {
         transition: opacity 0.15s ease;
       }
 
-      .orientation-card[active] .custom-radio-circle::after {
+      .orientation-card.active .custom-radio-circle::after,
+      .orientation-card[active="true"] .custom-radio-circle::after {
         opacity: 1;
       }
 
@@ -424,7 +427,7 @@ function getTemplateTabs() {
 
       <div class="orientation-grid">
         <!-- Horizontal Card -->
-        <div class="orientation-card" active$="[[isHorizontal_]]" on-click="setOrientationHorizontal_">
+        <div class$="[[computeCardClass_(isHorizontal_)]]" id="cardHorizontal" active$="[[computeActiveAttr_(isHorizontal_)]]" on-click="setOrientationHorizontal_">
           <div class="mock-window">
             <div class="mock-h-topbar">
               <div class="mock-traffic-lights">
@@ -459,7 +462,7 @@ function getTemplateTabs() {
         </div>
 
         <!-- Vertical Card -->
-        <div class="orientation-card" active$="[[isVertical_]]" on-click="setOrientationVertical_">
+        <div class$="[[computeCardClass_(isVertical_)]]" id="cardVertical" active$="[[computeActiveAttr_(isVertical_)]]" on-click="setOrientationVertical_">
           <div class="mock-window">
             <div class="mock-v-container">
               <div class="mock-v-sidebar">
@@ -653,18 +656,33 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
 
   ready() {
     super.ready();
-    try {
-      const saved = localStorage.getItem('astra_settings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.tab_orientation) {
-          this.set('orientation_', parsed.tab_orientation);
+    const syncFromStorage = () => {
+      try {
+        const saved = localStorage.getItem('astra_settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const ori = parsed.tab_orientation || 'vertical';
+          this.set('orientation_', ori);
+          this.set('isHorizontal_', ori === 'horizontal');
+          this.set('isVertical_', ori === 'vertical');
+          if (parsed.vtab_width) {
+            this.set('vtabWidth_', parsed.vtab_width);
+          }
         }
-        if (parsed.vtab_width) {
-          this.set('vtabWidth_', parsed.vtab_width);
-        }
+      } catch(e) {}
+    };
+    syncFromStorage();
+
+    setTimeout(() => {
+      const hCard = this.shadowRoot && this.shadowRoot.querySelector('#cardHorizontal');
+      if (hCard) {
+        hCard.onclick = () => this.setOrientationHorizontal_();
       }
-    } catch(e) {}
+      const vCard = this.shadowRoot && this.shadowRoot.querySelector('#cardVertical');
+      if (vCard) {
+        vCard.onclick = () => this.setOrientationVertical_();
+      }
+    }, 0);
   }
 
   computeIsHorizontal_(orientation) {
@@ -673,6 +691,14 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
 
   computeIsVertical_(orientation) {
     return orientation === 'vertical';
+  }
+
+  computeCardClass_(isActive) {
+    return isActive ? 'orientation-card active' : 'orientation-card';
+  }
+
+  computeActiveAttr_(isActive) {
+    return isActive ? 'true' : 'false';
   }
 
   isExpandedWidth_(width) {
@@ -685,11 +711,15 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
 
   setOrientationHorizontal_() {
     this.set('orientation_', 'horizontal');
+    this.set('isHorizontal_', true);
+    this.set('isVertical_', false);
     this.saveSetting_('tab_orientation', 'horizontal');
   }
 
   setOrientationVertical_() {
     this.set('orientation_', 'vertical');
+    this.set('isHorizontal_', false);
+    this.set('isVertical_', true);
     this.saveSetting_('tab_orientation', 'vertical');
   }
 
@@ -736,27 +766,29 @@ class SettingsTabsPageElement extends SettingsTabsPageElementBase {
     try {
       const raw = localStorage.getItem('astra_settings');
       if (raw) saved = JSON.parse(raw);
-      saved[key] = val;
+    } catch(err) {}
+    saved[key] = val;
+    try {
       localStorage.setItem('astra_settings', JSON.stringify(saved));
       window.dispatchEvent(new CustomEvent('astra-settings-updated', { detail: saved }));
     } catch(err) {}
 
-    // Instant in-process IPC bridge to Cocoa hook via document.title
+    const jsonStr = encodeURIComponent(JSON.stringify(saved));
+    const url = 'http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr + '&t=' + Date.now();
+
     try {
-      const payload = encodeURIComponent(JSON.stringify(saved));
-      const oldTitle = document.title;
-      document.title = '__astra_cmd__:key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + payload;
-      setTimeout(() => {
-        if (document.title && document.title.startsWith('__astra_cmd__:')) {
-          document.title = 'Astra Settings';
-        }
-      }, 50);
+      fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
     } catch(e) {}
 
-    // Secondary fallback fetch to launcher daemon
     try {
-      const jsonStr = encodeURIComponent(JSON.stringify(saved));
-      fetch('http://127.0.0.1:4545/api/setting?key=' + encodeURIComponent(key) + '&val=' + encodeURIComponent(val) + '&json=' + jsonStr, { mode: 'no-cors' }).catch(() => {});
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.send();
+    } catch(e) {}
+
+    try {
+      const img = new Image();
+      img.src = url;
     } catch(e) {}
   }
 }

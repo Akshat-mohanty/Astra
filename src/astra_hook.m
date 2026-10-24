@@ -1,5 +1,8 @@
 #import <Cocoa/Cocoa.h>
 #import <objc/runtime.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /* ─── Flipped View for clean top-down tab layout ─────────────────────────── */
 @interface AstraFlippedView : NSView
@@ -239,15 +242,138 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 }
 @end
 
+/* ─── Astra Sidebar Collapse / Expand Button ──────────────────────────────── */
+@interface AstraCollapseButton : NSButton
+@property (nonatomic, strong) NSTrackingArea *trackingArea;
+@property (nonatomic, assign) BOOL isHovered;
+@property (nonatomic, assign) BOOL isCollapsed;
+@property (nonatomic, assign) BOOL isFloating;
+@end
+
+@implementation AstraCollapseButton
+- (instancetype)initWithFrame:(NSRect)frameRect {
+    self = [super initWithFrame:frameRect];
+    if (self) {
+        [self setButtonType:NSButtonTypeMomentaryChange];
+        [self setBordered:NO];
+        [self setTitle:@""];
+        [self setWantsLayer:YES];
+        self.layer.cornerRadius = 6.0;
+        _isCollapsed = NO;
+        _isFloating = NO;
+    }
+    return self;
+}
+
+- (void)setIsFloating:(BOOL)floating {
+    _isFloating = floating;
+    if (_isFloating) {
+        self.layer.cornerRadius = 7.0;
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.12 green:0.12 blue:0.14 alpha:0.94].CGColor;
+        self.layer.borderWidth = 1.0;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.16].CGColor;
+    } else {
+        self.layer.cornerRadius = 6.0;
+        self.layer.backgroundColor = [NSColor clearColor].CGColor;
+        self.layer.borderWidth = 0.0;
+    }
+    [self setNeedsDisplay:YES];
+}
+
+- (void)updateTrackingAreas {
+    [super updateTrackingAreas];
+    if (_trackingArea) [self removeTrackingArea:_trackingArea];
+    _trackingArea = [[NSTrackingArea alloc] initWithRect:self.bounds
+                                                 options:NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways
+                                                   owner:self
+                                                userInfo:nil];
+    [self addTrackingArea:_trackingArea];
+}
+
+- (void)mouseEntered:(NSEvent *)event {
+    _isHovered = YES;
+    if (_isFloating) {
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.18 green:0.18 blue:0.20 alpha:0.98].CGColor;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.3].CGColor;
+    } else {
+        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.1].CGColor;
+    }
+    [self setNeedsDisplay:YES];
+}
+
+- (void)mouseExited:(NSEvent *)event {
+    _isHovered = NO;
+    if (_isFloating) {
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.12 green:0.12 blue:0.14 alpha:0.94].CGColor;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.16].CGColor;
+    } else {
+        self.layer.backgroundColor = [NSColor clearColor].CGColor;
+    }
+    [self setNeedsDisplay:YES];
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+    [super drawRect:dirtyRect];
+    NSRect b = [self bounds];
+    CGFloat cx = b.size.width / 2.0;
+    CGFloat cy = b.size.height / 2.0;
+
+    NSColor *strokeColor = _isHovered ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.75 alpha:1.0];
+    [strokeColor setStroke];
+
+    // Elegant sidebar outline rectangle
+    CGFloat boxW = 15.0;
+    CGFloat boxH = 13.0;
+    NSRect boxRect = NSMakeRect(floor(cx - boxW / 2.0), floor(cy - boxH / 2.0), boxW, boxH);
+    NSBezierPath *box = [NSBezierPath bezierPathWithRoundedRect:boxRect xRadius:2.5 yRadius:2.5];
+    [box setLineWidth:1.2];
+    [box stroke];
+
+    // Vertical sidebar divider line
+    CGFloat divX = boxRect.origin.x + 5.0;
+    NSBezierPath *div = [NSBezierPath bezierPath];
+    [div moveToPoint:NSMakePoint(divX, boxRect.origin.y + 0.5)];
+    [div lineToPoint:NSMakePoint(divX, boxRect.origin.y + boxH - 0.5)];
+    [div setLineWidth:1.1];
+    [div stroke];
+
+    // Miniature directional chevron arrow
+    NSBezierPath *arr = [NSBezierPath bezierPath];
+    [arr setLineWidth:1.3];
+    [arr setLineCapStyle:NSLineCapStyleRound];
+    [arr setLineJoinStyle:NSLineJoinStyleRound];
+
+    if (_isCollapsed) {
+        // Expand arrow pointing right: >
+        CGFloat ax = cx + 2.8;
+        [arr moveToPoint:NSMakePoint(ax - 1.5, cy + 2.5)];
+        [arr lineToPoint:NSMakePoint(ax + 1.2, cy)];
+        [arr lineToPoint:NSMakePoint(ax - 1.5, cy - 2.5)];
+    } else {
+        // Collapse arrow pointing left: <
+        CGFloat ax = cx + 3.2;
+        [arr moveToPoint:NSMakePoint(ax + 1.2, cy + 2.5)];
+        [arr lineToPoint:NSMakePoint(ax - 1.5, cy)];
+        [arr lineToPoint:NSMakePoint(ax + 1.2, cy - 2.5)];
+    }
+    [arr stroke];
+}
+@end
+
+static void toggle_sidebar_collapse(void);
+static void configure_window(NSWindow *win);
+
 /* ─── Astra Vertical Sidebar View ─────────────────────────────────────────── */
 @interface AstraVerticalSidebarView : NSView
 @property (nonatomic, strong) NSScrollView *scrollView;
 @property (nonatomic, strong) AstraFlippedView *tabContainer;
 @property (nonatomic, strong) NSView *footerView;
 @property (nonatomic, strong) AstraSettingsButton *settingsBtn;
+@property (nonatomic, strong) AstraCollapseButton *collapseBtn;
 @property (nonatomic, strong) NSArray *lastTitles;
 @property (nonatomic, assign) NSInteger lastActiveIndex;
 - (void)layoutSidebarViews;
+- (void)onCollapseClicked:(id)sender;
 - (void)updateTabsWithTitles:(NSArray *)titles activeIndex:(NSInteger)activeIdx;
 - (void)addOptimisticTabWithTitle:(NSString *)title;
 - (void)removeActiveTabOptimistically;
@@ -333,6 +459,7 @@ static void open_settings_in_new_tab(void) {
 @interface AstraMenuHandler : NSObject
 + (instancetype)sharedHandler;
 - (void)openSettingsInNewTab:(id)sender;
+- (void)onFloatingExpandClicked:(id)sender;
 @end
 
 @implementation AstraMenuHandler
@@ -346,6 +473,9 @@ static void open_settings_in_new_tab(void) {
 }
 - (void)openSettingsInNewTab:(id)sender {
     open_settings_in_new_tab();
+}
+- (void)onFloatingExpandClicked:(id)sender {
+    toggle_sidebar_collapse();
 }
 @end
 
@@ -407,6 +537,14 @@ static void configure_menu_items(void) {
         [_scrollView setDocumentView:_tabContainer];
 
         [self addSubview:_scrollView];
+
+        // Collapse Button in top right of sidebar header
+        _collapseBtn = [[AstraCollapseButton alloc] initWithFrame:NSMakeRect(w - 38, h - 38, 28, 28)];
+        [_collapseBtn setTarget:self];
+        [_collapseBtn setAction:@selector(onCollapseClicked:)];
+        [_collapseBtn setToolTip:@"Collapse sidebar (⌘B)"];
+        [self addSubview:_collapseBtn];
+
         [self layoutSidebarViews];
     }
     return self;
@@ -423,23 +561,27 @@ static void configure_menu_items(void) {
     if (w <= 0 || h <= 0) return;
 
     BOOL compact = (w < 100);
+    _collapseBtn.isCollapsed = NO;
+    [_collapseBtn setToolTip:@"Collapse sidebar (⌘B)"];
 
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
-    if (compact) {
-        [_settingsBtn setFrame:NSMakeRect(8, 6, w - 16, 32)];
-        [_settingsBtn setTitle:@"Settings"];
-        [_settingsBtn setAlignment:NSTextAlignmentCenter];
-    } else {
-        [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
-        [_settingsBtn setTitle:@"Settings"];
-        [_settingsBtn setAlignment:NSTextAlignmentCenter];
-    }
+    [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
+    [_settingsBtn setTitle:compact ? @"S" : @"Settings"];
+    [_settingsBtn setAlignment:NSTextAlignmentCenter];
+
+    CGFloat btnSize = 28.0;
+    [_collapseBtn setFrame:NSMakeRect(w - btnSize - 10.0, h - 38.0, btnSize, btnSize)];
 
     CGFloat sx = compact ? 6.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
     CGFloat topInset = 48.0;
     CGFloat bottomInset = 48.0;
     [_scrollView setFrame:NSMakeRect(sx, bottomInset, sw, h - topInset - bottomInset)];
+    [_collapseBtn setNeedsDisplay:YES];
+}
+
+- (void)onCollapseClicked:(id)sender {
+    toggle_sidebar_collapse();
 }
 
 - (void)onSettingsClicked:(id)sender {
@@ -610,6 +752,10 @@ static void configure_menu_items(void) {
 
 - (void)mouseDown:(NSEvent *)event {
     NSPoint loc = [self convertPoint:[event locationInWindow] fromView:nil];
+    if (_collapseBtn && NSPointInRect(loc, _collapseBtn.frame)) {
+        [_collapseBtn performClick:nil];
+        return;
+    }
     if (loc.y >= self.bounds.size.height - 48.0) {
         [self.window performWindowDragWithEvent:event];
         return;
@@ -641,7 +787,6 @@ static void configure_menu_items(void) {
 @end
 
 /* ─── Setting Reader & Native Command Bridge ─────────────────────────────── */
-static NSString *s_cached_tab_orientation = nil;
 static void configure_window(NSWindow *win);
 
 static NSDictionary *read_all_astra_settings(void) {
@@ -659,50 +804,111 @@ static NSDictionary *read_all_astra_settings(void) {
 }
 
 static BOOL read_tab_orientation_setting(void) {
-    if (s_cached_tab_orientation) {
-        if ([s_cached_tab_orientation isEqualToString:@"vertical"]) return YES;
-        if ([s_cached_tab_orientation isEqualToString:@"horizontal"]) return NO;
-    }
     NSDictionary *dict = read_all_astra_settings();
-    if (dict) {
+    if (dict && dict[@"tab_orientation"]) {
         NSString *ori = dict[@"tab_orientation"];
-        if (ori) {
-            s_cached_tab_orientation = [ori copy];
-            if ([ori isEqualToString:@"vertical"]) return YES;
-            if ([ori isEqualToString:@"horizontal"]) return NO;
-        }
-    }
-
-    // Fallback to Local Storage LevelDB log
-    NSString *home = NSHomeDirectory();
-    NSString *dbDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra/Default/Local Storage/leveldb"];
-    NSArray *files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dbDir error:nil];
-    for (NSString *fname in files) {
-        if ([fname hasSuffix:@".log"] || [fname hasSuffix:@".ldb"]) {
-            NSString *fpath = [dbDir stringByAppendingPathComponent:fname];
-            NSData *d = [NSData dataWithContentsOfFile:fpath];
-            if (d) {
-                const char *bytes = (const char *)[d bytes];
-                NSUInteger len = [d length];
-                for (NSInteger i = (NSInteger)len - 40; i >= 0; i--) {
-                    if (strncmp(bytes + i, "tab_orientation", 15) == 0) {
-                        char chunk[40];
-                        strncpy(chunk, bytes + i, 39);
-                        chunk[39] = '\0';
-                        if (strstr(chunk, "vertical")) {
-                            s_cached_tab_orientation = @"vertical";
-                            return YES;
-                        }
-                        if (strstr(chunk, "horizontal")) {
-                            s_cached_tab_orientation = @"horizontal";
-                            return NO;
-                        }
-                    }
-                }
-            }
-        }
+        if ([ori isEqualToString:@"horizontal"]) return NO;
+        if ([ori isEqualToString:@"vertical"]) return YES;
     }
     return YES;
+}
+
+static BOOL s_sidebar_collapsed = NO;
+
+static BOOL read_sidebar_collapsed_setting(void) {
+    NSDictionary *dict = read_all_astra_settings();
+    if (dict && dict[@"sidebar_collapsed"]) {
+        return [dict[@"sidebar_collapsed"] boolValue];
+    }
+    return NO;
+}
+
+static void toggle_sidebar_collapse(void) {
+    s_sidebar_collapsed = !s_sidebar_collapsed;
+
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+        NSString *home = NSHomeDirectory();
+        NSString *confDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra"];
+        NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
+        [[NSFileManager defaultManager] createDirectoryAtPath:confDir withIntermediateDirectories:YES attributes:nil error:nil];
+        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:read_all_astra_settings()];
+        dict[@"sidebar_collapsed"] = @(s_sidebar_collapsed);
+        dict[@"vtab_width"] = @"expanded";
+        NSData *data = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:nil];
+        if (data) {
+            [data writeToFile:confPath atomically:YES];
+        }
+    });
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (s_currentSidebarView) {
+            s_currentSidebarView.lastTitles = nil;
+        }
+        for (NSWindow *win in [NSApp windows]) {
+            configure_window(win);
+        }
+        if (!s_sidebar_collapsed && s_currentSidebarView) {
+            query_and_update_tabs(s_currentSidebarView);
+        }
+    });
+}
+
+static dispatch_source_t s_settings_file_source = nil;
+static int s_settings_fd = -1;
+
+static void start_settings_watcher(void) {
+    if (s_settings_file_source) {
+        dispatch_source_cancel(s_settings_file_source);
+        s_settings_file_source = nil;
+    }
+    if (s_settings_fd >= 0) {
+        close(s_settings_fd);
+        s_settings_fd = -1;
+    }
+
+    NSString *home = NSHomeDirectory();
+    NSString *confDir = [home stringByAppendingPathComponent:@"Library/Application Support/Astra"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:confDir withIntermediateDirectories:YES attributes:nil error:nil];
+    NSString *confPath = [confDir stringByAppendingPathComponent:@"astra_settings.json"];
+
+    if (![[NSFileManager defaultManager] fileExistsAtPath:confPath]) {
+        [@"{\"tab_orientation\":\"vertical\"}\n" writeToFile:confPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    }
+
+    s_settings_fd = open([confPath UTF8String], O_EVTONLY);
+    if (s_settings_fd < 0) return;
+
+    s_settings_file_source = dispatch_source_create(
+        DISPATCH_SOURCE_TYPE_VNODE,
+        s_settings_fd,
+        DISPATCH_VNODE_WRITE | DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_ATTRIB | DISPATCH_VNODE_REVOKE,
+        dispatch_get_main_queue()
+    );
+
+    if (s_settings_file_source) {
+        dispatch_source_set_event_handler(s_settings_file_source, ^{
+            unsigned long flags = dispatch_source_get_data(s_settings_file_source);
+            read_tab_orientation_setting();
+            s_sidebar_collapsed = read_sidebar_collapsed_setting();
+            for (NSWindow *win in [NSApp windows]) {
+                configure_window(win);
+            }
+            if (flags & (DISPATCH_VNODE_DELETE | DISPATCH_VNODE_RENAME | DISPATCH_VNODE_REVOKE)) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(60 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                    start_settings_watcher();
+                });
+            }
+        });
+
+        dispatch_source_set_cancel_handler(s_settings_file_source, ^{
+            if (s_settings_fd >= 0) {
+                close(s_settings_fd);
+                s_settings_fd = -1;
+            }
+        });
+
+        dispatch_resume(s_settings_file_source);
+    }
 }
 
 static CGFloat read_sidebar_width_setting(void) {
@@ -733,14 +939,16 @@ static void handle_astra_command(NSString *cmdString) {
         }
     }
 
-    if (key && [key isEqualToString:@"tab_orientation"] && val) {
-        s_cached_tab_orientation = [val copy];
+    if (key && [key isEqualToString:@"sidebar_collapsed"] && val) {
+        s_sidebar_collapsed = [val boolValue];
     } else if (jsonStr) {
         NSData *d = [jsonStr dataUsingEncoding:NSUTF8StringEncoding];
         if (d) {
             NSDictionary *parsed = [NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
-            if ([parsed isKindOfClass:[NSDictionary class]] && parsed[@"tab_orientation"]) {
-                s_cached_tab_orientation = [parsed[@"tab_orientation"] copy];
+            if ([parsed isKindOfClass:[NSDictionary class]]) {
+                if (parsed[@"sidebar_collapsed"]) {
+                    s_sidebar_collapsed = [parsed[@"sidebar_collapsed"] boolValue];
+                }
             }
         }
     }
@@ -890,13 +1098,16 @@ static void update_window_layout(NSWindow *win) {
         configure_fullscreen_toolbar();
     }
     BOOL isVertical = read_tab_orientation_setting();
-    CGFloat sidebarWidth = isVertical ? read_sidebar_width_setting() : 220.0;
+    BOOL isCollapsed = read_sidebar_collapsed_setting();
+    CGFloat baseSidebarWidth = read_sidebar_width_setting();
+    CGFloat sidebarWidth = (isVertical && !isCollapsed) ? baseSidebarWidth : 0.0;
     CGFloat topTabHeight = (isVertical || isFullscreen) ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
     NSView *webContentsView = nil;
     AstraVerticalSidebarView *sidebarView = nil;
     AstraTopCoverView *topCoverView = nil;
+    AstraCollapseButton *floatingBtn = nil;
 
     for (NSView *sub in [cv subviews]) {
         NSString *cls = [sub className];
@@ -908,16 +1119,19 @@ static void update_window_layout(NSWindow *win) {
             sidebarView = (AstraVerticalSidebarView *)sub;
         } else if ([sub isKindOfClass:[AstraTopCoverView class]]) {
             topCoverView = (AstraTopCoverView *)sub;
+        } else if ([sub isKindOfClass:[AstraCollapseButton class]]) {
+            floatingBtn = (AstraCollapseButton *)sub;
         }
     }
 
     if (isVertical) {
+        CGFloat topShift = isFullscreen ? 0.0 : 41.0;
         NSRect contentFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height);
 
-        // Position ViewsCompositorSuperview shifted up by 41pt so the horizontal tab strip is pushed off-screen
+        // Position ViewsCompositorSuperview so it starts at y=0 (NO dead space below) and extends up past top by 41pt (pushing horizontal tabs off-screen)
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect compFrame = NSMakeRect(sidebarWidth, 41.0, winBounds.size.width - sidebarWidth, winBounds.size.height);
+            NSRect compFrame = NSMakeRect(sidebarWidth, 0.0, winBounds.size.width - sidebarWidth, winBounds.size.height + topShift);
             if (!NSEqualRects([viewsCompositor frame], compFrame)) {
                 [viewsCompositor setFrame:compFrame];
             }
@@ -938,29 +1152,64 @@ static void update_window_layout(NSWindow *win) {
             [topCoverView setHidden:YES];
         }
 
-        // Create or update vertical sidebar on the left
-        NSRect targetSidebarFrame = NSMakeRect(0, 0, sidebarWidth, winBounds.size.height);
-        if (!sidebarView) {
-            sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
-            [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
-        } else {
-            if ([sidebarView isHidden]) [sidebarView setHidden:NO];
-            if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
-                [sidebarView setFrame:targetSidebarFrame];
-                sidebarView.lastTitles = nil;
+        if (isCollapsed) {
+            // Collapsed: hide the vertical sidebar view
+            if (sidebarView && ![sidebarView isHidden]) {
+                [sidebarView setHidden:YES];
             }
-        }
-        s_currentSidebarView = sidebarView;
 
-        // Query open tabs and update sidebar with fast, responsive interval
-        static NSTimeInterval s_last_query = 0;
-        NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
-        if (now - s_last_query > 0.08) {
-            s_last_query = now;
-            query_and_update_tabs(sidebarView);
+            // Show floating expand button at top left next to traffic lights
+            CGFloat btnX = isFullscreen ? 16.0 : 78.0;
+            NSRect targetBtnFrame = NSMakeRect(btnX, winBounds.size.height - 38.0, 28.0, 28.0);
+            if (!floatingBtn) {
+                floatingBtn = [[AstraCollapseButton alloc] initWithFrame:targetBtnFrame];
+                floatingBtn.isFloating = YES;
+                floatingBtn.isCollapsed = YES;
+                [floatingBtn setToolTip:@"Expand sidebar (⌘B)"];
+                [floatingBtn setTarget:[AstraMenuHandler sharedHandler]];
+                [floatingBtn setAction:@selector(onFloatingExpandClicked:)];
+                [cv addSubview:floatingBtn positioned:NSWindowAbove relativeTo:nil];
+            } else {
+                if ([floatingBtn isHidden]) [floatingBtn setHidden:NO];
+                [floatingBtn setFrame:targetBtnFrame];
+                floatingBtn.isFloating = YES;
+                floatingBtn.isCollapsed = YES;
+                [floatingBtn setNeedsDisplay:YES];
+                [cv addSubview:floatingBtn positioned:NSWindowAbove relativeTo:nil];
+            }
+        } else {
+            // Expanded: hide the floating button
+            if (floatingBtn && ![floatingBtn isHidden]) {
+                [floatingBtn setHidden:YES];
+            }
+
+            // Create or update vertical sidebar on the left
+            NSRect targetSidebarFrame = NSMakeRect(0, 0, sidebarWidth, winBounds.size.height);
+            if (!sidebarView) {
+                sidebarView = [[AstraVerticalSidebarView alloc] initWithFrame:targetSidebarFrame];
+                [cv addSubview:sidebarView positioned:NSWindowAbove relativeTo:nil];
+            } else {
+                if ([sidebarView isHidden]) [sidebarView setHidden:NO];
+                if (!NSEqualRects([sidebarView frame], targetSidebarFrame)) {
+                    [sidebarView setFrame:targetSidebarFrame];
+                    sidebarView.lastTitles = nil;
+                }
+            }
+            s_currentSidebarView = sidebarView;
+
+            // Query open tabs and update sidebar with fast, responsive interval
+            static NSTimeInterval s_last_query = 0;
+            NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+            if (now - s_last_query > 0.08) {
+                s_last_query = now;
+                query_and_update_tabs(sidebarView);
+            }
         }
     } else {
         // Horizontal Tabs mode: restore native top tab strip
+        if (floatingBtn && ![floatingBtn isHidden]) {
+            [floatingBtn setHidden:YES];
+        }
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
             NSRect fullCompFrame = NSMakeRect(0, 0, winBounds.size.width, winBounds.size.height);
@@ -1072,6 +1321,12 @@ static void install_astra_hook(void) {
                     force_refresh_tabs();
                 });
                 return event;
+            } else if ([chars isEqualToString:@"b"]) {
+                toggle_sidebar_collapse();
+                return nil;
+            } else if ([chars isEqualToString:@"s"] && ([event modifierFlags] & NSEventModifierFlagShift)) {
+                toggle_sidebar_collapse();
+                return nil;
             }
         }
         return event;
@@ -1107,6 +1362,9 @@ static void install_astra_hook(void) {
             configure_window(win);
         }
     }];
+
+    s_sidebar_collapsed = read_sidebar_collapsed_setting();
+    start_settings_watcher();
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
         [NSTimer scheduledTimerWithTimeInterval:0.08 repeats:YES block:^(NSTimer * _Nonnull timer) {
