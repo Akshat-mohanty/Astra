@@ -607,6 +607,15 @@ static void configure_menu_items(void) {
         [_tabContainer addSubview:btn];
     }
 }
+
+- (void)mouseDown:(NSEvent *)event {
+    NSPoint loc = [self convertPoint:[event locationInWindow] fromView:nil];
+    if (loc.y >= self.bounds.size.height - 48.0) {
+        [self.window performWindowDragWithEvent:event];
+        return;
+    }
+    [super mouseDown:event];
+}
 @end
 
 /* ─── Astra Top Cover Bar (Covers horizontal tabs in vertical mode) ────────── */
@@ -800,7 +809,7 @@ static void update_window_layout(NSWindow *win) {
     }
     BOOL isVertical = read_tab_orientation_setting();
     CGFloat sidebarWidth = isVertical ? read_sidebar_width_setting() : 220.0;
-    CGFloat topTabHeight = isFullscreen ? 0.0 : 41.0;
+    CGFloat topTabHeight = (isVertical || isFullscreen) ? 0.0 : 41.0;
 
     NSView *viewsCompositor = nil;
     NSView *webContentsView = nil;
@@ -821,18 +830,18 @@ static void update_window_layout(NSWindow *win) {
     }
 
     if (isVertical) {
-        NSRect contentFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height - topTabHeight);
+        NSRect contentFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height);
 
-        // Position ViewsCompositorSuperview so GPU compositor renders from sidebarWidth to right edge
+        // Position ViewsCompositorSuperview shifted up by 41pt so the horizontal tab strip is pushed off-screen
         if (viewsCompositor) {
             if ([viewsCompositor isHidden]) [viewsCompositor setHidden:NO];
-            NSRect compFrame = NSMakeRect(sidebarWidth, 0, winBounds.size.width - sidebarWidth, winBounds.size.height);
+            NSRect compFrame = NSMakeRect(sidebarWidth, 41.0, winBounds.size.width - sidebarWidth, winBounds.size.height);
             if (!NSEqualRects([viewsCompositor frame], compFrame)) {
                 [viewsCompositor setFrame:compFrame];
             }
         }
 
-        // Adjust WebContentsViewCocoa to start at sidebarWidth and fill to the right edge
+        // Adjust WebContentsViewCocoa to start at sidebarWidth and fill 100% height to the top edge
         if (webContentsView) {
             if (!NSEqualRects([webContentsView frame], contentFrame)) {
                 [webContentsView setFrame:contentFrame];
@@ -842,22 +851,9 @@ static void update_window_layout(NSWindow *win) {
             }
         }
 
-        // Cover the top horizontal tabs above webContentsView only in windowed mode
-        if (!isFullscreen) {
-            NSRect topCoverFrame = NSMakeRect(sidebarWidth, winBounds.size.height - topTabHeight, winBounds.size.width - sidebarWidth, topTabHeight);
-            if (!topCoverView) {
-                topCoverView = [[AstraTopCoverView alloc] initWithFrame:topCoverFrame];
-                [cv addSubview:topCoverView positioned:NSWindowAbove relativeTo:nil];
-            } else {
-                if ([topCoverView isHidden]) [topCoverView setHidden:NO];
-                if (!NSEqualRects([topCoverView frame], topCoverFrame)) {
-                    [topCoverView setFrame:topCoverFrame];
-                }
-            }
-        } else {
-            if (topCoverView && ![topCoverView isHidden]) {
-                [topCoverView setHidden:YES];
-            }
+        // In vertical tabs mode, web contents fill the full height, so topCoverView is hidden
+        if (topCoverView && ![topCoverView isHidden]) {
+            [topCoverView setHidden:YES];
         }
 
         // Create or update vertical sidebar on the left

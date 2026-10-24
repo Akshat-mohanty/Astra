@@ -120,6 +120,11 @@ def patch_resources_pak():
     cr-toolbar {
       border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
       background: #121214 !important;
+      -webkit-app-region: drag;
+    }
+
+    cr-toolbar #search, cr-toolbar cr-icon-button, cr-toolbar button, cr-toolbar input, cr-toolbar [role="button"], cr-toolbar a {
+      -webkit-app-region: no-drag;
     }
 
     a.cr-nav-menu-item[selected],
