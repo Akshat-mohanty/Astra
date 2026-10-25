@@ -78,6 +78,7 @@
   });
 
   function measure() {
+    if (!root) return;
     available = Math.max(
       160,
       Math.min(520, window.innerHeight - root.getBoundingClientRect().bottom - 32),
@@ -201,71 +202,98 @@
 </div>
 
 <style>
-  /* The field fills the notch, centred in it with a little glass all round. */
+  /* The field centered on the page with a sleek modern dark glass finish */
   .dock {
     position: relative;
     display: flex;
     align-items: center;
     block-size: 100%;
-    padding-block: 3px;
     text-align: start;
   }
 
   .bar {
     position: relative;
     inline-size: 100%;
+    background: rgba(12, 16, 20, 0.78);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.55),
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition:
+      border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* The notch is the field's shape and material, so the field inside it is
-     only its words. Set here rather than as a size of the shared field, which
-     every page would pay for on behalf of this one. */
+  .bar:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(16, 21, 26, 0.85);
+  }
+
+  .bar:focus-within {
+    border-color: rgba(159, 230, 176, 0.85);
+    background: rgba(11, 15, 18, 0.94);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(159, 230, 176, 0.5),
+      0 0 24px rgba(159, 230, 176, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
   .dock .bar :global(.ui-search[data-size]),
   .dock .bar :global(.ui-search[data-size]:hover),
   .dock .bar :global(.ui-search[data-size]:focus-within) {
-    min-height: 44px;
-    padding-inline: 18px;
-    gap: 11px;
-    border-radius: 0;
+    min-height: 52px;
+    padding-inline: 20px;
+    gap: 12px;
+    border-radius: 28px;
     background: transparent;
     box-shadow: none;
   }
 
   .dock .bar :global(.ui-search[data-size] svg) {
-    inline-size: 16px;
-    block-size: 16px;
+    inline-size: 18px;
+    block-size: 18px;
+    color: rgba(159, 230, 176, 0.8);
   }
 
   .dock .bar :global(.ui-search[data-size] input) {
-    height: 44px;
-    font-size: 15px;
+    height: 52px;
+    font-size: 16px;
     letter-spacing: -0.008em;
   }
 
   .clear {
     position: absolute;
     inset-block: 0;
-    inset-inline-end: 10px;
+    inset-inline-end: 14px;
     display: flex;
     align-items: center;
   }
 
-  /* The results drop out of the notch into the page below it, read as the
+  /* The results drop out into the page below it, read as the
      launcher's list: rows that name their kind at the edge and one
      highlight that glides between them. */
   .sheet {
     --row-radius: calc(var(--radius-panel) - 6px);
 
     position: absolute;
-    inset-block-start: calc(100% + 6px);
+    inset-block-start: calc(100% + 8px);
     inset-inline: 0;
-    z-index: 1;
+    z-index: 100;
     max-block-size: var(--available);
     overflow: hidden;
     border-radius: var(--radius-panel);
-    background: var(--color-raised);
+    background: rgba(15, 19, 23, 0.94);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
     box-shadow:
-      inset 0 0 0 1px var(--color-border),
-      var(--shadow-float);
+      inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 16px 48px rgba(0, 0, 0, 0.65);
     transform-origin: 50% 0;
     animation: sheet-in 340ms var(--ease-emphasized) backwards;
 
