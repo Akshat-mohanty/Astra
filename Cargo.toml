@@ -78,6 +78,9 @@ tauri = { path = "vendor/tauri" }
 tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }
 wry = { path = "vendor/wry" }
 
+[profile.dev]
+debug = 1
+
 [profile.release]
 # Browser chrome should fail terminally on an invariant violation instead of
 # attempting to unwind through native WebView/Objective-C/COM callbacks.
