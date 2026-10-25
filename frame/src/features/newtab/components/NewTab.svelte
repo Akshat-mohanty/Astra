@@ -7,26 +7,21 @@
     ArrowRight01Icon,
     Calendar01Icon,
     CheckListIcon,
-    Clock01Icon,
     Menu01Icon,
     Music01Icon,
     Settings01Icon,
-    Shield01Icon,
     SparklesIcon,
   } from "@hugeicons/core-free-icons";
   import * as m from "$shared/i18n/messages";
-  import { commands } from "$shared/ipc/bindings";
   import { events } from "$shared/ipc/native-events";
   import { preferences } from "$domain/preferences";
   import { taskCounts } from "$domain/resources";
   import { tabs } from "$domain/tabs";
   import Icon from "$shared/ui/Icon";
   import IconButton from "$shared/ui/IconButton";
-  import { focus, localDay } from "$domain/time";
+  import { dayKey } from "../lib/clock";
   import { groundPath, notchShape, notchWidth } from "../lib/ground";
-  import { layout, type Box } from "../lib/layout";
-  import { WORDMARK } from "$shared/lib/wordmark";
-  import { reducedMotion } from "$shared/lib/motion";
+  import { layout } from "../lib/layout";
   import { decode, placeSky, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
   import NewTabAccount from "./NewTabAccount.svelte";
   import AstrolabeDial from "./AstrolabeDial.svelte";
@@ -54,8 +49,6 @@
   let height = $state(0);
   let now = $state(new Date());
   let due = $state({ today: 0, overdue: 0 });
-  let blocked = $state<number | null>(null);
-  let focusedBefore = $state(0);
   let is24Hour = $state(false);
   let activeMode = $state<"normal" | "clock" | "timeline">("normal");
 
@@ -67,7 +60,6 @@
   let showDue = $derived(
     !incognito && preferences.enabled("tasks") && preferences.value("ui.newtab-tasks") === "true",
   );
-  let showFocus = $derived(preferences.enabled("time"));
 
   // Time & Date format calculations
   let rawHours = $derived(now.getHours());
@@ -107,14 +99,9 @@
     const s = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
     return Math.min(1, Math.max(0, s / 86400));
   });
+  let dayProgressPercent = $derived(dayProgressFraction * 100);
 
   let timelineCursorPercent = $derived(dayProgressFraction * 100);
-
-  // Focus & tasks
-  let running = $derived(focus.session());
-  let focusMinutes = $derived(
-    (focusedBefore + (running === null ? 0 : focus.focusedSeconds(running, now.getTime()))) / 60,
-  );
 
   let page = $derived(layout(width, height, { controls: [], clock: false }));
   let scene = $derived(skyScene());
@@ -142,51 +129,10 @@
   let quickTask = $state("");
   let addingTask = $state(false);
 
-  // Blocker stats
-  $effect(() => {
-    const owner = profile;
-    void now;
-    if (!owner || incognito) {
-      blocked = null;
-      return;
-    }
-    let live = true;
-    void commands.blockerStats(owner).then(
-      (result) => {
-        if (live) blocked = result.status === "ok" ? result.data.today : null;
-      },
-      () => {},
-    );
-    return () => {
-      live = false;
-    };
-  });
-
-  // Focus stats
-  $effect(() => {
-    const owner = profile;
-    const day = localDay(now);
-    void running?.rounds;
-    if (!owner || incognito || !showFocus) {
-      focusedBefore = 0;
-      return;
-    }
-    let live = true;
-    void commands.timeCall(owner, { kind: "focus_days", from_day: day, days: 1 }).then(
-      (result) => {
-        if (live && result.kind === "focus_days") focusedBefore = result.days[0]?.seconds ?? 0;
-      },
-      () => {},
-    );
-    return () => {
-      live = false;
-    };
-  });
-
   // Task counts
   $effect(() => {
     const owner = profile;
-    const day = localDay(now);
+    const day = dayKey(now);
     if (!owner || !showDue) {
       due = { today: 0, overdue: 0 };
       return;

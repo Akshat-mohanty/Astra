@@ -217,15 +217,15 @@
   compact mode it is present and correct but unpainted, and the launcher is the
   visible way to reach it.
 -->
-<form bind:this={form} class="shrink-0" class:pb-2={!compact} onsubmit={submit} role="search">
+<form bind:this={form} class="shrink-0" class:pb-2={!compact && !!activeUrl} onsubmit={submit} role="search">
   <!--
     A refused navigation rings the field, following the shared Field
     convention. The message is announced rather than drawn: a block of text
     appearing under the address bar would push the whole chrome down.
   -->
   <div
-    class:sr-only={compact}
-    class:flex={!compact}
+    class:sr-only={compact || !activeUrl}
+    class:flex={!compact && !!activeUrl}
     class:shadow-[inset_0_0_0_1px_var(--color-danger)]={failed}
     class="address-field h-[34px] items-center gap-2 rounded-row bg-address ps-2.5 pe-1 shadow-[var(--shadow-tile)] transition-[background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-out)] [--address-centering:20px] focus-within:bg-address-hover focus-within:shadow-[var(--shadow-field-focus)] hover:bg-address-hover"
   >
