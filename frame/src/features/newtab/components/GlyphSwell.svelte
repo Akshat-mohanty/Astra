@@ -2,12 +2,12 @@
   import { type Snippet } from "svelte";
 
   let {
-    colors = ["#07090a", "#9fe6b0", "#e9fff0"],
+    colors = ["#07090a", "rgba(255, 255, 255, 0.42)", "#ffffff"],
     ramp = "·:-+=*#",
     cell = 15,
     children,
   }: {
-    /** Background, ink, crest accent (hex). */
+    /** Background, ink, crest accent (hex or rgba). */
     colors?: [string, string, string];
     /** Glyphs from quiet to loud. */
     ramp?: string;
@@ -75,7 +75,8 @@
       last = 0,
       lastIdle = 0,
       lastSpawn = 0,
-      lastCell = -1;
+      lastX = -999,
+      lastY = -999;
     const swells: Swell[] = [];
     const t0 = performance.now();
     const now = () => (performance.now() - t0) / 1000;
@@ -95,7 +96,7 @@
     const frame = (t: number) => {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      while (swells.length > 0 && swells[0] && t - swells[0].t > 6) swells.shift();
+      while (swells.length > 0 && swells[0] && t - swells[0].t > 3.6) swells.shift();
       const ox = ((W - (cols - 1) * size) / 2) * dpr;
       const oy = ((H - (rows - 1) * size) / 2) * dpr;
 
@@ -143,14 +144,15 @@
       last = ms;
       resize();
       const t = now();
-      if (t - lastIdle > 1.9 && t - lastSpawn > 1.2) {
+      if (t - lastIdle > 2.8 && t - lastSpawn > 2.0) {
         lastIdle = t;
         swells.push({
           x: Math.random() * cols,
           y: Math.random() * rows,
           t,
-          a: 0.7,
+          a: 0.55,
         });
+        if (swells.length > 5) swells.shift();
       }
       frame(t);
     };
@@ -169,24 +171,28 @@
       return { x: x / size, y: y / size };
     };
 
-    // A new swell each time the pointer reaches a new cell, at most every 140ms.
+    // A calm ripple only when moving a reasonable distance (at least 5 cells) and at least 320ms apart.
     const onMove = (e: PointerEvent) => {
       const c = at(e);
       if (!c) return;
-      const id = Math.floor(c.y) * 10000 + Math.floor(c.x);
       const t = now();
-      if (id === lastCell || t - lastSpawn < 0.14) return;
-      lastCell = id;
+      const dist = Math.hypot(c.x - lastX, c.y - lastY);
+      if (dist < 5 || t - lastSpawn < 0.32) return;
+      lastX = c.x;
+      lastY = c.y;
       lastSpawn = t;
-      swells.push({ x: c.x, y: c.y, t, a: 0.8 });
-      if (swells.length > 14) swells.shift();
+      swells.push({ x: c.x, y: c.y, t, a: 0.55 });
+      if (swells.length > 5) swells.shift();
     };
 
     const onDown = (e: PointerEvent) => {
       const c = at(e);
       if (c) {
-        swells.push({ x: c.x, y: c.y, t: now(), a: 1.6 });
+        lastX = c.x;
+        lastY = c.y;
+        swells.push({ x: c.x, y: c.y, t: now(), a: 1.2 });
         lastSpawn = now();
+        if (swells.length > 5) swells.shift();
       }
     };
 

@@ -25,7 +25,7 @@
 >
   <!-- Background: Animated Glyph Swell canvas covering the whole surface -->
   <div class="page" aria-hidden="true">
-    <GlyphSwell colors={["#07090a", "#9fe6b0", "#e9fff0"]} cell={15} />
+    <GlyphSwell colors={["#07090a", "rgba(255, 255, 255, 0.42)", "#ffffff"]} cell={15} />
   </div>
 
   <!-- Centered Search Field -->

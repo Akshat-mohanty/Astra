@@ -235,13 +235,13 @@
   }
 
   .bar:focus-within {
-    border-color: rgba(159, 230, 176, 0.85);
-    background: rgba(11, 15, 18, 0.94);
+    border-color: rgba(255, 255, 255, 0.75);
+    background: rgba(14, 18, 22, 0.94);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.65),
-      0 0 0 1px rgba(159, 230, 176, 0.5),
-      0 0 24px rgba(159, 230, 176, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      0 0 0 1px rgba(255, 255, 255, 0.4),
+      0 0 24px rgba(255, 255, 255, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .dock .bar :global(.ui-search[data-size]),
@@ -258,7 +258,7 @@
   .dock .bar :global(.ui-search[data-size] svg) {
     inline-size: 18px;
     block-size: 18px;
-    color: rgba(159, 230, 176, 0.8);
+    color: rgba(255, 255, 255, 0.75);
   }
 
   .dock .bar :global(.ui-search[data-size] input) {
