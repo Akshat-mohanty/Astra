@@ -135,11 +135,8 @@
       live = false;
     };
   });
-  let controls = $derived([
-    ...(showAccount ? [account.signedIn ? 32 : Math.max(32, signInWidth)] : []),
-    ...(oncustomize ? [32] : []),
-  ]);
-  let page = $derived(layout(width, height, { controls, clock: showClock }));
+  let controls: number[] = [];
+  let page = $derived(layout(width, height, { controls: [], clock: false }));
   const at = ({ x, y, w, h }: Box) => `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
 
   // Day over a light page, night over a dark one.
@@ -310,43 +307,6 @@
   <div class="field" style:width={`${fieldWidth}px`} style:height={`${page.notch.height}px`}>
     {@render search()}
   </div>
-
-  {#if showGreeting}
-    <p class="greeting" style:bottom={`${height - page.mark.y + 18}px`}>
-      {greeting}
-    </p>
-  {/if}
-
-  {#if page.when !== null}
-    <p class="when" style:top={`${page.when}px`}>
-      <time class="time" datetime={now.toISOString()}
-        >{#if face.period !== null && face.periodLeading}<span class="period"
-            >{`${face.period} `}</span
-          >{/if}{face.time}{#if face.period !== null && !face.periodLeading}<span class="period"
-            >{` ${face.period}`}</span
-          >{/if}</time
-      ><span class="date">{date}</span>
-    </p>
-  {/if}
-
-  <!-- Each control a disc of light on the sky, level with the field. -->
-  {#if showAccount && onaccount && page.controls[0]}
-    <div class="control" style={at(page.controls[0])}>
-      <NewTabAccount {account} {onaccount} bind:signInWidth />
-    </div>
-  {/if}
-  {#if oncustomize && page.controls.at(-1)}
-    <div class="control" style={at(page.controls.at(-1)!)}>
-      <IconButton
-        icon={Settings01Icon}
-        label={m.settings_customize_newtab()}
-        shape="circle"
-        size={16}
-        buttonSize={32}
-        onclick={oncustomize}
-      />
-    </div>
-  {/if}
 
   <!-- A private window has no figures; what it promises stands in their place. -->
   {#if incognito}

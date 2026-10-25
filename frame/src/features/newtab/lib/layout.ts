@@ -20,8 +20,8 @@ export type Layout = {
   when: number | null;
 };
 
-const NOTCH: Notch = { width: 640, height: 50, radius: 18, flare: 14 };
-const CORNER = 110;
+const NOTCH: Notch = { width: 99999, height: 50, radius: 18, flare: 14 };
+const CORNER = 16;
 const CONTROL = { size: 32, gap: 6, inset: 14 };
 /** What two round controls take from the corner, which CORNER was set for. */
 const TWO_ROUND = CONTROL.inset + 2 * CONTROL.size + CONTROL.gap;
