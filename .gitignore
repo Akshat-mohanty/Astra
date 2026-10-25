@@ -17,6 +17,10 @@ build_workspace
 
 # Engine downloads
 engine/*.dmg
+Astra-main/
+
+# Rust build target
+target/
 
 # Python cache
 __pycache__/

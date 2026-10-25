@@ -81,28 +81,28 @@ def patch_resources_pak():
       touch-action: manipulation;
     }
 
-    /* Custom Astra Obsidian Theme Variables on Root Level */
+    /* Astra Settings Theme on Root Level */
     :root, [dark], html, body {
-      --md-background-color: #121214 !important;
-      --cr-toolbar-background-color: #121214 !important;
-      --cr-card-background-color: #18181b !important;
-      --cr-card-border-radius: 14px !important;
-      --cr-primary-text-color: #f4f3ef !important;
-      --cr-secondary-text-color: #929298 !important;
-      --cr-separator-color: rgba(255, 255, 255, 0.08) !important;
-      --cr-separator-line: 1px solid rgba(255, 255, 255, 0.08) !important;
+      --md-background-color: #1a1a1d !important;
+      --cr-toolbar-background-color: #1f1f22 !important;
+      --cr-card-background-color: #26262a !important;
+      --cr-card-border-radius: 18px !important;
+      --cr-primary-text-color: #f4f4f6 !important;
+      --cr-secondary-text-color: rgba(244, 244, 246, 0.68) !important;
+      --cr-separator-color: rgba(255, 255, 255, 0.07) !important;
+      --cr-separator-line: 1px solid rgba(255, 255, 255, 0.07) !important;
       --cr-focus-outline-color: rgba(255, 255, 255, 0.4) !important;
-      --cr-checked-color: #ffffff !important;
-      --cr-hover-background-color: rgba(255, 255, 255, 0.05) !important;
-      --cr-active-background-color: rgba(255, 255, 255, 0.12) !important;
-      --cr-toggle-checked-bar-color: rgba(255, 255, 255, 0.4) !important;
-      --cr-toggle-checked-button-color: #ffffff !important;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+      --cr-checked-color: #ededf0 !important;
+      --cr-hover-background-color: rgba(255, 255, 255, 0.04) !important;
+      --cr-active-background-color: rgba(255, 255, 255, 0.075) !important;
+      --cr-toggle-checked-bar-color: rgba(255, 255, 255, 0.2) !important;
+      --cr-toggle-checked-button-color: #ededf0 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
     }
 
     @media (prefers-color-scheme: dark) {
       html {
-        background: #121214;
+        background: #1a1a1d;
       }
     }
 
@@ -110,16 +110,16 @@ def patch_resources_pak():
     body {
       height: 100%;
       margin: 0;
-      background: #121214;
+      background: #1a1a1d;
     }
 
     settings-ui {
-      --settings-menu-width: 256px;
+      --settings-menu-width: 260px;
     }
 
     cr-toolbar {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-      background: #121214 !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+      background: #1f1f22 !important;
       -webkit-app-region: drag;
     }
 
@@ -127,15 +127,29 @@ def patch_resources_pak():
       -webkit-app-region: no-drag;
     }
 
+    a.cr-nav-menu-item {
+      border-radius: 12px !important;
+      color: rgba(244, 244, 246, 0.68) !important;
+      margin: 2px 8px !important;
+      font-size: 13px !important;
+      transition: background 0.15s ease, color 0.15s ease !important;
+    }
+
+    a.cr-nav-menu-item:hover {
+      background: rgba(255, 255, 255, 0.04) !important;
+      color: #f4f4f6 !important;
+    }
+
     a.cr-nav-menu-item[selected],
     a.cr-nav-menu-item:focus {
-      background: rgba(255, 255, 255, 0.12) !important;
-      color: #ffffff !important;
-      font-weight: 600 !important;
+      background: rgba(255, 255, 255, 0.075) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+      color: #f4f4f6 !important;
+      font-weight: 500 !important;
     }
 
     a.cr-nav-menu-item[selected] cr-icon {
-      color: #ffffff !important;
+      color: #f4f4f6 !important;
     }
   </style>
 </head>
@@ -207,10 +221,10 @@ def patch_resources_pak():
         'TOP_LEVEL_EQUIVALENT_ROUTE=loadTimeData.getBoolean("isGuest")?guestTopLevelRoute:routes.PRIVACY;'
     )
 
-    # Style selected menu items in monochrome white & black
+    # Style selected menu items with Astra's plate of light and 12px radius
     patched_settings = patched_settings.replace(
         '.cr-nav-menu-item[selected]{--iron-icon-fill-color:black;background:var(--google-blue-300);color:var(--google-grey-900)}',
-        '.cr-nav-menu-item[selected]{--iron-icon-fill-color:#000000;background:#ffffff;color:#000000;font-weight:600}'
+        '.cr-nav-menu-item[selected]{--iron-icon-fill-color:#f4f4f6;background:rgba(255,255,255,0.075);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);color:#f4f4f6;font-weight:500;border-radius:12px}'
     )
 
     # Inject Tabs menu item into getTemplate$4 (SettingsMenuElement)

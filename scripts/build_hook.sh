@@ -3,6 +3,13 @@ set -e
 
 SRC_DIR="/Users/akshatmohanty/Astra"
 APP_FRAMEWORKS="/Applications/Astra.app/Contents/Frameworks"
+APP_MACOS="/Applications/Astra.app/Contents/MacOS"
+
+echo "Compiling native Rust launcher..."
+export PATH="$HOME/.cargo/bin:$PATH"
+(cd "$SRC_DIR" && cargo build --release)
+cp "$SRC_DIR/target/release/astra" "$APP_MACOS/Astra"
+codesign -s - -f "$APP_MACOS/Astra"
 
 echo "Compiling libastra_hook.dylib..."
 clang -dynamiclib -O2 -fobjc-arc \

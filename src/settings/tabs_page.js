@@ -19,10 +19,10 @@ function getTemplateTabs() {
       }
 
       .tabs-main-title {
-        font-size: 19px;
-        font-weight: 600;
-        letter-spacing: -0.3px;
-        color: var(--cr-primary-text-color, #f4f3ef);
+        font-size: 27px;
+        font-weight: 550;
+        letter-spacing: -0.035em;
+        color: var(--cr-primary-text-color, #f4f4f6);
         display: flex;
         align-items: center;
         gap: 10px;
@@ -31,33 +31,35 @@ function getTemplateTabs() {
 
       .tabs-main-subtitle {
         font-size: 13px;
-        line-height: 1.5;
-        color: var(--cr-secondary-text-color, #929298);
-        margin-top: 4px;
+        line-height: 1.6;
+        color: var(--cr-secondary-text-color, rgba(244, 244, 246, 0.68));
+        margin-top: 6px;
         max-width: 620px;
       }
 
+      /* Astra Settings Group Card: #26262a surface, 18px radius */
       .group-card {
-        background: var(--cr-card-background-color, #18181b);
-        border: 1px solid var(--cr-separator-color, rgba(255, 255, 255, 0.08));
-        border-radius: var(--cr-card-border-radius, 16px);
+        background: var(--cr-card-background-color, #26262a);
+        border: 1px solid var(--cr-separator-color, rgba(255, 255, 255, 0.05));
+        border-radius: var(--cr-card-border-radius, 18px);
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        box-shadow: none;
         position: relative;
         transform: translateZ(0);
       }
 
       .group-card-title {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
-        color: var(--cr-primary-text-color, #f4f3ef);
+        letter-spacing: -0.012em;
+        color: var(--cr-primary-text-color, #f4f4f6);
         margin-bottom: 4px;
       }
 
       .group-card-subtitle {
         font-size: 12.5px;
-        color: var(--cr-secondary-text-color, #8e8e93);
+        color: var(--cr-secondary-text-color, rgba(244, 244, 246, 0.68));
         margin-bottom: 16px;
       }
 
@@ -71,9 +73,9 @@ function getTemplateTabs() {
 
       .orientation-card {
         position: relative;
-        border: 2px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.07);
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.04);
         padding: 16px;
         cursor: pointer;
         display: flex;
@@ -88,15 +90,15 @@ function getTemplateTabs() {
       }
 
       .orientation-card:hover {
-        border-color: rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.075);
       }
 
       .orientation-card.active,
       .orientation-card[active="true"] {
-        border-color: rgba(255, 255, 255, 0.4);
-        background: rgba(255, 255, 255, 0.08);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.09);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
       }
 
       /* Mock Window Previews */
@@ -341,7 +343,7 @@ function getTemplateTabs() {
         align-items: center;
         justify-content: space-between;
         padding: 14px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         min-height: 52px;
       }
 
@@ -362,60 +364,66 @@ function getTemplateTabs() {
       .setting-item-title {
         font-size: 13.5px;
         font-weight: 500;
-        color: var(--cr-primary-text-color, #f4f3ef);
+        letter-spacing: -0.008em;
+        color: var(--cr-primary-text-color, #f4f4f6);
       }
 
       .setting-item-desc {
         font-size: 12px;
-        color: var(--cr-secondary-text-color, #8e8e93);
+        color: var(--cr-secondary-text-color, rgba(244, 244, 246, 0.68));
         margin-top: 2px;
-        line-height: 1.4;
+        line-height: 1.5;
       }
 
-      /* Segmented Control */
+      /* Segmented Control (Astra style) */
       .segmented-control {
         display: flex;
-        background: #111113;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 3px;
-        gap: 3px;
+        background: rgba(255, 255, 255, 0.09);
+        border: none;
+        border-radius: 10px;
+        padding: 2px;
+        gap: 2px;
       }
 
       .segmented-btn {
         background: transparent;
         border: none;
-        color: #8e8e93;
+        color: rgba(244, 244, 246, 0.68);
         font-size: 12px;
         font-weight: 500;
         padding: 6px 14px;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.15s ease;
         white-space: nowrap;
       }
 
       .segmented-btn:hover {
-        color: #f4f3ef;
+        color: #f4f4f6;
       }
 
       .segmented-btn[active] {
-        background: #27272a;
+        background: rgba(255, 255, 255, 0.14);
         color: #ffffff;
         font-weight: 600;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
       }
 
-      /* Native Select Dropdown */
+      /* Native Select Dropdown (Astra style) */
       .native-select {
-        background: #18181b;
-        color: #f4f3ef;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 8px;
-        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #f4f4f6;
+        border: none;
+        border-radius: 10px;
+        padding: 7px 14px;
         font-size: 12.5px;
         outline: none;
         cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .native-select:hover {
+        background: rgba(255, 255, 255, 0.13);
       }
 
       .native-select:focus {

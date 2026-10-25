@@ -1,0 +1,10 @@
+[package]
+name = "astra"
+version = "0.2.0"
+edition = "2021"
+
+[[bin]]
+name = "astra"
+path = "src/main.rs"
+
+[dependencies]

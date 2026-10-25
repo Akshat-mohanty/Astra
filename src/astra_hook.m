@@ -98,17 +98,17 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         [self setBordered:NO];
         [self setTitle:@""];
         [self setWantsLayer:YES];
-        self.layer.cornerRadius = 8.0;
+        self.layer.cornerRadius = 12.0; // Astra --radius-row: 12px pill shape
 
-        // Close Button
-        _closeBtn = [[NSButton alloc] initWithFrame:NSMakeRect(frameRect.size.width - 26, 8, 18, 18)];
+        // Close Button (Astra style: 20x20 with 6px radius)
+        _closeBtn = [[NSButton alloc] initWithFrame:NSMakeRect(frameRect.size.width - 27, (frameRect.size.height - 20) / 2.0, 20, 20)];
         [_closeBtn setButtonType:NSButtonTypeMomentaryChange];
         [_closeBtn setBordered:NO];
         [_closeBtn setTitle:@"×"];
-        [_closeBtn setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]];
+        [_closeBtn setFont:[NSFont systemFontOfSize:13 weight:NSFontWeightRegular]];
         [_closeBtn setWantsLayer:YES];
-        _closeBtn.layer.cornerRadius = 4.0;
-        [_closeBtn setAlphaValue:current ? 0.7 : 0.0];
+        _closeBtn.layer.cornerRadius = 6.0;
+        [_closeBtn setAlphaValue:0.0];
         [self addSubview:_closeBtn];
 
         [self updateAppearance];
@@ -129,28 +129,31 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
 - (void)mouseEntered:(NSEvent *)event {
     _isHovered = YES;
-    [_closeBtn setAlphaValue:0.8];
+    [_closeBtn setAlphaValue:0.6];
     [self updateAppearance];
 }
 
 - (void)mouseExited:(NSEvent *)event {
     _isHovered = NO;
-    [_closeBtn setAlphaValue:_isCurrent ? 0.6 : 0.0];
+    [_closeBtn setAlphaValue:0.0];
     [self updateAppearance];
 }
 
 - (void)updateAppearance {
     if (_isCurrent) {
-        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.12].CGColor;
+        // Astra active tab: --row-active: rgb(255 255 255 / 0.075), --row-rim: inset 0 0 0 1px rgb(255 255 255 / 0.06)
+        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.075].CGColor;
         self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.24].CGColor;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.06].CGColor;
     } else if (_isHovered) {
-        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.05].CGColor;
-        self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.1].CGColor;
+        // Astra hover tab: --row-hover: rgb(255 255 255 / 0.04), NO border
+        self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.04].CGColor;
+        self.layer.borderWidth = 0.0;
+        self.layer.borderColor = [NSColor clearColor].CGColor;
     } else {
         self.layer.backgroundColor = [NSColor clearColor].CGColor;
         self.layer.borderWidth = 0.0;
+        self.layer.borderColor = [NSColor clearColor].CGColor;
     }
     [self setNeedsDisplay:YES];
 }
@@ -173,8 +176,8 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
         NSString *disp = (t && [t length] > 0) ? [t substringToIndex:MIN((NSUInteger)2, [t length])] : @"";
         NSDictionary *attrs = @{
-            NSFontAttributeName: [NSFont systemFontOfSize:12 weight:_isCurrent ? NSFontWeightBold : NSFontWeightMedium],
-            NSForegroundColorAttributeName: _isCurrent ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.7 alpha:1.0],
+            NSFontAttributeName: [NSFont systemFontOfSize:12.5 weight:_isCurrent ? NSFontWeightBold : NSFontWeightMedium],
+            NSForegroundColorAttributeName: _isCurrent ? [NSColor colorWithCalibratedRed:244.0/255.0 green:244.0/255.0 blue:246.0/255.0 alpha:1.0] : [NSColor colorWithCalibratedRed:216.0/255.0 green:216.0/255.0 blue:219.0/255.0 alpha:0.8],
             NSParagraphStyleAttributeName: style
         };
         NSRect textRect = NSMakeRect(4, (b.size.height - 16) / 2.0, b.size.width - 8, 16);
@@ -184,13 +187,14 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
     [_closeBtn setHidden:NO];
 
+    // Astra typography: 13px system font, active: #ededf0 / #f4f4f6 semibold, inactive: #d8d8db regular
     NSDictionary *attrs = @{
-        NSFontAttributeName: [NSFont systemFontOfSize:12.5 weight:_isCurrent ? NSFontWeightSemibold : NSFontWeightRegular],
-        NSForegroundColorAttributeName: _isCurrent ? [NSColor whiteColor] : [NSColor colorWithCalibratedWhite:0.7 alpha:1.0],
+        NSFontAttributeName: [NSFont systemFontOfSize:13.0 weight:_isCurrent ? NSFontWeightSemibold : NSFontWeightRegular],
+        NSForegroundColorAttributeName: _isCurrent ? [NSColor colorWithCalibratedRed:244.0/255.0 green:244.0/255.0 blue:246.0/255.0 alpha:1.0] : [NSColor colorWithCalibratedRed:216.0/255.0 green:216.0/255.0 blue:219.0/255.0 alpha:0.85],
         NSParagraphStyleAttributeName: style
     };
 
-    NSRect textRect = NSMakeRect(12, (b.size.height - 16) / 2.0, b.size.width - 40, 16);
+    NSRect textRect = NSMakeRect(12, (b.size.height - 16) / 2.0, b.size.width - 42, 16);
     [t drawInRect:textRect withAttributes:attrs];
 }
 @end
@@ -208,11 +212,11 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
         [self setButtonType:NSButtonTypeMomentaryChange];
         [self setBordered:NO];
         [self setTitle:@"Settings"];
-        [self setFont:[NSFont systemFontOfSize:12.5 weight:NSFontWeightMedium]];
-        [self setContentTintColor:[NSColor colorWithCalibratedWhite:0.75 alpha:1.0]];
+        [self setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightMedium]];
+        [self setContentTintColor:[NSColor colorWithCalibratedRed:244.0/255.0 green:244.0/255.0 blue:246.0/255.0 alpha:0.68]];
         [self setAlignment:NSTextAlignmentCenter];
         [self setWantsLayer:YES];
-        self.layer.cornerRadius = 7.0;
+        self.layer.cornerRadius = 10.0;
     }
     return self;
 }
@@ -229,15 +233,15 @@ static NSString *AstraSanitizeTabTitle(NSString *st) {
 
 - (void)mouseEntered:(NSEvent *)event {
     _isHovered = YES;
-    self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
-    [self setContentTintColor:[NSColor whiteColor]];
+    self.layer.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.04].CGColor;
+    [self setContentTintColor:[NSColor colorWithCalibratedRed:244.0/255.0 green:244.0/255.0 blue:246.0/255.0 alpha:1.0]];
     [self setNeedsDisplay:YES];
 }
 
 - (void)mouseExited:(NSEvent *)event {
     _isHovered = NO;
     self.layer.backgroundColor = [NSColor clearColor].CGColor;
-    [self setContentTintColor:[NSColor colorWithCalibratedWhite:0.75 alpha:1.0]];
+    [self setContentTintColor:[NSColor colorWithCalibratedRed:244.0/255.0 green:244.0/255.0 blue:246.0/255.0 alpha:0.68]];
     [self setNeedsDisplay:YES];
 }
 @end
@@ -543,22 +547,23 @@ static void configure_menu_items(void) {
     self = [super initWithFrame:frameRect];
     if (self) {
         [self setWantsLayer:YES];
-        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.07 green:0.07 blue:0.08 alpha:1.0].CGColor; // #121214
+        // Astra graphite chrome #1f1f22: [31, 31, 34]
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:31.0/255.0 green:31.0/255.0 blue:34.0/255.0 alpha:1.0].CGColor;
         self.layer.borderWidth = 1.0;
-        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
+        self.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.07].CGColor;
         [self setAutoresizingMask:NSViewHeightSizable | NSViewMaxXMargin];
 
         CGFloat w = frameRect.size.width;
         CGFloat h = frameRect.size.height;
 
         // Bottom Footer (Settings shortcut)
-        _footerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, w, 44)];
+        _footerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, w, 46)];
         [_footerView setWantsLayer:YES];
         _footerView.layer.borderWidth = 1.0;
-        _footerView.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.06].CGColor;
+        _footerView.layer.borderColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.07].CGColor;
         [_footerView setAutoresizingMask:NSViewMaxYMargin | NSViewWidthSizable];
 
-        _settingsBtn = [[AstraSettingsButton alloc] initWithFrame:NSMakeRect(12, 6, w - 24, 32)];
+        _settingsBtn = [[AstraSettingsButton alloc] initWithFrame:NSMakeRect(10, 6, w - 20, 34)];
         [_settingsBtn setTarget:self];
         [_settingsBtn setAction:@selector(onSettingsClicked:)];
         [_footerView addSubview:_settingsBtn];
@@ -606,11 +611,11 @@ static void configure_menu_items(void) {
     _collapseBtn.isCollapsed = compact;
     [_collapseBtn setToolTip:compact ? @"Expand sidebar (⌘B)" : @"Collapse sidebar (⌘B)"];
 
-    [_footerView setHidden:compact];
+    [_footerView setHidden:NO];
 
     [_footerView setFrame:NSMakeRect(0, 0, w, 44)];
-    [_settingsBtn setFrame:NSMakeRect(12, 6, w - 24, 32)];
-    [_settingsBtn setTitle:compact ? @"S" : @"Settings"];
+    [_settingsBtn setFrame:NSMakeRect(compact ? 4 : 10, 6, compact ? (w - 8) : (w - 20), 32)];
+    [_settingsBtn setTitle:compact ? @"⚙" : @"Settings"];
     [_settingsBtn setAlignment:NSTextAlignmentCenter];
 
     CGFloat btnSize = 28.0;
@@ -620,11 +625,11 @@ static void configure_menu_items(void) {
     [_collapseBtn setFrame:NSMakeRect(bx, by, btnSize, btnSize)];
     [_collapseBtn setHidden:NO];
 
-    CGFloat sx = compact ? 6.0 : 10.0;
+    CGFloat sx = compact ? 4.0 : 10.0;
     CGFloat sw = w - (sx * 2.0);
     CGFloat topInset = compact ? 76.0 : 48.0;
-    CGFloat bottomInset = compact ? 8.0 : 48.0;
-    [_scrollView setHidden:compact];
+    CGFloat bottomInset = 48.0;
+    [_scrollView setHidden:NO]; // Never hide tabs! Always show in both compact and expanded
     [_scrollView setFrame:NSMakeRect(sx, bottomInset, sw, h - topInset - bottomInset)];
     [_collapseBtn setNeedsDisplay:YES];
 }
@@ -703,7 +708,7 @@ static void configure_menu_items(void) {
 
 - (void)scrollToActiveTab {
     if (_lastActiveIndex <= 0) return;
-    CGFloat rowH = 36.0;
+    CGFloat rowH = 34.0; // Astra --row-sidebar: 34px
     CGFloat spacing = 4.0;
     CGFloat y = (_lastActiveIndex - 1) * (rowH + spacing);
     NSRect tabRect = NSMakeRect(0, y, [_scrollView bounds].size.width, rowH);
@@ -760,7 +765,7 @@ static void configure_menu_items(void) {
     CGFloat itemWidth = [_scrollView bounds].size.width;
     if (itemWidth < 100) itemWidth = 196.0;
 
-    CGFloat rowH = 36.0;
+    CGFloat rowH = 34.0; // Astra --row-sidebar: 34px
     CGFloat spacing = 4.0;
     CGFloat totalH = [titles count] * (rowH + spacing);
 
@@ -823,9 +828,10 @@ static void configure_menu_items(void) {
     self = [super initWithFrame:frameRect];
     if (self) {
         [self setWantsLayer:YES];
-        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:0.071 green:0.071 blue:0.078 alpha:1.0].CGColor; // #121214
+        // Astra chrome ground #1f1f22
+        self.layer.backgroundColor = [NSColor colorWithCalibratedRed:31.0/255.0 green:31.0/255.0 blue:34.0/255.0 alpha:1.0].CGColor;
         _bottomBorder = [CALayer layer];
-        _bottomBorder.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.08].CGColor;
+        _bottomBorder.backgroundColor = [NSColor colorWithCalibratedWhite:1.0 alpha:0.07].CGColor;
         [self.layer addSublayer:_bottomBorder];
         [self setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
     }
@@ -988,12 +994,8 @@ static BOOL s_has_initialized_sidebar_state = NO;
 static BOOL read_sidebar_collapsed_setting(void) {
     if (!s_has_initialized_sidebar_state) {
         s_has_initialized_sidebar_state = YES;
-        NSDictionary *dict = read_all_astra_settings();
-        if (dict && dict[@"sidebar_collapsed"]) {
-            s_sidebar_collapsed_state = [dict[@"sidebar_collapsed"] boolValue];
-        } else {
-            s_sidebar_collapsed_state = NO;
-        }
+        // Default to expanded so tabs are clearly visible immediately
+        s_sidebar_collapsed_state = NO;
     }
     return s_sidebar_collapsed_state;
 }
@@ -1511,7 +1513,8 @@ static void configure_window(NSWindow *win) {
     [win setTitle:@""];
     [win setStyleMask:[win styleMask] | NSWindowStyleMaskFullSizeContentView];
     [win setTitlebarAppearsTransparent:YES];
-    [win setBackgroundColor:[NSColor colorWithCalibratedRed:0.098 green:0.098 blue:0.098 alpha:1.0]];
+    // Astra window canvas ground: #1a1a1d
+    [win setBackgroundColor:[NSColor colorWithCalibratedRed:26.0/255.0 green:26.0/255.0 blue:29.0/255.0 alpha:1.0]];
 
     BOOL isFullscreen = (win.styleMask & NSWindowStyleMaskFullScreen) != 0;
     if (!isFullscreen) {
