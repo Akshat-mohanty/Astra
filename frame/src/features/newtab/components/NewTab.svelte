@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { untrack, type Snippet } from "svelte";
+  import { type Snippet } from "svelte";
   import * as m from "$shared/i18n/messages";
   import { groundPath, notchShape, notchWidth } from "../lib/ground";
   import { layout } from "../lib/layout";
-  import { decode, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
+  import FloatingPaths from "./FloatingPaths.svelte";
 
   let {
     search,
@@ -24,22 +24,6 @@
   let height = $state(0);
 
   let page = $derived(layout(width, height, { controls: [], clock: false }));
-  let scene = $derived(skyScene());
-  const arriving = !seen(untrack(() => scene));
-  let shown = $state<Scene | null>(seen(untrack(() => scene)) ? untrack(() => scene) : null);
-
-  $effect(() => {
-    const wanted = scene;
-    let live = true;
-    const reveal = () => {
-      if (live) shown = wanted;
-    };
-    void decode(wanted).then(reveal, reveal);
-    return () => {
-      live = false;
-    };
-  });
-
   let ground = $derived(groundPath(width, height, page.notch));
   let lip = $derived(notchShape(width, height, page.notch));
   let fieldWidth = $derived(notchWidth(width, page.notch));
@@ -47,20 +31,14 @@
 
 <section
   class="newtab"
-  class:arriving
-  data-scene={scene}
-  data-ready={shown === scene}
   aria-label={m.new_tab()}
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  <!-- Background Wallpaper: Dark Horseman -->
+  <!-- Background: Animated Floating Paths covering the exact wallpaper area -->
   {#if ground}
     <div class="page" aria-hidden="true" style:clip-path={`path(evenodd, "${ground}")`}>
-      <div
-        class="sky"
-        style:background-image={`url("${SCENES[scene]}")`}
-      ></div>
+      <FloatingPaths position={-1} dual={true} />
     </div>
   {/if}
 
@@ -83,10 +61,6 @@
 
 <style>
   .newtab {
-    --sky-paper: var(--sky-day-paper);
-    --sky-shadow: var(--sky-day-shadow);
-    --sky-lip: var(--sky-day-lip);
-
     position: relative;
     block-size: 100%;
     overflow: hidden;
@@ -98,27 +72,10 @@
     user-select: none;
   }
 
-  .newtab[data-scene="night"] {
-    --sky-paper: var(--sky-night-paper);
-    --sky-shadow: var(--sky-night-shadow);
-    --sky-lip: var(--sky-night-lip);
-  }
-
-  .page,
-  .sky {
+  .page {
     position: absolute;
     inset: 0;
-  }
-
-  .page {
     background: #000000;
-  }
-
-  .sky {
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-    opacity: 1;
   }
 
   .rim {
@@ -136,7 +93,7 @@
   }
 
   .lip {
-    stop-color: var(--sky-lip, rgba(255, 255, 255, 0.15));
+    stop-color: rgba(255, 255, 255, 0.15);
   }
 
   /* Field notch search */
