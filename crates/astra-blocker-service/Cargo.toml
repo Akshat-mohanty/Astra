@@ -1,0 +1,27 @@
+[package]
+name = "astra-blocker-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = []
+official-https = ["astra-blocker-update/official-https"]
+tuf = ["astra-blocker-update/tuf"]
+
+[dependencies]
+flate2 = "=1.1.9"
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "=0.10.9"
+thiserror.workspace = true
+astra-blocker.workspace = true
+astra-blocker-update.workspace = true
+astra-core.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[[example]]
+name = "official_update_probe"
+required-features = ["official-https"]

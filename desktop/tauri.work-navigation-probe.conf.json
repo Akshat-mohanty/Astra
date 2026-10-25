@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Astra Work Navigation Probe",
+  "identifier": "app.astra.work-navigation-probe",
+  "build": { "devUrl": null },
+  "app": {
+    "windows": [{
+      "label": "main",
+      "create": false,
+      "title": "Astra Work Navigation Probe",
+      "width": 1200,
+      "height": 800,
+      "minWidth": 680,
+      "minHeight": 480,
+      "hiddenTitle": true,
+      "titleBarStyle": "Overlay",
+      "transparent": true,
+      "trafficLightPosition": { "x": 7, "y": 22 }
+    }]
+  }
+}

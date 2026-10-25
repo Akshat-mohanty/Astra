@@ -1,10 +1,92 @@
-[package]
-name = "astra"
-version = "0.2.0"
+[workspace]
+resolver = "2"
+members = ["crates/*", "desktop", "xtask"]
+exclude = [
+    "vendor/adblock",
+    "vendor/tauri",
+    "vendor/tauri-runtime-wry",
+    "vendor/tauri-plugin-updater",
+    "vendor/wry",
+]
+
+[workspace.package]
+version = "0.1.0"
 edition = "2021"
+license = "MPL-2.0"
+authors = ["crynta"]
+repository = "https://github.com/astra/astra"
 
-[[bin]]
-name = "astra"
-path = "src/main.rs"
+[workspace.dependencies]
+astra-agentic = { path = "crates/astra-agentic", version = "=0.1.0" }
+astra-decision = { path = "crates/astra-decision", version = "=0.1.0" }
+astra-agent-model-catalog = { path = "crates/astra-agent-model-catalog", version = "=0.1.0" }
+astra-agent-runtime = { path = "crates/astra-agent-runtime", version = "=0.1.0" }
+astra-agent-provider-transport = { path = "crates/astra-agent-provider-transport", version = "=0.1.0" }
+astra-agent-controller = { path = "crates/astra-agent-controller", version = "=0.1.0" }
+astra-blocker = { path = "crates/astra-blocker", version = "=0.1.0", default-features = false }
+astra-blocker-service = { path = "crates/astra-blocker-service", version = "=0.1.0", default-features = false }
+astra-blocker-update = { path = "crates/astra-blocker-update", version = "=0.1.0", default-features = false }
+astra-account = { path = "crates/astra-account", version = "=0.1.0" }
+astra-core = { path = "crates/astra-core", version = "=0.1.0" }
+astra-credentials = { path = "crates/astra-credentials", version = "=0.1.0" }
+astra-ipc = { path = "crates/astra-ipc", version = "=0.1.0" }
+astra-engine = { path = "crates/astra-engine", version = "=0.1.0" }
+astra-notes = { path = "crates/astra-notes", version = "=0.1.0" }
+astra-import = { path = "crates/astra-import", version = "=0.1.0" }
+astra-private-fs = { path = "crates/astra-private-fs", version = "=0.1.0" }
+astra-store = { path = "crates/astra-store", version = "=0.1.0" }
+astra-voice = { path = "crates/astra-voice", version = "=0.1.0" }
+astra-update-transport = { path = "crates/astra-update-transport", version = "=0.1.0", default-features = false }
+astra-app = { path = "crates/astra-app", version = "=0.1.0" }
+astra-work-composition = { path = "crates/astra-work-composition", version = "=0.1.0" }
+astra-page-assist = { path = "crates/astra-page-assist", version = "=0.1.0" }
 
-[dependencies]
+tauri = { version = "=2.11.3", features = ["macos-private-api"] }
+tauri-build = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+wry = "=0.55.1"
+raw-window-handle = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+crc32fast = "=1.5.0"
+ring = "=0.17.14"
+thiserror = "2"
+ulid = "1"
+url = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros"] }
+crossbeam-queue = "=0.3.12"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "0.0.12"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
+proptest = "1"
+tempfile = "3"
+tough = { version = "=0.24.0", default-features = false }
+
+# These native-boundary crates start from the exact upstream revisions recorded
+# alongside their source. Keeping the surgical adapters in-tree makes Tauri
+# construction policy and Wry's callback, prompt, teardown, profile, and Linux
+# process-isolation policy reproducible without relying on mutable forks.
+[patch.crates-io]
+tauri-plugin-updater = { path = "vendor/tauri-plugin-updater" }
+adblock = { path = "vendor/adblock" }
+tauri = { path = "vendor/tauri" }
+tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }
+wry = { path = "vendor/wry" }
+
+[profile.release]
+# Browser chrome should fail terminally on an invariant violation instead of
+# attempting to unwind through native WebView/Objective-C/COM callbacks.
+panic = "abort"
+# Keep the native shell small without giving up whole-program optimization.
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+# Bounds checks remain enabled independently; retain integer overflow checks
+# as well so release builds do not silently wrap security/resource counters.
+overflow-checks = true

@@ -1,0 +1,22 @@
+{
+  "productName": "Astra Performance",
+  "identifier": "app.astra.performance",
+  "build": { "devUrl": null },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "Astra Performance",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 680,
+        "minHeight": 480,
+        "decorations": false,
+        "shadow": true,
+        "transparent": true,
+        "url": "browser.html"
+      }
+    ]
+  }
+}

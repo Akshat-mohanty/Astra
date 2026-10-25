@@ -1,0 +1,31 @@
+[package]
+name = "astra-agent-controller"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+build = false
+
+[features]
+default = []
+provider-transport = [
+    "dep:astra-agent-provider-transport",
+    "dep:astra-decision",
+    "astra-agent-provider-transport/provider-transport",
+]
+probe-harness = [
+    "provider-transport",
+    "astra-agent-provider-transport/probe-harness",
+]
+
+[dependencies]
+thiserror.workspace = true
+tokio = { workspace = true, features = ["time"] }
+astra-agentic.workspace = true
+astra-decision = { workspace = true, optional = true }
+astra-agent-model-catalog.workspace = true
+astra-agent-provider-transport = { workspace = true, optional = true }
+astra-agent-runtime.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

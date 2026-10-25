@@ -1,31 +1,49 @@
-# macOS system files
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Application build output & binaries
+# Dependencies & build outputs
+target/
+node_modules/
+dist/
 build/
 *.dmg
 *.app/
 *.o
 *.obj
 
+# Caches & local stores
+.pnpm-store/
+/crates/astra-engine/target/
+/vendor/adblock/target/
+/crates/astra-blocker/fuzz/artifacts/
+/crates/astra-blocker/fuzz/target/
+gen/schemas
+/eval/agentic-browsing/local-results/
+__pycache__/
+*.py[cod]
+*.log
+
+# Frame caches
+/frame/src/shared/i18n/
+/frame/project.inlang/cache/
+/frame/.vitest-attachments/
+/frame/dist-work-preview/
+/frame/reports/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
 # External disk image & workspace symlinks
 build_workspace
 *.sparseimage
 *.sparsebundle
-
-# Engine downloads
 engine/*.dmg
 Astra-main/
 
-# Rust build target
-target/
-
-# Python cache
-__pycache__/
-*.pyc
-
-# User profile data & caches
-/tmp/Astra*
+# Local tooling and secrets
+.claude/
+.vscode/*
+!.vscode/extensions.json
+.env
+.env.*
+*.local
 user_data/

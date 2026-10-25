@@ -1,0 +1,47 @@
+[package]
+name = "astra-work-composition"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = []
+durable-runtime = ["native-work", "dep:serde_json", "dep:sha2", "dep:astra-core", "dep:astra-ipc", "astra-app/work-runtime", "dep:tokio", "dep:astra-page-assist"]
+native-work = ["dep:astra-app", "dep:astra-engine", "dep:astra-store", "dep:astra-agent-controller", "dep:astra-agent-provider-transport", "dep:astra-agentic"]
+macos-work = ["native-work"]
+public-qualification = [
+    "macos-work",
+    "astra-app/work-execution-probe",
+    "astra-agent-provider-transport/probe-harness",
+]
+navigation-qualification = ["macos-work", "dep:astra-agentic", "dep:astra-core", "dep:astra-agent-runtime"]
+discovery-qualification = ["navigation-qualification", "public-qualification"]
+# Content-free original-resource failure evidence; never selects a task.
+retained-lifetime-diagnostic = ["public-qualification", "astra-engine/native-agentic-work-lifetime-diagnostic"]
+retained-product-qualification = ["navigation-qualification", "retained-lifetime-diagnostic"]
+# A compile-time-only objective selection on the same retained product entry.
+retained-commerce-qualification = ["retained-product-qualification"]
+retained-action-qualification = ["retained-product-qualification", "astra-agentic/probe-harness"]
+retained-back-qualification = ["retained-product-qualification", "astra-agentic/probe-harness"]
+retained-notion-qualification = ["retained-product-qualification"]
+retained-notion-write-qualification = ["retained-product-qualification"]
+retained-qualification = ["public-qualification", "astra-engine/native-agentic-work-resource-probe", "dep:astra-agentic", "dep:astra-core", "dep:astra-agent-runtime"]
+retained-public-qualification = ["retained-qualification", "astra-engine/native-agentic-public-resource-probe"]
+
+[dependencies]
+serde_json = { workspace = true, optional = true }
+sha2 = { version = "=0.10.9", optional = true }
+astra-ipc = { workspace = true, optional = true }
+astra-page-assist = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true, features = ["time"] }
+astra-app = { workspace = true, optional = true, features = ["work-execution"] }
+astra-engine = { workspace = true, optional = true, features = ["agentic-browser"] }
+astra-store = { workspace = true, optional = true, features = ["work-execution"] }
+astra-agent-controller = { workspace = true, optional = true, features = ["provider-transport"] }
+astra-agent-provider-transport = { workspace = true, optional = true }
+astra-agentic = { workspace = true, optional = true }
+astra-agent-runtime = { workspace = true, optional = true }
+astra-core = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true

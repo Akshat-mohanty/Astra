@@ -1,0 +1,59 @@
+[package]
+name = "astra-terra-macos-probe"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+build = "build.rs"
+
+[features]
+default = []
+decision-eval = ["live-probe", "dep:astra-agent-model-catalog", "dep:astra-decision", "astra-decision/evals"]
+durable-runtime = ["live-probe", "astra-agentic/probe-harness", "astra-work-composition/durable-runtime", "astra-work-composition/retained-lifetime-diagnostic", "dep:astra-agent-model-catalog", "dep:astra-private-fs"]
+live-probe = [
+    "dep:astra-app",
+    "astra-agent-controller/probe-harness",
+    "astra-agent-provider-transport/probe-harness",
+    "astra-engine/native-agentic-semantic-probe",
+    "astra-engine/agentic-browser-qa",
+    "astra-work-composition/public-qualification",
+    "astra-work-composition/navigation-qualification",
+]
+
+[[bin]]
+name = "macos-terra-agentic-probe"
+path = "src/main.rs"
+required-features = ["live-probe"]
+
+[[bin]]
+name = "windows-work-probe"
+path = "src/windows_main.rs"
+required-features = ["durable-runtime"]
+
+[dependencies]
+image = { version = "=0.25.10", default-features = false, features = ["png"] }
+astra-agent-model-catalog = { workspace = true, optional = true }
+serde_json.workspace = true
+sha2 = "=0.10.9"
+astra-ipc.workspace = true
+astra-agent-controller.workspace = true
+astra-agent-provider-transport.workspace = true
+astra-agentic.workspace = true
+astra-decision = { workspace = true, optional = true }
+astra-engine.workspace = true
+astra-agent-runtime.workspace = true
+astra-store.workspace = true
+astra-core.workspace = true
+astra-app = { workspace = true, optional = true }
+astra-work-composition.workspace = true
+astra-blocker.workspace = true
+astra-blocker-service.workspace = true
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt", "time", "process", "io-util"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+astra-blocker = { workspace = true, features = ["webkit"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+astra-blocker = { workspace = true, features = ["runtime"] }
+astra-private-fs = { workspace = true, optional = true, features = ["windows-work-test-fixtures"] }
