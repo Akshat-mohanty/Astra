@@ -47,3 +47,5 @@ Astra-main/
 .env.*
 *.local
 user_data/
+
+Astra-main/

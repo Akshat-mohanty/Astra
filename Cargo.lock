@@ -124,6 +124,545 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0f477b951e452a0b6b4a10b53ccd569042d1d01729b519e02074a9c0958a063"
 
 [[package]]
+name = "astra-account"
+version = "0.1.0"
+dependencies = [
+ "astra-credentials",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "astra-agent-controller"
+version = "0.1.0"
+dependencies = [
+ "astra-agent-model-catalog",
+ "astra-agent-provider-transport",
+ "astra-agent-runtime",
+ "astra-agentic",
+ "astra-decision",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "astra-agent-model-catalog"
+version = "0.1.0"
+dependencies = [
+ "astra-agentic",
+]
+
+[[package]]
+name = "astra-agent-provider-transport"
+version = "0.1.0"
+dependencies = [
+ "astra-agentic",
+]
+
+[[package]]
+name = "astra-agent-runtime"
+version = "0.1.0"
+dependencies = [
+ "astra-agentic",
+ "crossbeam-queue",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "astra-agentic"
+version = "0.1.0"
+dependencies = [
+ "astra-core",
+ "astra-credentials",
+ "astra-decision",
+ "base64 0.22.1",
+ "crc32fast",
+ "dirs",
+ "dom_query 0.28.0",
+ "futures-util",
+ "httpdate",
+ "proptest",
+ "psl",
+ "reqwest",
+ "rig-core",
+ "security-framework",
+ "security-framework-sys",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.18",
+ "tokio",
+ "ulid",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "astra-app"
+version = "0.1.0"
+dependencies = [
+ "astra-agent-controller",
+ "astra-agent-model-catalog",
+ "astra-agent-provider-transport",
+ "astra-agent-runtime",
+ "astra-agentic",
+ "astra-core",
+ "astra-ipc",
+ "astra-mcp",
+ "astra-private-fs",
+ "astra-store",
+ "base64 0.22.1",
+ "chrono",
+ "flate2",
+ "globset",
+ "grep-matcher",
+ "grep-regex",
+ "grep-searcher",
+ "ignore",
+ "libc",
+ "lopdf",
+ "objc2",
+ "objc2-foundation",
+ "psl",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2 0.10.9",
+ "similar",
+ "socket2",
+ "tempfile",
+ "tokio",
+ "url",
+ "windows",
+ "windows-core 0.61.2",
+]
+
+[[package]]
+name = "astra-blocker"
+version = "0.1.0"
+dependencies = [
+ "adblock",
+ "astra-core",
+ "flate2",
+ "idna",
+ "proptest",
+ "regex",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "url",
+ "windows",
+]
+
+[[package]]
+name = "astra-blocker-service"
+version = "0.1.0"
+dependencies = [
+ "astra-blocker",
+ "astra-blocker-update",
+ "astra-core",
+ "flate2",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "astra-blocker-update"
+version = "0.1.0"
+dependencies = [
+ "astra-blocker",
+ "astra-core",
+ "astra-update-transport",
+ "async-trait",
+ "aws-lc-rs",
+ "jiff",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tough",
+ "url",
+ "windows",
+]
+
+[[package]]
+name = "astra-core"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "specta",
+ "tempfile",
+ "ulid",
+ "url",
+ "winreg",
+]
+
+[[package]]
+name = "astra-credentials"
+version = "0.1.0"
+dependencies = [
+ "dirs",
+ "security-framework",
+ "security-framework-sys",
+ "windows-sys 0.61.2",
+ "zeroize",
+]
+
+[[package]]
+name = "astra-decision"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "astra-desktop"
+version = "1.0.3"
+dependencies = [
+ "astra-account",
+ "astra-agent-controller",
+ "astra-agent-model-catalog",
+ "astra-agent-provider-transport",
+ "astra-agent-runtime",
+ "astra-agentic",
+ "astra-app",
+ "astra-blocker",
+ "astra-blocker-service",
+ "astra-core",
+ "astra-engine",
+ "astra-import",
+ "astra-ipc",
+ "astra-notes",
+ "astra-store",
+ "astra-voice",
+ "astra-webext",
+ "astra-webext-macos",
+ "astra-work-composition",
+ "async-io",
+ "base64 0.22.1",
+ "block2",
+ "dispatch2",
+ "futures-lite",
+ "getrandom 0.3.4",
+ "gtk",
+ "image",
+ "json-patch",
+ "libc",
+ "minisign-verify 0.3.0",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "objc2-quartz-core",
+ "objc2-service-management",
+ "objc2-user-notifications",
+ "objc2-web-kit",
+ "raw-window-handle",
+ "reqwest",
+ "rfd",
+ "serde",
+ "serde_json",
+ "specta",
+ "specta-typescript",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-updater",
+ "tauri-specta",
+ "tauri-utils",
+ "tempfile",
+ "tokio",
+ "webkit2gtk",
+ "webview2-com",
+ "window-vibrancy 0.8.0",
+ "windows",
+ "x11rb",
+ "xkeysym",
+ "zbus",
+]
+
+[[package]]
+name = "astra-engine"
+version = "0.1.0"
+dependencies = [
+ "astra-agentic",
+ "astra-blocker",
+ "astra-core",
+ "astra-webext",
+ "astra-webext-macos",
+ "base64 0.22.1",
+ "block2",
+ "dirs",
+ "dispatch2",
+ "flate2",
+ "gtk",
+ "image",
+ "libc",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-authentication-services",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation",
+ "objc2-quartz-core",
+ "objc2-security",
+ "objc2-web-kit",
+ "raw-window-handle",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "url",
+ "webkit2gtk",
+ "webview2-com",
+ "windows",
+ "windows-core 0.61.2",
+ "windows-numerics",
+ "windows-sys 0.61.2",
+ "wry",
+ "zeroize",
+]
+
+[[package]]
+name = "astra-import"
+version = "0.1.0"
+dependencies = [
+ "astra-core",
+ "plist",
+ "rusqlite",
+ "serde_json",
+ "tempfile",
+ "url",
+]
+
+[[package]]
+name = "astra-ipc"
+version = "0.1.0"
+dependencies = [
+ "astra-core",
+ "serde",
+ "serde_json",
+ "specta",
+ "specta-serde",
+ "specta-typescript",
+]
+
+[[package]]
+name = "astra-mcp"
+version = "0.1.0"
+dependencies = [
+ "astra-credentials",
+ "async-trait",
+ "libc",
+ "reqwest",
+ "rmcp",
+ "security-framework",
+ "security-framework-sys",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+ "ulid",
+ "url",
+ "windows",
+ "zeroize",
+]
+
+[[package]]
+name = "astra-notes"
+version = "0.1.0"
+dependencies = [
+ "astra-core",
+ "notify",
+ "proptest",
+ "pulldown-cmark",
+ "rusqlite",
+ "rustix",
+ "sha2 0.10.9",
+ "tempfile",
+ "tracing",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "astra-page-assist"
+version = "0.1.0"
+dependencies = [
+ "astra-ipc",
+ "cssparser 0.37.0",
+ "proptest",
+]
+
+[[package]]
+name = "astra-private-fs"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "rustix",
+ "tempfile",
+ "thiserror 2.0.18",
+ "unicode-normalization",
+ "windows",
+]
+
+[[package]]
+name = "astra-store"
+version = "0.1.0"
+dependencies = [
+ "astra-agentic",
+ "astra-core",
+ "astra-private-fs",
+ "image",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "ulid",
+ "url",
+ "windows",
+]
+
+[[package]]
+name = "astra-terra-macos-probe"
+version = "0.1.0"
+dependencies = [
+ "astra-agent-controller",
+ "astra-agent-model-catalog",
+ "astra-agent-provider-transport",
+ "astra-agent-runtime",
+ "astra-agentic",
+ "astra-app",
+ "astra-blocker",
+ "astra-blocker-service",
+ "astra-core",
+ "astra-decision",
+ "astra-engine",
+ "astra-ipc",
+ "astra-private-fs",
+ "astra-store",
+ "astra-work-composition",
+ "image",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "astra-update-transport"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures-util",
+ "reqwest",
+ "thiserror 2.0.18",
+ "time",
+ "tough",
+ "url",
+]
+
+[[package]]
+name = "astra-voice"
+version = "0.1.0"
+dependencies = [
+ "block2",
+ "embed_plist",
+ "objc2",
+ "objc2-avf-audio",
+ "objc2-foundation",
+ "objc2-speech",
+ "windows",
+]
+
+[[package]]
+name = "astra-webext"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "ring",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "thiserror 2.0.18",
+ "url",
+ "zip",
+]
+
+[[package]]
+name = "astra-webext-macos"
+version = "0.1.0"
+dependencies = [
+ "astra-webext",
+ "base64 0.22.1",
+ "block2",
+ "dispatch2",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "objc2-web-kit",
+ "serde_json",
+]
+
+[[package]]
+name = "astra-webext-windows"
+version = "0.1.0"
+dependencies = [
+ "astra-webext",
+ "base64 0.22.1",
+ "raw-window-handle",
+ "serde_json",
+ "sha2 0.10.9",
+ "webview2-com",
+ "windows",
+ "wry",
+]
+
+[[package]]
+name = "astra-work-composition"
+version = "0.1.0"
+dependencies = [
+ "astra-agent-controller",
+ "astra-agent-provider-transport",
+ "astra-agent-runtime",
+ "astra-agentic",
+ "astra-app",
+ "astra-core",
+ "astra-engine",
+ "astra-ipc",
+ "astra-page-assist",
+ "astra-store",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokio",
+]
+
+[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7185,6 +7724,8 @@ checksum = "b9cc00251562a284751c9973bace760d86c0276c471b4be569fe6b068ee97a56"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "astra-blocker",
+ "astra-core",
  "base64 0.22.1",
  "flate2",
  "libc",
@@ -7194,8 +7735,6 @@ dependencies = [
  "sha2 0.10.9",
  "tempfile",
  "toml 0.9.12+spec-1.1.0",
- "astra-blocker",
- "astra-core",
 ]
 
 [[package]]
@@ -7280,545 +7819,6 @@ dependencies = [
  "serde",
  "winnow 1.0.3",
  "zvariant",
-]
-
-[[package]]
-name = "astra-account"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "url",
- "astra-credentials",
- "zeroize",
-]
-
-[[package]]
-name = "astra-agent-controller"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "astra-agent-model-catalog",
- "astra-agent-provider-transport",
- "astra-agent-runtime",
- "astra-agentic",
- "astra-decision",
-]
-
-[[package]]
-name = "astra-agent-model-catalog"
-version = "0.1.0"
-dependencies = [
- "astra-agentic",
-]
-
-[[package]]
-name = "astra-agent-provider-transport"
-version = "0.1.0"
-dependencies = [
- "astra-agentic",
-]
-
-[[package]]
-name = "astra-agent-runtime"
-version = "0.1.0"
-dependencies = [
- "crossbeam-queue",
- "thiserror 2.0.18",
- "tokio",
- "astra-agentic",
-]
-
-[[package]]
-name = "astra-agentic"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "crc32fast",
- "dirs",
- "dom_query 0.28.0",
- "futures-util",
- "httpdate",
- "proptest",
- "psl",
- "reqwest",
- "rig-core",
- "security-framework",
- "security-framework-sys",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.18",
- "tokio",
- "ulid",
- "url",
- "astra-core",
- "astra-credentials",
- "astra-decision",
- "zeroize",
-]
-
-[[package]]
-name = "astra-app"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "chrono",
- "flate2",
- "globset",
- "grep-matcher",
- "grep-regex",
- "grep-searcher",
- "ignore",
- "libc",
- "lopdf",
- "objc2",
- "objc2-foundation",
- "psl",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha1",
- "sha2 0.10.9",
- "similar",
- "socket2",
- "tempfile",
- "tokio",
- "url",
- "windows",
- "windows-core 0.61.2",
- "astra-agent-controller",
- "astra-agent-model-catalog",
- "astra-agent-provider-transport",
- "astra-agent-runtime",
- "astra-agentic",
- "astra-core",
- "astra-ipc",
- "astra-mcp",
- "astra-private-fs",
- "astra-store",
-]
-
-[[package]]
-name = "astra-blocker"
-version = "0.1.0"
-dependencies = [
- "adblock",
- "flate2",
- "idna",
- "proptest",
- "regex",
- "rustix",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "url",
- "windows",
- "astra-core",
-]
-
-[[package]]
-name = "astra-blocker-service"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "astra-blocker",
- "astra-blocker-update",
- "astra-core",
-]
-
-[[package]]
-name = "astra-blocker-update"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "aws-lc-rs",
- "jiff",
- "rustix",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tough",
- "url",
- "windows",
- "astra-blocker",
- "astra-core",
- "astra-update-transport",
-]
-
-[[package]]
-name = "astra-core"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "proptest",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "specta",
- "tempfile",
- "ulid",
- "url",
- "winreg",
-]
-
-[[package]]
-name = "astra-credentials"
-version = "0.1.0"
-dependencies = [
- "dirs",
- "security-framework",
- "security-framework-sys",
- "windows-sys 0.61.2",
- "zeroize",
-]
-
-[[package]]
-name = "astra-decision"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "astra-desktop"
-version = "1.0.3"
-dependencies = [
- "async-io",
- "base64 0.22.1",
- "block2",
- "dispatch2",
- "futures-lite",
- "getrandom 0.3.4",
- "gtk",
- "image",
- "json-patch",
- "libc",
- "minisign-verify 0.3.0",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "objc2-quartz-core",
- "objc2-service-management",
- "objc2-user-notifications",
- "objc2-web-kit",
- "raw-window-handle",
- "reqwest",
- "rfd",
- "serde",
- "serde_json",
- "specta",
- "specta-typescript",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-single-instance",
- "tauri-plugin-updater",
- "tauri-specta",
- "tauri-utils",
- "tempfile",
- "tokio",
- "webkit2gtk",
- "webview2-com",
- "window-vibrancy 0.8.0",
- "windows",
- "x11rb",
- "xkeysym",
- "zbus",
- "astra-account",
- "astra-agent-controller",
- "astra-agent-model-catalog",
- "astra-agent-provider-transport",
- "astra-agent-runtime",
- "astra-agentic",
- "astra-app",
- "astra-blocker",
- "astra-blocker-service",
- "astra-core",
- "astra-engine",
- "astra-import",
- "astra-ipc",
- "astra-notes",
- "astra-store",
- "astra-voice",
- "astra-webext",
- "astra-webext-macos",
- "astra-work-composition",
-]
-
-[[package]]
-name = "astra-engine"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "block2",
- "dirs",
- "dispatch2",
- "flate2",
- "gtk",
- "image",
- "libc",
- "objc2",
- "objc2-app-kit",
- "objc2-authentication-services",
- "objc2-core-foundation",
- "objc2-core-graphics",
- "objc2-foundation",
- "objc2-quartz-core",
- "objc2-security",
- "objc2-web-kit",
- "raw-window-handle",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "url",
- "webkit2gtk",
- "webview2-com",
- "windows",
- "windows-core 0.61.2",
- "windows-numerics",
- "windows-sys 0.61.2",
- "wry",
- "astra-agentic",
- "astra-blocker",
- "astra-core",
- "astra-webext",
- "astra-webext-macos",
- "zeroize",
-]
-
-[[package]]
-name = "astra-import"
-version = "0.1.0"
-dependencies = [
- "plist",
- "rusqlite",
- "serde_json",
- "tempfile",
- "url",
- "astra-core",
-]
-
-[[package]]
-name = "astra-ipc"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "specta",
- "specta-serde",
- "specta-typescript",
- "astra-core",
-]
-
-[[package]]
-name = "astra-mcp"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "libc",
- "reqwest",
- "rmcp",
- "security-framework",
- "security-framework-sys",
- "serde_json",
- "sha2 0.10.9",
- "tokio",
- "ulid",
- "url",
- "windows",
- "astra-credentials",
- "zeroize",
-]
-
-[[package]]
-name = "astra-notes"
-version = "0.1.0"
-dependencies = [
- "notify",
- "proptest",
- "pulldown-cmark",
- "rusqlite",
- "rustix",
- "sha2 0.10.9",
- "tempfile",
- "tracing",
- "unicode-normalization",
- "astra-core",
-]
-
-[[package]]
-name = "astra-page-assist"
-version = "0.1.0"
-dependencies = [
- "cssparser 0.37.0",
- "proptest",
- "astra-ipc",
-]
-
-[[package]]
-name = "astra-private-fs"
-version = "0.1.0"
-dependencies = [
- "libc",
- "rustix",
- "tempfile",
- "thiserror 2.0.18",
- "unicode-normalization",
- "windows",
-]
-
-[[package]]
-name = "astra-store"
-version = "0.1.0"
-dependencies = [
- "image",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "ulid",
- "url",
- "windows",
- "astra-agentic",
- "astra-core",
- "astra-private-fs",
-]
-
-[[package]]
-name = "astra-terra-macos-probe"
-version = "0.1.0"
-dependencies = [
- "image",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "tokio",
- "astra-agent-controller",
- "astra-agent-model-catalog",
- "astra-agent-provider-transport",
- "astra-agent-runtime",
- "astra-agentic",
- "astra-app",
- "astra-blocker",
- "astra-blocker-service",
- "astra-core",
- "astra-decision",
- "astra-engine",
- "astra-ipc",
- "astra-private-fs",
- "astra-store",
- "astra-work-composition",
-]
-
-[[package]]
-name = "astra-update-transport"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "futures-util",
- "reqwest",
- "thiserror 2.0.18",
- "time",
- "tough",
- "url",
-]
-
-[[package]]
-name = "astra-voice"
-version = "0.1.0"
-dependencies = [
- "block2",
- "embed_plist",
- "objc2",
- "objc2-avf-audio",
- "objc2-foundation",
- "objc2-speech",
- "windows",
-]
-
-[[package]]
-name = "astra-webext"
-version = "0.1.0"
-dependencies = [
- "flate2",
- "ring",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
- "thiserror 2.0.18",
- "url",
- "zip",
-]
-
-[[package]]
-name = "astra-webext-macos"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "block2",
- "dispatch2",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "objc2-web-kit",
- "serde_json",
- "astra-webext",
-]
-
-[[package]]
-name = "astra-webext-windows"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "raw-window-handle",
- "serde_json",
- "sha2 0.10.9",
- "webview2-com",
- "windows",
- "wry",
- "astra-webext",
-]
-
-[[package]]
-name = "astra-work-composition"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "sha2 0.10.9",
- "tokio",
- "astra-agent-controller",
- "astra-agent-provider-transport",
- "astra-agent-runtime",
- "astra-agentic",
- "astra-app",
- "astra-core",
- "astra-engine",
- "astra-ipc",
- "astra-page-assist",
- "astra-store",
 ]
 
 [[package]]

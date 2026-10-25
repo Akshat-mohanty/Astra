@@ -14,7 +14,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MPL-2.0"
 authors = ["crynta"]
-repository = "https://github.com/astra/astra"
+repository = "https://github.com/Akshat-mohanty/Astra"
 
 [workspace.dependencies]
 astra-agentic = { path = "crates/astra-agentic", version = "=0.1.0" }
