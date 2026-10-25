@@ -25,12 +25,12 @@ use objc2::{
 };
 use objc2_app_kit::{
     NSAppearanceCustomization, NSAppearanceNameAqua, NSAppearanceNameDarkAqua,
-    NSAutoresizingMaskOptions, NSBezierPath, NSButton, NSColor, NSEvent, NSResponder,
-    NSTrackingArea, NSTrackingAreaOptions, NSView, NSViewLayerContentsRedrawPolicy, NSWindow,
-    NSWindowButton, NSWindowDidBecomeKeyNotification, NSWindowDidDeminiaturizeNotification,
+    NSAutoresizingMaskOptions, NSButton, NSEvent, NSResponder, NSTrackingArea,
+    NSTrackingAreaOptions, NSView, NSViewLayerContentsRedrawPolicy, NSWindow, NSWindowButton,
+    NSWindowDidBecomeKeyNotification, NSWindowDidDeminiaturizeNotification,
     NSWindowDidExitFullScreenNotification, NSWindowDidResignKeyNotification, NSWindowOrderingMode,
     NSWindowStyleMask, NSWindowWillEnterFullScreenNotification,
-    NSWindowWillExitFullScreenNotification, NSWorkspace,
+    NSWindowWillExitFullScreenNotification,
 };
 use objc2_foundation::{
     ns_string, MainThreadMarker, NSArray, NSInsetRect, NSNotification, NSNotificationCenter,
@@ -42,15 +42,6 @@ use tauri::WebviewWindow;
 /// The pointer lights the controls a little before it reaches them, so the
 /// colour is already there when it arrives rather than appearing under it.
 const APPROACH: f64 = 6.0;
-/// Lighting answers the pointer, so it is quick; letting go is slower, so a
-/// pointer grazing the corner does not make the controls flicker.
-const LIGHT_SECONDS: f64 = 0.14;
-const REST_SECONDS: f64 = 0.24;
-
-/// Measured from the controls of an inactive window on macOS 26: white at a
-/// sixth over a dark ground. On a light ground the same step is taken in ink.
-const REST_DARK: (f64, f64) = (1.0, 0.17);
-const REST_LIGHT: (f64, f64) = (0.0, 0.13);
 
 pub struct Ivars {
     tracking: RefCell<Option<Retained<NSTrackingArea>>>,
@@ -94,14 +85,7 @@ define_class!(
 
         #[unsafe(method(drawRect:))]
         fn draw_rect(&self, _dirty: NSRect) {
-            if self.ivars().suspended.get() {
-                return;
-            }
-            let (white, alpha) = if self.is_dark() { REST_DARK } else { REST_LIGHT };
-            NSColor::colorWithWhite_alpha(white, alpha).setFill();
-            for rect in self.control_rects() {
-                NSBezierPath::bezierPathWithOvalInRect(rect).fill();
-            }
+            // Keep native buttons visible at full opacity; no unlit discs needed.
         }
 
         #[unsafe(method(updateTrackingAreas))]
@@ -198,30 +182,15 @@ impl WindowControls {
         Some(NSInsetRect(union, -APPROACH, -APPROACH))
     }
 
-    fn is_dark(&self) -> bool {
-        // SAFETY: immutable framework constants.
-        let (aqua, dark) = unsafe { (NSAppearanceNameAqua, NSAppearanceNameDarkAqua) };
-        self.effectiveAppearance()
-            .bestMatchFromAppearancesWithNames(&NSArray::from_slice(&[aqua, dark]))
-            .is_some_and(|name| name.isEqualToString(dark))
-    }
-
-    fn light(&self, lit: bool, animate: bool) {
+    fn light(&self, lit: bool, _animate: bool) {
         self.ivars().lit.set(lit);
         if self.ivars().suspended.get() {
             return;
         }
-        let reduce = NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion();
-        let duration = match (animate && !reduce, lit) {
-            (false, _) => 0.0,
-            (true, true) => LIGHT_SECONDS,
-            (true, false) => REST_SECONDS,
-        };
-        let (button_opacity, rest_opacity) = if lit { (1.0, 0.0) } else { (0.0, 1.0) };
         for button in self.buttons() {
-            fade(&button, button_opacity, duration);
+            fade(&button, 1.0, 0.0);
         }
-        fade(self, rest_opacity, duration);
+        fade(self, 0.0, 0.0);
     }
 
     fn settle(&self) {
@@ -236,7 +205,10 @@ impl WindowControls {
             return;
         }
         self.ivars().settled.set(true);
-        self.resync(false);
+        for button in &buttons {
+            fade(button, 1.0, 0.0);
+        }
+        fade(self, 0.0, 0.0);
     }
 
     /// Puts the controls back in the state the pointer implies. Tracking

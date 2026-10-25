@@ -2,10 +2,17 @@
   import { onMount, untrack, type Snippet } from "svelte";
   import { accountFoot, accountSession } from "$domain/account";
   import {
+    Add01Icon,
+    ArrowLeft01Icon,
+    ArrowRight01Icon,
+    Calendar01Icon,
     CheckListIcon,
     Clock01Icon,
+    Menu01Icon,
+    Music01Icon,
     Settings01Icon,
     Shield01Icon,
+    SparklesIcon,
   } from "@hugeicons/core-free-icons";
   import * as m from "$shared/i18n/messages";
   import { commands } from "$shared/ipc/bindings";
@@ -15,8 +22,6 @@
   import { tabs } from "$domain/tabs";
   import Icon from "$shared/ui/Icon";
   import IconButton from "$shared/ui/IconButton";
-  import { greetingFor } from "../lib/greeting";
-  import { clockFace, clockFormat, dayKey, focusSpan, untilNextMinute } from "../lib/clock";
   import { focus, localDay } from "$domain/time";
   import { groundPath, notchShape, notchWidth } from "../lib/ground";
   import { layout, type Box } from "../lib/layout";
@@ -24,6 +29,7 @@
   import { reducedMotion } from "$shared/lib/motion";
   import { decode, placeSky, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
   import NewTabAccount from "./NewTabAccount.svelte";
+  import AstrolabeDial from "./AstrolabeDial.svelte";
 
   let {
     search,
@@ -50,53 +56,93 @@
   let due = $state({ today: 0, overdue: 0 });
   let blocked = $state<number | null>(null);
   let focusedBefore = $state(0);
+  let is24Hour = $state(false);
+  let activeMode = $state<"normal" | "clock" | "timeline">("normal");
 
   let incognito = $derived(tabs.profile()?.kind === "incognito");
   const account = accountFoot({ private: () => incognito });
-  // The account is in its own pane beside the page's settings, and the
-  // settings keep the corner, so nothing moves when the account is known.
   let showAccount = $derived(!!onaccount && account.available);
   let signInWidth = $state(0);
   let profile = $derived(tabs.profile()?.id ?? null);
-  let showGreeting = $derived(preferences.value("ui.newtab-greeting") === "true");
-  let showClock = $derived(preferences.value("ui.newtab-clock") === "true");
   let showDue = $derived(
     !incognito && preferences.enabled("tasks") && preferences.value("ui.newtab-tasks") === "true",
   );
   let showFocus = $derived(preferences.enabled("time"));
-  let today = $derived(dayKey(now));
 
-  let firstName = $derived((tabs.profile()?.name ?? "").trim().split(/\s+/u)[0] ?? "");
-  let greeting = $derived.by(() => {
-    const words = greetingFor(now);
-    const named = !incognito && preferences.value("ui.newtab-name") === "true" && firstName;
-    return named ? m.ntp_greeting_named({ greeting: words, name: firstName }) : words;
+  // Time & Date format calculations
+  let rawHours = $derived(now.getHours());
+  let hours = $derived.by(() => {
+    const val = is24Hour ? rawHours : rawHours % 12 || 12;
+    return String(val).padStart(2, "0");
   });
-  let face = $derived(clockFace(now, clockFormat(preferences.value("ui.newtab-clock-format"))));
-  let date = $derived(
-    new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(
-      now,
-    ),
+  let minutes = $derived(String(now.getMinutes()).padStart(2, "0"));
+  let seconds = $derived(String(now.getSeconds()).padStart(2, "0"));
+  let period = $derived(is24Hour ? "" : rawHours >= 12 ? "PM" : "AM");
+
+  let fullDateStr = $derived(
+    new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(now),
   );
-  const number = new Intl.NumberFormat();
+
+  // Timezone calculations
+  let timeZone = $derived(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+  let cityName = $derived.by(() => {
+    const raw = timeZone.split("/").pop()?.replace(/_/g, " ") ?? "Local";
+    return raw;
+  });
+
+  let gmtOffsetStr = $derived.by(() => {
+    const offsetMin = -now.getTimezoneOffset();
+    const sign = offsetMin >= 0 ? "+" : "-";
+    const h = Math.floor(Math.abs(offsetMin) / 60);
+    const m = Math.abs(offsetMin) % 60;
+    return `GMT ${sign}${h}${m > 0 ? `:${String(m).padStart(2, "0")}` : ":00"}`;
+  });
+
+  let dayProgressFraction = $derived.by(() => {
+    const s = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    return Math.min(1, Math.max(0, s / 86400));
+  });
+
+  let timelineCursorPercent = $derived(dayProgressFraction * 100);
+
+  // Focus & tasks
   let running = $derived(focus.session());
   let focusMinutes = $derived(
     (focusedBefore + (running === null ? 0 : focus.focusedSeconds(running, now.getTime()))) / 60,
   );
-  let focusGoalMinutes = $derived(Number(preferences.value("focus.goal")) || 120);
-  let focusShare = $derived(
-    focusGoalMinutes > 0 ? Math.min(1, Math.max(0, focusMinutes / focusGoalMinutes)) : 0,
-  );
 
-  // The figures a private window shows none of; what is due only while Tasks
-  // is wanted here. What the blocker stopped is always there, at nothing
-  // until it has stopped something.
-  let figures = $derived(
-    incognito ? [] : ["trackers", ...(showFocus ? ["focus"] : []), ...(showDue ? ["due"] : [])],
-  );
+  let page = $derived(layout(width, height, { controls: [], clock: false }));
+  let scene = $derived(skyScene());
+  const arriving = !seen(untrack(() => scene));
+  let shown = $state<Scene | null>(seen(untrack(() => scene)) ? untrack(() => scene) : null);
 
-  // Read when the page opens and with the minute's redraw while it shows, so
-  // it keeps up with browsing in other tabs without a timer of its own.
+  $effect(() => {
+    const wanted = scene;
+    let live = true;
+    const reveal = () => {
+      if (live) shown = wanted;
+    };
+    void decode(wanted).then(reveal, reveal);
+    return () => {
+      live = false;
+    };
+  });
+
+  let sky = $derived(placeSky(width, page.horizon));
+  let ground = $derived(groundPath(width, height, page.notch));
+  let lip = $derived(notchShape(width, height, page.notch));
+  let fieldWidth = $derived(notchWidth(width, page.notch));
+
+  // Quick task entry
+  let quickTask = $state("");
+  let addingTask = $state(false);
+
+  // Blocker stats
   $effect(() => {
     const owner = profile;
     void now;
@@ -115,7 +161,8 @@
       live = false;
     };
   });
-  // Focus finished earlier today; a running session adds to it live.
+
+  // Focus stats
   $effect(() => {
     const owner = profile;
     const day = localDay(now);
@@ -135,52 +182,11 @@
       live = false;
     };
   });
-  let controls: number[] = [];
-  let page = $derived(layout(width, height, { controls: [], clock: false }));
-  const at = ({ x, y, w, h }: Box) => `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
 
-  // Day over a light page, night over a dark one.
-  let scene = $derived(skyScene());
-
-  // The sky arrives once a session, as the first new tab opens, and is simply
-  // there on every one after.
-  const arriving = !seen(untrack(() => scene));
-  let shown = $state<Scene | null>(seen(untrack(() => scene)) ? untrack(() => scene) : null);
-  $effect(() => {
-    const wanted = scene;
-    let live = true;
-    // A sky that cannot be decoded leaves the page its own colour; it never
-    // keeps the name and the controls hidden.
-    const reveal = () => {
-      if (live) shown = wanted;
-    };
-    void decode(wanted).then(reveal, reveal);
-    return () => {
-      live = false;
-    };
-  });
-
-  // The picture is the page: painted with it, nothing drawn of its own. The
-  // page is cut by the notch the field hangs in, so the window's own glass
-  // reaches down into it around the field.
-  let sky = $derived(placeSky(width, page.horizon));
-  const id = $props.id();
-  let ground = $derived(groundPath(width, height, page.notch));
-  let lip = $derived(notchShape(width, height, page.notch));
-  let fieldWidth = $derived(notchWidth(width, page.notch));
-  let letters = $derived(
-    `scale(${page.mark.w / WORDMARK.width}) ` +
-      `translate(${-WORDMARK.x} ${-WORDMARK.y}) scale(${WORDMARK.scaleX} ${WORDMARK.scaleY})`,
-  );
-  // One pass of light across the name as the first sky arrives, then
-  // stillness: driven by the document, nothing left running once it passes.
-  const glint = arriving && !reducedMotion();
-
-  // What is due today, overdue included, kept current while the page shows it:
-  // read once, then again whenever a task in this profile changes.
+  // Task counts
   $effect(() => {
     const owner = profile;
-    const day = today;
+    const day = localDay(now);
     if (!owner || !showDue) {
       due = { today: 0, overdue: 0 };
       return;
@@ -214,12 +220,12 @@
 
   onMount(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    // One redraw per minute, on the turn, and none while the page is hidden.
     function update() {
       now = new Date();
       clearTimeout(timer);
-      if (document.visibilityState === "visible")
-        timer = setTimeout(update, untilNextMinute(Date.now()));
+      if (document.visibilityState === "visible") {
+        timer = setTimeout(update, 1000 - (Date.now() % 1000));
+      }
     }
     function visibility() {
       clearTimeout(timer);
@@ -234,13 +240,6 @@
   });
 </script>
 
-<!--
-  Drawn by the chrome, so a new tab costs no WebView and shows no paint flash.
-  The page is a window onto the Astra sky: solid above, dissolving through
-  a halftone screen into the page below the horizon. The window's own glass
-  reaches down into it through the notch the field hangs in. The dots are
-  baked into the picture, so the page only shows it.
--->
 <section
   class="newtab"
   class:arriving
@@ -250,118 +249,301 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  {#if ground}<div class="page" aria-hidden="true" style:clip-path={`path(evenodd, "${ground}")`}>
+  <!-- Background Wallpaper: Astra Starry Night Sky -->
+  {#if ground}
+    <div class="page" aria-hidden="true" style:clip-path={`path(evenodd, "${ground}")`}>
       <div
         class="sky"
         style:background-image={`url("${SCENES[scene]}")`}
         style:background-size={`${sky.w}px ${sky.h}px`}
         style:background-position={`${sky.x}px ${sky.y}px`}
       ></div>
-    </div>{/if}
+    </div>
+  {/if}
 
-  <!-- Light caught along the edge where the page meets the window, fading
-       away from it: a strip as tall as the notch, so it is drawn once. -->
+  <!-- Light edge along top notch -->
   <svg class="rim" aria-hidden="true" style:height={`${page.notch.height + 1}px`}>
     <defs>
-      <linearGradient id={`${id}-lip`} x1="0" y1="1" x2="0" y2="0">
+      <linearGradient id="notch-lip" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0" class="lip" />
         <stop offset="0.6" class="lip" stop-opacity="0" />
       </linearGradient>
     </defs>
-    <path d={lip} stroke={`url(#${id}-lip)`} />
+    <path d={lip} stroke="url(#notch-lip)" />
   </svg>
 
-  <!-- The name, drawn only as large as itself. -->
-  <svg class="mark" role="img" aria-label="Astra" style={at(page.mark)}>
-    <defs>
-      <path id={`${id}-letters`} d={WORDMARK.d} transform={letters} />
-      {#if glint}<linearGradient
-          id={`${id}-glint`}
-          gradientUnits="userSpaceOnUse"
-          x1={-page.mark.h * 3}
-          x2="0"
-          y1="0"
-          y2={page.mark.h}
-        >
-          <stop offset="0" class="glint" stop-opacity="0" />
-          <stop offset="0.5" class="glint" />
-          <stop offset="1" class="glint" stop-opacity="0" />
-          <animateTransform
-            attributeName="gradientTransform"
-            type="translate"
-            from="0 0"
-            to={`${page.mark.w + page.mark.h * 3} 0`}
-            begin="0.5s"
-            dur="1.3s"
-            calcMode="spline"
-            keyTimes="0;1"
-            keySplines="0.3 0 0.2 1"
-            fill="freeze"
-          />
-        </linearGradient>{/if}
-    </defs>
-    <use class="name" href={`#${id}-letters`} />
-    {#if glint}<use href={`#${id}-letters`} fill={`url(#${id}-glint)`} />{/if}
-  </svg>
-
-  <div class="field" style:width={`${fieldWidth}px`} style:height={`${page.notch.height}px`}>
-    {@render search()}
-  </div>
-
-  <!-- A private window has no figures; what it promises stands in their place. -->
-  {#if incognito}
-    <p class="note">{m.ntp_private()}</p>
-  {:else if figures.length}
-    <!-- The day in figures, along the foot of the page; they step aside
-         while a search is open. -->
-    <div class="figures">
-      {#each figures as figure (figure)}
-        {#if figure === "trackers"}
-          <div class="figure">
-            <Icon icon={Shield01Icon} size={14} /><span class="name"
-              >{m.ntp_trackers_blocked()}</span
-            ><span class="value">{number.format(blocked ?? 0)}</span>
-          </div>
-        {:else if figure === "focus"}
-          <button type="button" class="figure" onclick={ontime}>
-            <Icon icon={Clock01Icon} size={14} /><span class="name">{m.ntp_focused()}</span><span
-              class="value">{focusSpan(focusMinutes)}</span
-            ><span
-              class="meter"
-              role="meter"
-              aria-label={m.ntp_focus_goal({ goal: focusSpan(focusGoalMinutes) })}
-              aria-valuemin={0}
-              aria-valuemax={focusGoalMinutes}
-              aria-valuenow={Math.min(focusMinutes, focusGoalMinutes)}
-              ><span class="fill" style:transform={`scaleX(${focusShare})`}></span></span
-            >
-          </button>
-        {:else}
-          <button type="button" class="figure" onclick={ontasks}>
-            <Icon icon={CheckListIcon} size={14} /><span class="name">{m.ntp_due_today()}</span
-            ><span class="value">{due.today}</span><span class="foot" class:late={due.overdue > 0}
-              >{due.overdue > 0
-                ? m.ntp_overdue({ count: due.overdue })
-                : m.ntp_nothing_overdue()}</span
-            >
-          </button>
-        {/if}
-      {/each}
+  <!-- Top Glass Bar: Brand, Search Notch, and Action Buttons -->
+  <header class="top-bar">
+    <div class="top-left">
+      <div class="brand">
+        <span class="brand-glyph" aria-hidden="true">✦</span>
+        <span class="brand-text">ASTRA</span>
+      </div>
     </div>
-  {/if}
+
+    <!-- Edge-to-Edge Search Notch Field -->
+    <div class="field" style:width={`${fieldWidth}px`} style:height={`${page.notch.height}px`}>
+      {@render search()}
+    </div>
+
+    <div class="top-right">
+      <div class="action-buttons">
+        <IconButton
+          icon={Menu01Icon}
+          label="Dashboard layout"
+          size={16}
+          buttonSize={32}
+        />
+        <IconButton
+          icon={Calendar01Icon}
+          label="Calendar & Tasks"
+          size={16}
+          buttonSize={32}
+          onclick={ontasks}
+        />
+        <IconButton
+          icon={Music01Icon}
+          label="Focus audio"
+          size={16}
+          buttonSize={32}
+          onclick={ontime}
+        />
+        <IconButton
+          icon={SparklesIcon}
+          label="Astra AI"
+          size={16}
+          buttonSize={32}
+        />
+        {#if showAccount}
+          <div class="account-wrapper">
+            <NewTabAccount {account} onaccount={onaccount!} bind:signInWidth />
+          </div>
+        {/if}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Stage: 3-Column Layout matching browsermock.webp -->
+  <main class="dashboard-body">
+    <!-- Left Column: Timezones Card -->
+    <div class="card-column left-column">
+      <div class="dashboard-card timezones-card">
+        <div class="card-header">
+          <span class="card-title">Timezones</span>
+          <button
+            type="button"
+            class="action-pill-button"
+            onclick={() => {}}
+          >
+            <Icon icon={Add01Icon} size={13} />
+            <span>Timezone</span>
+          </button>
+        </div>
+
+        <div class="card-inset">
+          <div class="timezone-info">
+            <div class="location-name">{cityName} (Local)</div>
+            <div class="gmt-offset">{gmtOffsetStr}</div>
+          </div>
+          <div class="timezone-digital">
+            {hours}:{minutes} {period}
+          </div>
+          <div class="ticks-progress-bar" title={`Day progress: ${Math.round(dayProgressPercent)}%`}>
+            {#each Array(44) as _, i}
+              <span
+                class="micro-tick"
+                class:active={i / 44 <= dayProgressFraction}
+              ></span>
+            {/each}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Column: Astrolabe Dial + Huge Digital Clock + Date -->
+    <div class="center-column">
+      <!-- Astronomical Dial in the background -->
+      <AstrolabeDial {now} size={Math.min(560, Math.max(380, width * 0.44))} />
+
+      <!-- Center Foreground Clock Display -->
+      <div class="clock-display">
+        <div class="clock-digits">
+          <span class="main-time">{hours}:{minutes}</span>
+          <span class="seconds-box">{seconds}</span>
+          {#if period}
+            <span class="period-text">{period}</span>
+          {/if}
+        </div>
+        <div class="full-date">{fullDateStr}</div>
+      </div>
+    </div>
+
+    <!-- Right Column: Tasks Card -->
+    <div class="card-column right-column">
+      <div class="dashboard-card tasks-card">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <Icon icon={CheckListIcon} size={16} />
+            <span class="card-title">Tasks</span>
+          </div>
+        </div>
+
+        <div class="tasks-body">
+          <p class="tasks-prompt">What are you focusing on?</p>
+          <div class="tasks-empty-state">
+            <button
+              type="button"
+              class="add-task-circle"
+              onclick={() => (addingTask = !addingTask)}
+              title="Add a task"
+            >
+              <Icon icon={Add01Icon} size={18} />
+            </button>
+            <span class="no-tasks-label">
+              {due.today > 0 ? `${due.today} task${due.today > 1 ? "s" : ""} today` : "No tasks for today"}
+            </span>
+          </div>
+
+          {#if addingTask}
+            <form
+              class="quick-task-form"
+              onsubmit={(e) => {
+                e.preventDefault();
+                if (quickTask.trim()) {
+                  addingTask = false;
+                  quickTask = "";
+                  ontasks?.();
+                }
+              }}
+            >
+              <input
+                type="text"
+                bind:value={quickTask}
+                placeholder="Type task and press Enter..."
+                class="quick-task-input"
+              />
+            </form>
+          {/if}
+        </div>
+
+        <div class="card-footer">
+          <button
+            type="button"
+            class="view-all-link"
+            onclick={ontasks}
+          >
+            <span>≡</span>
+            <span>View all Tasks</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Timeline Bar matching browsermock.webp -->
+  <footer class="timeline-toolbar">
+    <!-- Left Section: Modes -->
+    <div class="toolbar-left">
+      <button type="button" class="tool-icon-btn" title="Dashboard">
+        <Icon icon={Menu01Icon} size={14} />
+      </button>
+      <div class="mode-toggles">
+        <button
+          type="button"
+          class="mode-btn"
+          class:active={activeMode === "normal"}
+          onclick={() => (activeMode = "normal")}
+        >
+          NORMAL MODE
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          class:active={activeMode === "clock"}
+          onclick={() => (activeMode = "clock")}
+        >
+          CLOCK
+        </button>
+        <button
+          type="button"
+          class="mode-btn"
+          class:active={activeMode === "timeline"}
+          onclick={() => (activeMode = "timeline")}
+        >
+          TIMELINE
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Section: Timeline Ruler with Live Marker -->
+    <div class="toolbar-center">
+      <div class="timeline-ruler">
+        {#each [6, 8, 10, 12, 14, 16, 18, 20, 22] as hr}
+          <div class="hour-mark" style:left={`${(hr / 24) * 100}%`}>
+            <span class="hour-tick"></span>
+            <span class="hour-label">{String(hr).padStart(2, "0")}</span>
+          </div>
+        {/each}
+
+        <!-- Active Current Time Cursor Indicator -->
+        <div class="time-cursor" style:left={`${timelineCursorPercent}%`}>
+          <div class="cursor-pill">
+            <span class="cursor-dot"></span>
+            <span>{cityName} (Local)</span>
+          </div>
+          <div class="cursor-line"></div>
+        </div>
+      </div>
+
+      <div class="watch-caption">
+        <button type="button" class="arrow-btn"><Icon icon={ArrowLeft01Icon} size={12} /></button>
+        <span class="watch-title">THE ASTRA WATCH</span>
+        <button type="button" class="arrow-btn"><Icon icon={ArrowRight01Icon} size={12} /></button>
+      </div>
+    </div>
+
+    <!-- Right Section: Details & Controls -->
+    <div class="toolbar-right">
+      <div class="fps-badge">
+        <span class="fps-dot"></span>
+        <span>60 FPS</span>
+      </div>
+
+      <button
+        type="button"
+        class="time-toggle-btn"
+        onclick={() => (is24Hour = !is24Hour)}
+        title="Toggle 12 / 24 hour clock"
+      >
+        {is24Hour ? "24 HOUR" : "12 HOUR"}
+      </button>
+
+      <span class="time-range-label">6AM - 10PM</span>
+
+      <IconButton
+        icon={Settings01Icon}
+        label="Settings"
+        size={14}
+        buttonSize={28}
+        onclick={oncustomize}
+      />
+
+      <button type="button" class="text-link" onclick={oncustomize}>
+        ABOUT
+      </button>
+
+      <button type="button" class="text-link" onclick={oncustomize}>
+        Privacy
+      </button>
+    </div>
+  </footer>
 </section>
 
 <style>
-  /* Whatever the page leaves open is the window: the chrome's own colour on
-     an opaque window, and its material where it has one. Below the horizon
-     the page is the colour the sky dissolves into. Everything is placed in
-     the page's physical pixels, which do not mirror in a right-to-left page. */
   .newtab {
     --sky-paper: var(--sky-day-paper);
     --sky-shadow: var(--sky-day-shadow);
     --sky-lip: var(--sky-day-lip);
-    --disc-fill: var(--sky-day-disc-fill);
-    --disc-rim: var(--sky-day-disc-rim);
 
     position: relative;
     block-size: 100%;
@@ -369,18 +551,15 @@
     background: var(--color-chrome);
     isolation: isolate;
     container: newtab / inline-size;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--color-text, #ffffff);
+    user-select: none;
   }
 
   .newtab[data-scene="night"] {
     --sky-paper: var(--sky-night-paper);
     --sky-shadow: var(--sky-night-shadow);
     --sky-lip: var(--sky-night-lip);
-    --disc-fill: var(--sky-night-disc-fill);
-    --disc-rim: var(--sky-night-disc-rim);
-  }
-
-  :global(:root:not([data-material="none"])[data-material]) .newtab {
-    background: transparent;
   }
 
   .page,
@@ -390,11 +569,12 @@
   }
 
   .page {
-    background: var(--sky-paper);
+    background: #0b0c10;
   }
 
   .sky {
     background-repeat: no-repeat;
+    opacity: 0.95;
   }
 
   .rim {
@@ -403,306 +583,624 @@
     inset-inline: 0;
     inline-size: 100%;
     pointer-events: none;
+    z-index: 10;
   }
 
-  /* Light along the notch's foot: white by day, a cool moonlit tone at
-     night, where white would read as a drawn border. */
   .rim path {
     fill: none;
     stroke-width: 1;
   }
 
   .lip {
-    stop-color: var(--sky-lip);
+    stop-color: var(--sky-lip, rgba(255, 255, 255, 0.15));
   }
 
-  .mark {
+  /* Top Bar */
+  .top-bar {
     position: absolute;
-    overflow: visible;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 20;
     pointer-events: none;
   }
 
-  .name {
-    fill: var(--sky-name);
+  .top-left,
+  .top-right {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    z-index: 25;
   }
 
-  .glint {
-    stop-color: var(--sky-glint);
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
-  /* The field fills the notch: the window's glass is its material. */
+  .brand-glyph {
+    color: #93c5fd;
+    font-size: 15px;
+    filter: drop-shadow(0 0 6px rgba(147, 197, 253, 0.8));
+  }
+
+  .brand-text {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+  }
+
+  /* Field notch search */
   .field {
     position: absolute;
-    z-index: 2;
+    z-index: 22;
     inset-block-start: 0;
     inset-inline: 0;
     margin-inline: auto;
+    pointer-events: auto;
   }
 
-  .greeting,
-  .when {
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .account-wrapper {
+    margin-inline-start: 8px;
+  }
+
+  /* Main Dashboard Body */
+  .dashboard-body {
     position: absolute;
-    inset-inline: 0;
-    margin: 0 auto;
-    color: var(--sky-ink);
-    text-align: center;
-    text-shadow: 0 1px 18px var(--sky-shadow);
+    top: 60px;
+    bottom: 74px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 36px;
+    z-index: 5;
+  }
+
+  .card-column {
+    width: 290px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+
+  .left-column {
+    margin-bottom: 24px;
+  }
+
+  .right-column {
+    margin-bottom: 24px;
+  }
+
+  /* Cards styling */
+  .dashboard-card {
+    background: rgba(18, 20, 26, 0.65);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .dashboard-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: -0.01em;
+  }
+
+  .action-pill-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: default;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .action-pill-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .card-inset {
+    background: rgba(0, 0, 0, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .timezone-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .location-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .gmt-offset {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timezone-digital {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    margin: 12px 0 10px;
+    color: #ffffff;
+  }
+
+  .ticks-progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+    height: 12px;
+    width: 100%;
+  }
+
+  .micro-tick {
+    flex: 1;
+    height: 7px;
+    border-radius: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    transition: background-color 0.2s ease;
+  }
+
+  .micro-tick.active {
+    background: #ffffff;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Tasks Card */
+  .tasks-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 14px;
+    min-height: 140px;
+    justify-content: center;
+  }
+
+  .tasks-prompt {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 18px;
+    align-self: flex-start;
+  }
+
+  .tasks-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .add-task-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.6);
+    display: grid;
+    place-items: center;
+    cursor: default;
+    transition: all 0.2s ease;
+  }
+
+  .add-task-circle:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: scale(1.05);
+  }
+
+  .no-tasks-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .quick-task-form {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .quick-task-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+    outline: none;
+  }
+
+  .quick-task-input:focus {
+    border-color: #93c5fd;
+  }
+
+  .card-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 10px;
+  }
+
+  .view-all-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    cursor: default;
+    padding: 0;
+    transition: color 0.15s ease;
+  }
+
+  .view-all-link:hover {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  /* Center Column */
+  .center-column {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
     pointer-events: none;
   }
 
-  .greeting {
-    font-size: 11.5px;
-    font-weight: 600;
-    line-height: 16px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    opacity: 0.86;
+  .clock-display {
+    position: relative;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 80px;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.7));
   }
 
-  /* One line under the name: the time set firm, the date beside it a step
-     quieter, a point of light between them. */
-  .when {
+  .clock-digits {
     display: flex;
     align-items: baseline;
-    justify-content: center;
-    gap: 8px;
-    font-size: 16px;
-    line-height: 20px;
-  }
-
-  .time {
-    font-weight: 600;
+    font-weight: 700;
+    letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
   }
 
-  .period {
-    font-size: 11px;
+  .main-time {
+    font-size: clamp(54px, 6.2vw, 84px);
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 0 0 28px rgba(255, 255, 255, 0.25);
+  }
+
+  .seconds-box {
+    font-size: clamp(20px, 2.3vw, 32px);
+    line-height: 1;
+    color: #93c5fd;
+    margin-left: 4px;
+    align-self: flex-start;
+    padding-top: 6px;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    opacity: 0.86;
+    text-shadow: 0 0 16px rgba(147, 197, 253, 0.5);
   }
 
-  .date {
-    font-weight: 400;
-    opacity: 0.86;
+  .period-text {
+    font-size: clamp(22px, 2.5vw, 36px);
+    line-height: 1;
+    color: #ffffff;
+    margin-left: 10px;
+    font-weight: 600;
   }
 
-  .date::before {
-    content: "";
-    display: inline-block;
-    inline-size: 3px;
-    block-size: 3px;
-    margin-inline-end: 8px;
-    border-radius: var(--radius-capsule);
-    background: currentcolor;
-    vertical-align: middle;
-    opacity: 0.6;
+  .full-date {
+    margin-top: 14px;
+    font-size: clamp(14px, 1.3vw, 17px);
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
   }
 
-  /* A disc of light on the sky: the sky behind it is still, so it needs no
-     blur of its own. */
-  .control {
+  /* Bottom Timeline Toolbar */
+  .timeline-toolbar {
     position: absolute;
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    border-radius: var(--radius-capsule);
-    background: var(--disc-fill);
-    box-shadow:
-      inset 0 0 0 0.5px var(--disc-rim),
-      inset 0 1px 0 var(--disc-rim);
-    color: var(--sky-ink);
-  }
-
-  /* White on the sky for the buttons alone: the account's panel opens from
-     inside the disc and keeps the theme's own ink. */
-  .control :global(:is(.ntp-account, .sign-in, .icon-button)) {
-    --color-text: var(--sky-ink);
-    --color-muted: var(--sky-ink);
-    --color-label-secondary: var(--sky-ink);
-  }
-
-  .note {
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: 28px;
-    margin: 0 auto;
-    padding-inline: 24px;
-    color: var(--color-faint);
-    font-size: var(--text-label);
-    line-height: 1.5;
-    text-align: center;
-  }
-
-  /* The day's figures: quiet capsules on the page, each read as one line. */
-  .figures {
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: 24px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    padding-inline: 24px;
-    transition:
-      opacity var(--motion-base) var(--ease-out),
-      translate var(--motion-base) var(--ease-out);
-  }
-
-  /* Open results take the sky to themselves: the name and the time step
-     back under them rather than showing round them, and return as soon as
-     the results close, whatever is left in the field. Each is only as large as
-     itself, so the fade composites a few small layers and repaints nothing. */
-  .mark,
-  .greeting,
-  .when {
-    transition: opacity var(--motion-base) var(--ease-out);
-  }
-
-  .newtab:has(:global(.dock[data-open="true"])) :is(.mark, .greeting, .when) {
-    opacity: 0;
-  }
-
-  .figure {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 74px;
+    background: rgba(10, 12, 16, 0.78);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
     display: flex;
     align-items: center;
-    gap: 7px;
-    block-size: 34px;
-    padding: 0 14px 0 12px;
-    border: 0;
-    border-radius: var(--radius-capsule);
-    background: color-mix(in srgb, var(--color-text) 5%, transparent);
-    color: var(--color-muted);
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 500;
-    white-space: nowrap;
-    animation: arrive var(--motion-page) var(--ease-emphasized) 80ms backwards;
+    justify-content: space-between;
+    padding: 0 28px;
+    z-index: 20;
   }
 
-  .figure :global(svg) {
-    flex: none;
-    color: var(--color-faint);
+  .toolbar-left,
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
-  button.figure {
+  .tool-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    display: grid;
+    place-items: center;
     cursor: default;
-    outline: none;
-    transition:
-      background-color var(--motion-instant) var(--ease-smooth),
-      scale var(--motion-slow) var(--ease-smooth);
   }
 
-  button.figure:hover {
-    background: color-mix(in srgb, var(--color-text) 9%, transparent);
+  .mode-toggles {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
   }
 
-  button.figure:active {
-    scale: 0.97;
-    transition-duration: var(--motion-fast);
-  }
-
-  button.figure:focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
-  }
-
-  .value {
-    color: var(--color-text);
+  .mode-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: default;
+    transition: all 0.15s ease;
+  }
+
+  .mode-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .mode-btn:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Center Timeline */
+  .toolbar-center {
+    flex: 1;
+    max-width: 580px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 24px;
+  }
+
+  .timeline-ruler {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .hour-mark {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hour-tick {
+    width: 1px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.25);
+    margin-bottom: 2px;
+  }
+
+  .hour-label {
+    font-size: 9.5px;
+    color: rgba(255, 255, 255, 0.45);
     font-variant-numeric: tabular-nums;
   }
 
-  .foot {
-    color: var(--color-faint);
-  }
-
-  .foot.late {
-    color: var(--color-danger);
-  }
-
-  /* The day's progress toward the aim. */
-  .meter {
-    position: relative;
-    flex: none;
-    inline-size: 28px;
-    block-size: 3px;
-    margin-inline-start: 2px;
-    overflow: hidden;
-    border-radius: var(--radius-capsule);
-    background: var(--color-fill-strong);
-  }
-
-  .fill {
+  /* Time cursor marker */
+  .time-cursor {
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--color-text);
-    transform-origin: left center;
+    bottom: -1px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    pointer-events: none;
   }
 
-  /* A narrow pane keeps each figure to its icon and value on one row; the
-     rest is still read out. */
-  @container newtab (inline-size < 720px) {
-    .figure .name,
-    .figure .foot {
-      position: absolute;
-      inline-size: 1px;
-      block-size: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
+  .cursor-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(20, 24, 30, 0.95);
+    border: 1px solid rgba(34, 197, 94, 0.6);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-bottom: 2px;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+  }
+
+  .cursor-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+  }
+
+  .cursor-line {
+    width: 2px;
+    height: 16px;
+    background: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
+  }
+
+  .watch-caption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .watch-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .arrow-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    display: grid;
+    place-items: center;
+    cursor: default;
+    padding: 2px;
+  }
+
+  .arrow-btn:hover {
+    color: #ffffff;
+  }
+
+  /* Right section controls */
+  .fps-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fps-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #60a5fa;
+  }
+
+  .time-toggle-btn {
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: default;
+    transition: all 0.15s ease;
+  }
+
+  .time-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  .time-range-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-link {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: default;
+    padding: 2px 4px;
+    transition: color 0.15s ease;
+  }
+
+  .text-link:hover {
+    color: #ffffff;
+  }
+
+  /* Responsive adapt */
+  @media (max-width: 1080px) {
+    .card-column {
+      width: 240px;
     }
   }
 
-  /* The first new tab of a session waits for its sky, then the sky and
-     what stands on it come up together. */
-  .arriving :is(.sky, .mark, .greeting, .when, .control) {
-    transition: opacity 640ms var(--ease-out);
-  }
-
-  .arriving:not([data-ready="true"]) :is(.sky, .mark, .greeting, .when, .control) {
-    opacity: 0;
-  }
-
-  @keyframes arrive {
-    from {
-      opacity: 0;
+  @media (max-width: 860px) {
+    .dashboard-body {
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
     }
-  }
-
-  @media (forced-colors: active) {
-    .sky {
-      display: none;
+    .card-column {
+      width: 100%;
+      max-width: 360px;
     }
-
-    .name {
-      fill: CanvasText;
-    }
-
-    .greeting,
-    .when {
-      color: CanvasText;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .figure {
-      animation: none;
-    }
-
-    .arriving :is(.sky, .mark, .greeting, .when, .control),
-    .figures {
-      transition: none;
-    }
-  }
-
-  :global(:root[data-reduce-motion="true"]) .figure {
-    animation: none;
-  }
-
-  :global(:root[data-reduce-motion="true"])
-    :is(.arriving .sky, .arriving .mark, .arriving .control, .figures) {
-    transition: none;
   }
 </style>
