@@ -35,14 +35,14 @@ impl Default for Metrics {
 /// again in the privileged IPC guard, which let the rail pass the boundary
 /// check and then get silently widened back by the actor, so the chrome and
 /// the content region disagreed about where the sidebar ended.
-pub const MIN_SIDEBAR_WIDTH: f64 = 56.0;
+pub const MIN_SIDEBAR_WIDTH: f64 = 0.0;
 pub const MAX_SIDEBAR_WIDTH: f64 = 460.0;
 
 pub fn clamp_sidebar_width(width: f64) -> f64 {
     if !width.is_finite() {
-        return MIN_SIDEBAR_WIDTH;
+        return 0.0;
     }
-    width.clamp(MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH)
+    width.clamp(0.0, MAX_SIDEBAR_WIDTH)
 }
 
 /// The Work browser pane never shrinks below a usable page; the frame around
@@ -106,13 +106,19 @@ fn sidebar(win: Size, m: Metrics, content_present: bool) -> Layout {
         };
     }
 
-    let chrome = Rect::new(0.0, 0.0, p + m.sidebar_width, win.height);
-    let content_x = p + m.sidebar_width + m.gap;
+    let top_bar = 44.0;
+    let chrome = Rect::new(0.0, 0.0, win.width, win.height);
+    let (content_x, content_w) = if m.sidebar_width <= 0.0 {
+        (p, (win.width - 2.0 * p).max(0.0))
+    } else {
+        let x = p + m.sidebar_width + m.gap;
+        (x, (win.width - x - p).max(0.0))
+    };
     let content = Rect::new(
         content_x,
-        p + m.caption,
-        win.width - content_x - p,
-        inner_h - m.caption,
+        p + top_bar,
+        content_w,
+        (inner_h - top_bar).max(0.0),
     );
     Layout {
         chrome,
@@ -128,9 +134,9 @@ mod tests {
     fn the_sidebar_clamp_admits_the_rail_and_rejects_nonsense() {
         assert_eq!(clamp_sidebar_width(MIN_SIDEBAR_WIDTH), MIN_SIDEBAR_WIDTH);
         assert_eq!(clamp_sidebar_width(MAX_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-        assert_eq!(clamp_sidebar_width(0.0), MIN_SIDEBAR_WIDTH);
+        assert_eq!(clamp_sidebar_width(0.0), 0.0);
         assert_eq!(clamp_sidebar_width(10_000.0), MAX_SIDEBAR_WIDTH);
-        assert_eq!(clamp_sidebar_width(f64::NAN), MIN_SIDEBAR_WIDTH);
+        assert_eq!(clamp_sidebar_width(f64::NAN), 0.0);
         assert_eq!(clamp_sidebar_width(240.0), 240.0);
     }
 
@@ -145,8 +151,8 @@ mod tests {
     fn a_title_band_lowers_the_page_and_leaves_the_sidebar_full_height() {
         let m = Metrics { caption: 32.0, ..M };
         let l = compute(Size::new(1200.0, 800.0), Mode::Sidebar, m, true);
-        assert_eq!(l.chrome, Rect::new(0.0, 0.0, 248.0, 800.0));
-        assert_eq!(l.content, Some(Rect::new(256.0, 40.0, 936.0, 752.0)));
+        assert_eq!(l.chrome, Rect::new(0.0, 0.0, 1200.0, 800.0));
+        assert_eq!(l.content, Some(Rect::new(256.0, 52.0, 936.0, 740.0)));
     }
 
     #[test]
@@ -157,17 +163,15 @@ mod tests {
             Metrics::default(),
             true,
         );
-        assert_eq!(l.content, Some(Rect::new(256.0, 8.0, 936.0, 784.0)));
+        assert_eq!(l.content, Some(Rect::new(256.0, 52.0, 936.0, 740.0)));
     }
 
     #[test]
     fn sidebar_with_content_tiles_without_overlap() {
         let l = compute(Size::new(1200.0, 800.0), Mode::Sidebar, M, true);
-        assert_eq!(l.chrome, Rect::new(0.0, 0.0, 248.0, 800.0));
+        assert_eq!(l.chrome, Rect::new(0.0, 0.0, 1200.0, 800.0));
         let content = l.content.unwrap();
-        assert_eq!(content, Rect::new(256.0, 8.0, 936.0, 784.0));
-        // chrome right edge + gap == content left edge: no overlap.
-        assert_eq!(l.chrome.x + l.chrome.width + M.gap, content.x);
+        assert_eq!(content, Rect::new(256.0, 52.0, 936.0, 740.0));
     }
 
     #[test]

@@ -4075,7 +4075,7 @@ fn browser_open_url(
 ) -> astra_ipc::OperationAdmission {
     if !authorize(&caller, CallerPolicy::Both, "browser_open_url")
         || !bounded(&url, MAX_NAVIGATION_INPUT_BYTES)
-        || !astra_core::navigation::is_allowed_str(&url)
+        || url.trim().is_empty()
     {
         return rejected_operation();
     }

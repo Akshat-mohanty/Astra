@@ -23,6 +23,7 @@
   // it made — including the query the reader just typed.
   $effect(() => {
     const owner = profile;
+    if (!owner || owner === "unbound") return;
     return untrack(() => {
       const current = historySession(owner, "sidebar");
       session = current;

@@ -102,7 +102,7 @@
 
     <!-- Outer Graduation Ticks (120 ticks around rim, rotates with seconds) -->
     <g transform={`rotate(${secondRotation}, ${cx}, ${cy})`}>
-      {#each outerTicks as i}
+      {#each outerTicks as i (i)}
         {@const isMajor = i % 10 === 0}
         {@const isMed = i % 5 === 0}
         <g transform={`rotate(${i * 3}, ${cx}, ${cy})`}>
@@ -120,7 +120,7 @@
 
     <!-- ================= RING 5: MINUTES (r = 281) ================= -->
     <g transform={`rotate(${minuteRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-minute">
-      {#each minutesArray as m}
+      {#each minutesArray as m (m)}
         {@const ang = -m * 6}
         {@const isMajor = m % 5 === 0}
         {@const isActive = m === currentMinute}
@@ -153,7 +153,7 @@
 
     <!-- ================= RING 4: HOURS (r = 221) ================= -->
     <g transform={`rotate(${hourRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-hour">
-      {#each hoursArray as h}
+      {#each hoursArray as h (h)}
         {@const ang = -h * 15}
         {@const isActive = h === currentHour}
         <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
@@ -185,7 +185,7 @@
 
     <!-- ================= RING 3: DATES (r = 165) ================= -->
     <g transform={`rotate(${dateRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-date">
-      {#each datesArray as d, idx}
+      {#each datesArray as d, idx (d)}
         {@const ang = -idx * (360 / daysInMonth)}
         {@const isActive = d === currentDate}
         <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
@@ -217,7 +217,7 @@
 
     <!-- ================= RING 2: DAY OF WEEK (r = 115) ================= -->
     <g transform={`rotate(${dayRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-day">
-      {#each DAYS as day, idx}
+      {#each DAYS as day, idx (day)}
         {@const ang = -idx * (360 / 7)}
         {@const isActive = idx === currentDay}
         <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
@@ -249,7 +249,7 @@
 
     <!-- ================= RING 1: MONTHS (r = 69) ================= -->
     <g transform={`rotate(${monthRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-month">
-      {#each MONTHS as mth, idx}
+      {#each MONTHS as mth, idx (mth)}
         {@const ang = -idx * 30}
         {@const isActive = idx === currentMonth}
         <g transform={`rotate(${ang}, ${cx}, ${cy})`}>

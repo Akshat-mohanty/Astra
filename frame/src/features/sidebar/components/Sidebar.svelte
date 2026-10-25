@@ -10,7 +10,9 @@
     COMPACT_WIDTH,
     PANEL_GAP,
     effectiveWidth,
+    expanded,
     isCompact,
+    sidebarResizeActive,
     sidebarResizeSettlement,
     toggleMode,
   } from "$session/sidebar-mode.svelte";
@@ -181,14 +183,17 @@
   aria-label={m.ui_browser_sidebar()}
   style:width={`${width}px`}
   style:--sidebar-width={`${width}px`}
+  style:--sidebar-expanded-width={`${expanded()}px`}
   data-menu-material={IS_WINDOWS && !settings ? "opaque" : undefined}
   data-reshaping={reshaping}
+  data-sidebar-resizing={sidebarResizeActive()}
   data-sidebar-resize-settling={resizeSettling}
   data-header-fresh={headerFresh}
   data-pointer-in={pointerIn}
   onpointerenter={() => (pointerIn = true)}
   onpointerleave={() => (pointerIn = false)}
   class="browser-sidebar relative flex shrink-0 flex-col text-text select-none"
+  class:hidden-sidebar={width <= 0}
 >
   {#if !navigating && !railPage && tools.activeTool() === null}<SidebarResizeHandle
       {width}
@@ -201,7 +206,7 @@
       compact={headerCompact}
       launcher={paneled}
       ontoggle={toggleShape}
-      pageControls={!inWork}
+      pageControls={false}
     />{/if}
   <div
     bind:this={columns}
@@ -223,6 +228,38 @@
 </aside>
 
 <style>
+  :global(.browser-sidebar) {
+    transition:
+      width var(--motion-page) var(--ease-emphasized),
+      opacity var(--motion-page) var(--ease-emphasized);
+    overflow: hidden !important;
+  }
+
+  :global(.browser-sidebar[data-sidebar-resizing="true"]) {
+    transition: none !important;
+  }
+
+  :global(.browser-sidebar.hidden-sidebar) {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden;
+  }
+
+  :global(.browser-sidebar > header),
+  :global(.browser-sidebar > .sidebar-columns) {
+    width: var(--sidebar-expanded-width, 240px);
+    min-width: var(--sidebar-expanded-width, 240px);
+    transition: transform var(--motion-page) var(--ease-emphasized);
+  }
+
+  :global(.browser-sidebar.hidden-sidebar > header),
+  :global(.browser-sidebar.hidden-sidebar > .sidebar-columns) {
+    transform: translateX(-16px);
+  }
+
   /* A panel open in the column (the space switcher, the tray on the address,
      the profile's stack) is the one thing to read: whatever it lies over
      steps back under it, and comes forward again when it closes. */
@@ -238,6 +275,11 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    :global(.browser-sidebar),
+    :global(.browser-sidebar > header),
+    :global(.browser-sidebar > .sidebar-columns) {
+      transition: none !important;
+    }
     :global([data-under-panel]) {
       transition: none;
     }

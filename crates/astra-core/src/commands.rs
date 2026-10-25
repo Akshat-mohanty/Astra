@@ -160,7 +160,7 @@ pub const REGISTRY: &[CommandSpec] = &[
     command(
         "sidebar.toggleCompact",
         "Compact Mode",
-        Keys::same("CmdOrCtrl+Shift+S"),
+        Keys::same("CmdOrCtrl+S"),
         Group::View,
     ),
     command(

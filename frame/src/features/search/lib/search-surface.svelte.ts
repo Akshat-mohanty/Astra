@@ -336,14 +336,45 @@ export function createSearchSurface(options: {
 
   function submit(background = false) {
     if (composing) return;
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
     const row = rows.find((candidate) => candidate.id === selectedId);
-    if (row && (settled || row.id === CALCULATION_ID || (moved && local(row)))) {
+    // If the user deliberately selected a specific non-default row with arrow keys
+    if (moved && row && (settled || row.id === CALCULATION_ID || local(row))) {
       void run(row, background);
       return;
     }
-    // Sending something behind the current tab is a deliberate choice about
-    // a row the user can see; it is never deferred onto an answer they cannot.
-    if (query.trim() && !background) queued = row?.id ?? "";
+
+    // Fast path: navigate immediately without waiting for suggestions to settle
+    if (options.tabId) {
+      running = true;
+      open = false;
+      void commands.tabsNavigate(options.tabId, trimmed).catch(() => {
+        running = false;
+        failed = true;
+      });
+      return;
+    }
+
+    if (!anchored) {
+      running = true;
+      open = false;
+      void commands.browserOpenUrl(trimmed, background).then(() => {
+        if (background) announce("opened");
+        else fulfilled = true;
+      }).catch(() => {
+        running = false;
+        failed = true;
+      });
+      return;
+    }
+
+    if (row && (settled || row.id === CALCULATION_ID)) {
+      void run(row, background);
+      return;
+    }
+    if (!background) queued = row?.id ?? "";
   }
 
   async function copy() {

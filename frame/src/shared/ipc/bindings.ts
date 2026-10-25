@@ -608,6 +608,16 @@ export const commands = {
 
 /** Events */
 export const events = {
+	astraAccountChanged: makeEvent<AccountChanged>("astra:account-changed"),
+	astraImportProgress: makeEvent<ImportJobView>("astra:import-progress"),
+	astraKeymapChanged: makeEvent<KeymapChanged>("astra:keymap-changed"),
+	astraPageAssistChanged: makeEvent<PageAssistChanged>("astra:page-assist-changed"),
+	astraSwipe: makeEvent<SwipeScroll>("astra:swipe"),
+	astraVoiceChanged: makeEvent<VoiceChanged>("astra:voice-changed"),
+	astraVoiceLevels: makeEvent<VoiceLevels>("astra:voice-levels"),
+	astraWorkDecisionPreferenceChanged: makeEvent<WorkDecisionPreferenceChanged>("astra:work-decision-preference-changed"),
+	astraWorkHumanChanged: makeEvent<WorkHumanChanged>("astra:work-human-changed"),
+	astraWorkModelsChanged: makeEvent<WorkModelsChanged>("astra:work-models-changed"),
 	blockerStatusChanged: makeEvent<BlockerStatusChanged>("blocker-status-changed"),
 	browserCredentialCapabilityChanged: makeEvent<BrowserCredentialCapabilityChanged>("browser-credential-capability-changed"),
 	downloadsChanged: makeEvent<DownloadsChanged>("downloads-changed"),
@@ -631,16 +641,6 @@ export const events = {
 	webExtensionAccessRequested: makeEvent<WebExtensionAccessRequested>("web-extension-access-requested"),
 	workChanged: makeEvent<WorkChanged>("work-changed"),
 	workEnvironmentChanged: makeEvent<WorkEnvironmentChanged>("work-environment-changed"),
-	astraAccountChanged: makeEvent<AccountChanged>("astra:account-changed"),
-	astraImportProgress: makeEvent<ImportJobView>("astra:import-progress"),
-	astraKeymapChanged: makeEvent<KeymapChanged>("astra:keymap-changed"),
-	astraPageAssistChanged: makeEvent<PageAssistChanged>("astra:page-assist-changed"),
-	astraSwipe: makeEvent<SwipeScroll>("astra:swipe"),
-	astraVoiceChanged: makeEvent<VoiceChanged>("astra:voice-changed"),
-	astraVoiceLevels: makeEvent<VoiceLevels>("astra:voice-levels"),
-	astraWorkDecisionPreferenceChanged: makeEvent<WorkDecisionPreferenceChanged>("astra:work-decision-preference-changed"),
-	astraWorkHumanChanged: makeEvent<WorkHumanChanged>("astra:work-human-changed"),
-	astraWorkModelsChanged: makeEvent<WorkModelsChanged>("astra:work-models-changed"),
 };
 
 /* Types */

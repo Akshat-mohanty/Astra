@@ -4,8 +4,10 @@
   import GlyphSwell from "./GlyphSwell.svelte";
 
   let {
+    fromEmpty = false,
     search,
   }: {
+    fromEmpty?: boolean;
     /** The search snippet to render. */
     search: Snippet;
     /** Opens this page's settings. */
@@ -21,6 +23,7 @@
 
 <section
   class="newtab"
+  class:animate-from-empty={fromEmpty}
   aria-label={m.new_tab()}
 >
   <!-- Background: Animated Glyph Swell canvas covering the whole surface -->
@@ -72,5 +75,62 @@
     position: relative;
     inline-size: min(580px, 100%);
     pointer-events: auto;
+  }
+
+  .newtab.animate-from-empty {
+    animation: newtab-surface-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .newtab.animate-from-empty .page {
+    animation: newtab-bg-fade 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .newtab.animate-from-empty .search-wrapper {
+    animation: newtab-search-rise 580ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+  }
+
+  @keyframes newtab-surface-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(14px);
+      filter: blur(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes newtab-bg-fade {
+    from {
+      opacity: 0;
+      transform: scale(1.04);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes newtab-search-rise {
+    from {
+      opacity: 0;
+      transform: translateY(22px) scale(0.95);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .newtab.animate-from-empty,
+    .newtab.animate-from-empty .page,
+    .newtab.animate-from-empty .search-wrapper {
+      animation: none;
+    }
   }
 </style>

@@ -108,7 +108,7 @@ impl Shell {
         let chrome_layout = layout::compute(win.size, win.mode, win.metrics, chrome_present);
         if !self.chrome.position(ChromeFrame {
             rect: chrome_layout.chrome,
-            fill_width: chrome_layout.content.is_none(),
+            fill_width: true,
             travel,
         }) {
             return NativeDispatch::Rejected;

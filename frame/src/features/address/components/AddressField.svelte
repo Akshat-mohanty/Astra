@@ -86,6 +86,52 @@
   // without it, and the one case worth interrupting for still shows.
   let warning = $derived(!editing && security === "insecure");
 
+  let tabLoading = $derived(tabs.activeTab()?.loading ?? false);
+  let isLoading = $derived(tabLoading || pending);
+
+  let progressWidth = $state(0);
+  let progressOpacity = $state(0);
+  let progressVisible = $state(false);
+
+  $effect(() => {
+    if (isLoading) {
+      progressVisible = true;
+      progressOpacity = 1;
+      progressWidth = 18;
+
+      const crawl = setInterval(() => {
+        if (progressWidth < 60) {
+          progressWidth += Math.random() * 10 + 5;
+        } else if (progressWidth < 85) {
+          progressWidth += Math.random() * 3 + 1;
+        } else if (progressWidth < 94) {
+          progressWidth += 0.4;
+        }
+      }, 200);
+
+      return () => clearInterval(crawl);
+    } else {
+      let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+      let hideTimer: ReturnType<typeof setTimeout> | undefined;
+
+      if (progressVisible) {
+        progressWidth = 100;
+        fadeTimer = setTimeout(() => {
+          progressOpacity = 0;
+          hideTimer = setTimeout(() => {
+            progressVisible = false;
+            progressWidth = 0;
+          }, 350);
+        }, 200);
+      }
+
+      return () => {
+        if (fadeTimer) clearTimeout(fadeTimer);
+        if (hideTimer) clearTimeout(hideTimer);
+      };
+    }
+  });
+
   $effect(() => {
     const command = ui.uiCommand();
     if (command.seq === 0 || command.id !== "url.focus" || input === undefined) return;
@@ -217,18 +263,25 @@
   compact mode it is present and correct but unpainted, and the launcher is the
   visible way to reach it.
 -->
-<form bind:this={form} class="shrink-0" class:pb-2={!compact && !!activeUrl} onsubmit={submit} role="search">
+<form bind:this={form} class="shrink-0" onsubmit={submit} role="search">
   <!--
     A refused navigation rings the field, following the shared Field
     convention. The message is announced rather than drawn: a block of text
     appearing under the address bar would push the whole chrome down.
   -->
   <div
-    class:sr-only={compact || !activeUrl}
-    class:flex={!compact && !!activeUrl}
+    class="address-field relative h-[34px] flex items-center gap-2 rounded-row bg-address ps-2.5 pe-1 shadow-[var(--shadow-tile)] transition-[background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-out)] [--address-centering:20px] focus-within:bg-address-hover focus-within:shadow-[var(--shadow-field-focus)] hover:bg-address-hover"
+    class:sr-only={compact}
     class:shadow-[inset_0_0_0_1px_var(--color-danger)]={failed}
-    class="address-field h-[34px] items-center gap-2 rounded-row bg-address ps-2.5 pe-1 shadow-[var(--shadow-tile)] transition-[background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-out)] [--address-centering:20px] focus-within:bg-address-hover focus-within:shadow-[var(--shadow-field-focus)] hover:bg-address-hover"
   >
+    {#if progressVisible}
+      <div
+        class="address-progress-bar"
+        style:width={`${progressWidth}%`}
+        style:opacity={progressOpacity}
+        aria-hidden="true"
+      ></div>
+    {/if}
     {#if !compact && warning}
       <span
         class="flex h-4 w-4 shrink-0 items-center justify-center text-danger"
@@ -472,5 +525,41 @@
     min-width: 0;
     align-self: stretch;
     overflow: clip;
+  }
+
+  .address-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2.5px;
+    background: linear-gradient(
+      90deg,
+      #ff3366,
+      #ff9933,
+      #ffff33,
+      #33cc66,
+      #3399ff,
+      #9933ff,
+      #ff3366
+    );
+    background-size: 200% 100%;
+    animation: rainbow-flow 2s linear infinite;
+    box-shadow:
+      0 0 8px rgba(255, 51, 102, 0.45),
+      0 0 8px rgba(51, 153, 255, 0.45);
+    pointer-events: none;
+    transition: width 0.22s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.3s ease;
+    z-index: 20;
+    border-bottom-left-radius: var(--radius-row, 8px);
+    border-bottom-right-radius: 2px;
+  }
+
+  @keyframes rainbow-flow {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
   }
 </style>

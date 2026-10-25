@@ -9,11 +9,12 @@ use std::time::Duration;
 use dispatch2::{DispatchQueue, DispatchTime, MainThreadBound};
 use objc2::rc::{Retained, Weak};
 use objc2::runtime::{AnyObject, ProtocolObject};
-use objc2::{define_class, msg_send, AnyThread, DefinedClass, MainThreadOnly, Message};
+use objc2::{define_class, msg_send, AnyThread, ClassType, DefinedClass, MainThreadOnly, Message};
 use objc2_app_kit::{
-    NSAppearanceCustomization, NSAppearanceNameAqua, NSAppearanceNameDarkAqua, NSColor, NSCursor,
-    NSEvent, NSEventMask, NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow,
-    NSWindowDidResignKeyNotification, NSWindowOrderingMode, NSWorkspace,
+    NSAnimatablePropertyContainer, NSAnimationContext, NSAppearanceCustomization,
+    NSAppearanceNameAqua, NSAppearanceNameDarkAqua, NSColor, NSCursor, NSEvent, NSEventMask,
+    NSTrackingArea, NSTrackingAreaOptions, NSView, NSWindow, NSWindowDidResignKeyNotification,
+    NSWindowOrderingMode, NSWorkspace,
 };
 use objc2_core_graphics::CGImage;
 use objc2_foundation::{
@@ -422,34 +423,17 @@ impl ContentStage {
     /// without asking any page to draw again.
     pub fn slide_to(&self, frame: NSRect) {
         self.settle_motion();
-        let current = self.frame();
-        let Some(layer) = self.layer() else {
-            self.setFrame(frame);
-            return;
-        };
-        let generation = self.ivars().motion_generation.get().wrapping_add(1);
-        self.ivars().motion_generation.set(generation);
-        let (from, to) = if frame.size.width >= current.size.width {
-            self.setFrame(frame);
-            (current.origin.x - frame.origin.x, 0.0)
-        } else {
-            self.ivars().held_frame.set(Some(frame));
-            (0.0, frame.origin.x - current.origin.x)
-        };
-        let animation = translation(from, to, SLIDE_SECONDS);
-        let stage = Weak::from_retained(&self.retain());
-        let arrived = block2::RcBlock::new(move || {
-            if let Some(stage) = stage.load() {
-                if stage.ivars().motion_generation.get() == generation {
-                    stage.settle_motion();
-                }
-            }
+        let stage = self.retain();
+        let changes = block2::RcBlock::new(move |context: NonNull<NSAnimationContext>| {
+            let context = unsafe { context.as_ref() };
+            context.setDuration(0.3);
+            context.setAllowsImplicitAnimation(true);
+            context.setTimingFunction(Some(&CAMediaTimingFunction::functionWithControlPoints(
+                0.16, 1.0, 0.3, 1.0,
+            )));
+            stage.as_super().animator().setFrame(frame);
         });
-        CATransaction::begin();
-        // SAFETY: the block holds the stage weakly and runs on the main thread.
-        unsafe { CATransaction::setCompletionBlock(Some(&arrived)) };
-        layer.addAnimation_forKey(&animation, Some(ns_string!("astra.slide")));
-        CATransaction::commit();
+        NSAnimationContext::runAnimationGroup(&changes);
     }
 
     /// Brings the stage back into view after a browser page covered it: it
@@ -2191,6 +2175,7 @@ fn ease_out() -> Retained<CAMediaTimingFunction> {
 
 /// A horizontal move added to the layer's resting position, held at its end
 /// until the stage settles.
+#[allow(dead_code)]
 fn translation(from: f64, to: f64, seconds: f64) -> Retained<CABasicAnimation> {
     offset_animation(
         ns_string!("transform.translation.x"),

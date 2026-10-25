@@ -2,8 +2,8 @@ import { commands } from "$shared/ipc/bindings";
 
 export type SidebarMode = "default" | "compact";
 
-/** The rail width. Native admits it as a real sidebar width, not a mode flag. */
-export const COMPACT_WIDTH = 56;
+/** The rail width when closed (0). Native admits it as a real sidebar width, not a mode flag. */
+export const COMPACT_WIDTH = 0;
 export const MIN_EXPANDED_WIDTH = 180;
 export const MAX_EXPANDED_WIDTH = 460;
 

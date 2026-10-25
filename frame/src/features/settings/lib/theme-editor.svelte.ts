@@ -1,5 +1,6 @@
 import { palette, theme, type Mode, type ThemeSpec } from "$domain/appearance";
 import { preferences } from "$domain/preferences";
+import { tabs } from "$domain/tabs";
 import { writer } from "./preference-writer";
 
 const EDIT_SETTLE_MS = 380;
@@ -45,9 +46,21 @@ export function createThemeEditor() {
     write.want({ "ui.theme-custom": palette.serializeTheme(draft), "ui.theme": "custom" });
   }
 
+  function clearSpaceThemeOverride() {
+    const space = tabs.activeSpace();
+    if (space?.theme) {
+      void tabs.updateSpace(space.id, space.name, {
+        icon: space.icon,
+        color: space.color,
+        theme: null,
+      });
+    }
+  }
+
   function show(next: ThemeSpec) {
     draft = next;
     failed = false;
+    clearSpaceThemeOverride();
     theme.previewTheme(next);
     if (timer !== null) clearTimeout(timer);
     timer = setTimeout(flush, EDIT_SETTLE_MS);
@@ -65,6 +78,7 @@ export function createThemeEditor() {
     timer = null;
     draft = null;
     failed = false;
+    clearSpaceThemeOverride();
     const spec =
       id === palette.CUSTOM_THEME
         ? savedCustom

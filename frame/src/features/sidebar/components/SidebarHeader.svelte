@@ -23,7 +23,7 @@
   let {
     compact,
     ontoggle,
-    pageControls = true,
+    pageControls = false,
     launcher = false,
   }: {
     compact: boolean;
@@ -140,11 +140,7 @@
          lights; search stands there instead. -->
     {#if launcher && IS_WINDOWS}<span class="flex w-14 shrink-0 justify-center"
         ><ModeTabs compact /></span
-      >{:else}<IconButton
-        icon={SidebarLeftIcon}
-        label={m.ui_compact_mode()}
-        onclick={ontoggle}
-      />{/if}<span class="flex-1" aria-hidden="true"></span>
+      >{/if}<span class="flex-1" aria-hidden="true"></span>
 
     {#if pageControls}<div
         class="flex items-center gap-0.5"

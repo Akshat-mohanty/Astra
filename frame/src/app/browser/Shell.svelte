@@ -13,6 +13,14 @@
   import RenderBoundary from "$shared/ui/RenderBoundary";
   import { loadSettings } from "$features/settings";
   import { AddressField, findInPage } from "$features/address";
+  import {
+    ArrowLeft02Icon,
+    ArrowRight02Icon,
+    Refresh01Icon,
+    SidebarLeftIcon,
+  } from "@hugeicons/core-free-icons";
+  import { isCompact, toggleMode } from "$session/sidebar-mode.svelte";
+  import IconButton from "$shared/ui/IconButton";
 import { Dock } from "$features/dock";
 import { DownloadPulse, DownloadStatus } from "$features/downloads";
 import { UpdateNotice } from "$features/updates";
@@ -51,7 +59,8 @@ import {
   SidebarSearch,
   SidebarNotice,
 } from "$features/sidebar";
-  import { IS_WINDOWS } from "$shared/platform";
+  import { IS_MAC, IS_WINDOWS } from "$shared/platform";
+  import { fullscreen } from "$shared/lib/fullscreen.svelte";
   import { installChromeMenu } from "$shared/lib/chrome-menu";
   import { tabs } from "$domain/tabs";
   import { preferences } from "$domain/preferences";
@@ -208,6 +217,24 @@ import {
       if (command.id === "focus.alert=focus") notices.show(m.focus_back_title(), "focus");
     });
   });
+  let tabCount = $derived(tabs.tabs().length);
+  let wasEmpty = $state(untrack(() => tabs.tabs().length === 0));
+
+  $effect.pre(() => {
+    if (tabCount === 0) {
+      wasEmpty = true;
+    }
+  });
+
+  $effect(() => {
+    if (tabCount > 0 && wasEmpty) {
+      const timer = setTimeout(() => {
+        wasEmpty = false;
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  });
+
   // A load started from the new tab keeps it on screen until the page
   // commits, so the content pane never empties between the two.
   let newTabLoad = $state<string | null>(null);
@@ -260,6 +287,12 @@ import {
     if (inWork) requestTab(id);
     else tabs.activate(id);
   }
+  function toggleSidebar() {
+    if (toolHost.activeTool() !== null) toolHost.close();
+    else toggleMode();
+  }
+  let lights = $derived(IS_MAC && !fullscreen());
+  let closedSidebar = $derived(isCompact());
 </script>
 
 <!-- The chrome view starts at the window's corner in every shape and draws
@@ -273,11 +306,6 @@ import {
   data-astra-surface={browserPage.currentPage() ?? "browse"}
   data-private={incognito || undefined}
 >
-  <div class="top-address-container" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100; inline-size: min(580px, calc(100% - 240px)); pointer-events: auto;">
-    {#if !inWork}
-      <AddressField compact={false} />
-    {/if}
-  </div>
       <Sidebar
         >{#snippet browserBody(compact)}
        {#if compact && (inWork || paneled)}
@@ -344,6 +372,58 @@ import {
       >{/snippet}</Sidebar
   >
   <div class="stage-column">
+    <div
+      class="top-address-bar"
+      class:hidden-top-bar={newTabShown || browserPage.currentPage() !== null || inWork}
+      style:padding-inline-start={closedSidebar && lights ? "calc(var(--traffic-light-inset, 60px) + 8px)" : "12px"}
+    >
+      <div class="top-nav-controls" role="group" aria-label={m.ui_navigation()}>
+        <IconButton
+          icon={SidebarLeftIcon}
+          label={closedSidebar ? "Expand sidebar" : m.ui_compact_mode()}
+          shape="rounded"
+          buttonSize={28}
+          size={16}
+          onclick={toggleSidebar}
+        />
+        <IconButton
+          icon={ArrowLeft02Icon}
+          label={m.ui_back()}
+          shape="rounded"
+          buttonSize={28}
+          size={16}
+          disabled={tabs.activeTab()?.can_go_back !== true}
+          onclick={tabs.backActive}
+        />
+        <IconButton
+          icon={ArrowRight02Icon}
+          label={m.ui_forward()}
+          shape="rounded"
+          buttonSize={28}
+          size={16}
+          disabled={tabs.activeTab()?.can_go_forward !== true}
+          onclick={tabs.forwardActive}
+        />
+        <IconButton
+          icon={Refresh01Icon}
+          label={m.ui_reload()}
+          shape="rounded"
+          buttonSize={28}
+          size={16}
+          disabled={tabs.activeTab() === undefined}
+          onclick={tabs.reloadActive}
+        />
+      </div>
+      <div class="top-address-field-wrap">
+        <AddressField compact={false} />
+      </div>
+      <div
+        class="top-nav-spacer"
+        style:flex={closedSidebar && lights ? "0 0 calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "0 0 124px"}
+        style:width={closedSidebar && lights ? "calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "124px"}
+        aria-hidden="true"
+      ></div>
+    </div>
     {#if browserPage.navigationFailed()}<div class="navigation-error" role="alert">
         {m.browser_nav_failed()}
       </div>{/if}
@@ -404,6 +484,7 @@ import {
             failureLabel={m.surface_render_failed()}
             retryLabel={m.surface_retry()}
             >{#snippet children(NewTab)}<NewTab
+                fromEmpty={wasEmpty}
                 oncustomize={openSettings}
                 onaccount={openAccount}
                 ontasks={() => void browserPage.open("tasks")}
@@ -483,13 +564,13 @@ import {
                     >{#snippet children(View)}<View />{/snippet}</LazyView
                   >{/key}
               {:else if browserPage.currentPage() === "history"}
-                <LazyView
+                {#key tabs.profile()?.id}<LazyView
                   loader={loadHistoryPage}
                   loadingLabel={m.surface_loading()}
                   failureLabel={m.surface_render_failed()}
                   retryLabel={m.surface_retry()}
                   >{#snippet children(View)}<View />{/snippet}</LazyView
-                >
+                >{/key}
               {:else}
                 <LazyView
                   loader={loadLibraryPage}
@@ -517,6 +598,46 @@ import {
   .stage-column > :global(main) {
     flex: 1;
     min-height: 0;
+  }
+
+  .top-address-bar {
+    height: 38px;
+    min-height: 38px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-inline: 12px;
+    z-index: 50;
+    pointer-events: auto;
+  }
+
+  .top-address-bar.hidden-top-bar {
+    height: 0;
+    min-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .top-nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 124px;
+  }
+
+  .top-address-field-wrap {
+    width: min(640px, 100%);
+    margin-inline: auto;
+  }
+
+  .top-nav-spacer {
+    flex: 0 0 124px;
+    width: 124px;
   }
 
   .rail-search {

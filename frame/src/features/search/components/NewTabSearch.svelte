@@ -8,6 +8,7 @@
   import IconButton from "$shared/ui/IconButton";
   import ResultList from "./ResultList.svelte";
   import { createSearchSurface } from "../lib/search-surface.svelte";
+  import { VoiceTake } from "$domain/voice";
 
   let {
     tabId,
@@ -106,8 +107,114 @@
     return () => {
       window.removeEventListener("resize", measure);
       stop();
+      take.dispose();
+      if (webSpeechRec) {
+        try {
+          webSpeechRec.abort();
+        } catch {
+          // ignore abort failure
+        }
+      }
     };
   });
+
+  let isListening = $state(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let webSpeechRec = $state<any>(null);
+
+  const take = new VoiceTake((text) => {
+    if (text) {
+      surface.changed(text);
+      input?.focus();
+    }
+    isListening = false;
+  });
+
+  $effect(() => {
+    if (take.active && take.partial) {
+      surface.changed(take.partial);
+    }
+    if (take.phase === "listening" || take.phase === "starting" || take.phase === "transcribing") {
+      isListening = true;
+    } else if (take.phase === "failed" && isListening && !webSpeechRec) {
+      fallbackWebSpeech();
+    } else if (take.phase === "idle" && !webSpeechRec) {
+      isListening = false;
+    }
+  });
+
+  function fallbackWebSpeech() {
+    const SpeechRec =
+      (typeof window !== "undefined" &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)) ||
+      null;
+    if (!SpeechRec) {
+      isListening = false;
+      return;
+    }
+    try {
+      const rec = new SpeechRec();
+      rec.continuous = false;
+      rec.interimResults = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rec.onresult = (event: any) => {
+        let text = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            text = event.results[i][0].transcript;
+            surface.changed(text);
+            isListening = false;
+            input?.focus();
+          } else {
+            text += event.results[i][0].transcript;
+            surface.changed(text);
+          }
+        }
+      };
+      rec.onerror = () => {
+        isListening = false;
+        webSpeechRec = null;
+      };
+      rec.onend = () => {
+        isListening = false;
+        webSpeechRec = null;
+      };
+      webSpeechRec = rec;
+      rec.start();
+    } catch {
+      isListening = false;
+      webSpeechRec = null;
+    }
+  }
+
+  async function toggleVoice() {
+    if (isListening) {
+      isListening = false;
+      if (take.active) {
+        take.stop();
+      }
+      if (webSpeechRec) {
+        try {
+          webSpeechRec.stop();
+        } catch {
+          // ignore stop failure
+        }
+        webSpeechRec = null;
+      }
+      input?.focus();
+    } else {
+      isListening = true;
+      try {
+        await take.start();
+        if (take.phase === "failed") {
+          fallbackWebSpeech();
+        }
+      } catch {
+        fallbackWebSpeech();
+      }
+    }
+  }
 </script>
 
 <div
@@ -177,13 +284,24 @@
       </button>
 
       <div class="right-actions">
-        <button type="button" class="action-icon-btn" id="mic-btn" aria-label="Voice input">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-          </svg>
+        <button
+          type="button"
+          class="action-icon-btn"
+          id="mic-btn"
+          class:listening={isListening}
+          aria-label={isListening ? "Stop voice input" : "Voice input"}
+          onclick={toggleVoice}
+        >
+          {#if isListening}
+            <span class="recording-pulse"></span>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          {/if}
         </button>
 
         <button type="submit" class="submit-arrow-btn" aria-label="Submit" onclick={(e) => { e.preventDefault(); surface.submit(); }}>
@@ -242,7 +360,7 @@
   .bar {
     position: relative;
     inline-size: 100%;
-    background: rgba(12, 16, 20, 0.78);
+    background: rgba(14, 14, 14, 0.85);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid transparent;
@@ -258,16 +376,20 @@
 
   .bar:hover {
     border-color: transparent;
-    background: rgba(16, 21, 26, 0.85);
+    background: rgba(30, 30, 30, 0.9);
   }
 
   .bar:focus-within {
     border-color: transparent;
-    background: rgba(14, 18, 22, 0.94);
+    background: rgba(18, 18, 18, 0.95);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.65),
       0 2px 8px rgba(0, 0, 0, 0.4);
     outline: none;
+  }
+
+  .bar:focus-within:hover {
+    background: rgba(30, 30, 30, 0.95);
   }
 
   .dock .bar :global(.ui-search[data-size]),
@@ -360,6 +482,30 @@
     transition: background 0.15s ease, color 0.15s ease;
   }
 
+  .action-icon-btn.listening {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+
+  .recording-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: #ef4444;
+    animation: pulse 1s infinite alternate ease-in-out;
+  }
+
+  @keyframes pulse {
+    from {
+      opacity: 0.5;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+
   .action-icon-btn:hover,
   .submit-arrow-btn:hover {
     background: rgba(255, 255, 255, 0.12);
@@ -368,12 +514,12 @@
 
   .submit-arrow-btn {
     background: rgba(255, 255, 255, 0.9);
-    color: #0c1014;
+    color: #121212;
   }
 
   .submit-arrow-btn:hover {
     background: #ffffff;
-    color: #0c1014;
+    color: #121212;
   }
 
   /* The results drop out into the page below it, read as the
@@ -389,7 +535,7 @@
     max-block-size: var(--available);
     overflow: hidden;
     border-radius: var(--radius-panel);
-    background: rgba(15, 19, 23, 0.94);
+    background: rgba(20, 20, 20, 0.96);
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     box-shadow:
