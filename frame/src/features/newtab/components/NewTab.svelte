@@ -3,7 +3,7 @@
   import * as m from "$shared/i18n/messages";
   import { groundPath, notchShape, notchWidth } from "../lib/ground";
   import { layout } from "../lib/layout";
-  import { decode, placeSky, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
+  import { decode, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
   import AstrolabeDial from "./AstrolabeDial.svelte";
 
   let {
@@ -42,7 +42,6 @@
     };
   });
 
-  let sky = $derived(placeSky(width, page.horizon));
   let ground = $derived(groundPath(width, height, page.notch));
   let lip = $derived(notchShape(width, height, page.notch));
   let fieldWidth = $derived(notchWidth(width, page.notch));
@@ -78,14 +77,12 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  <!-- Background Wallpaper: Astra Starry Night Sky -->
+  <!-- Background Wallpaper: Dark Horseman from browsermock -->
   {#if ground}
     <div class="page" aria-hidden="true" style:clip-path={`path(evenodd, "${ground}")`}>
       <div
         class="sky"
         style:background-image={`url("${SCENES[scene]}")`}
-        style:background-size={`${sky.w}px ${sky.h}px`}
-        style:background-position={`${sky.x}px ${sky.y}px`}
       ></div>
     </div>
   {/if}
@@ -106,9 +103,9 @@
     {@render search()}
   </div>
 
-  <!-- Center Celestial Dial on Starry Night Sky -->
+  <!-- Center Celestial Dial on Dark Horseman -->
   <main class="center-stage">
-    <AstrolabeDial {now} size={Math.min(580, Math.max(340, width * 0.46))} />
+    <AstrolabeDial {now} size={Math.min(740, Math.max(480, width * 0.52))} />
   </main>
 </section>
 
@@ -121,7 +118,7 @@
     position: relative;
     block-size: 100%;
     overflow: hidden;
-    background: var(--color-chrome);
+    background: #000000;
     isolation: isolate;
     container: newtab / inline-size;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -142,12 +139,14 @@
   }
 
   .page {
-    background: #0b0c10;
+    background: #000000;
   }
 
   .sky {
     background-repeat: no-repeat;
-    opacity: 0.95;
+    background-size: cover;
+    background-position: center 36%;
+    opacity: 1;
   }
 
   .rim {
@@ -185,6 +184,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: translateY(-8%);
     pointer-events: none;
     z-index: 5;
   }

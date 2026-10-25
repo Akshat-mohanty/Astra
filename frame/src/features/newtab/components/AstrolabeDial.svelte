@@ -1,7 +1,7 @@
 <script lang="ts">
   let {
     now = new Date(),
-    size = 540,
+    size = 720,
   }: {
     now?: Date;
     size?: number;
@@ -23,93 +23,33 @@
     "Dec",
   ];
 
-  const currentDayIndex = $derived(now.getDay());
-  const currentMonthIndex = $derived(now.getMonth());
-  const currentYear = $derived(now.getFullYear());
-  const currentDate = $derived(now.getDate());
+  const cx = 350;
+  const cy = 350;
 
-  const cx = 270;
-  const cy = 270;
+  let currentYear = $derived(now.getFullYear());
+  let currentMonth = $derived(now.getMonth());
+  let currentDay = $derived(now.getDay());
+  let currentDate = $derived(now.getDate());
+  let currentHour = $derived(now.getHours());
+  let currentMinute = $derived(now.getMinutes());
+  let currentSecond = $derived(now.getSeconds());
 
-  function polarToCartesian(r: number, angleDeg: number) {
-    const rad = ((angleDeg - 90) * Math.PI) / 180;
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy + r * Math.sin(rad),
-    };
-  }
+  // Number of days in current month
+  let daysInMonth = $derived(new Date(currentYear, currentMonth + 1, 0).getDate());
 
-  // Minute ticks for the outer ring (0..59)
-  const minuteTicks = Array.from({ length: 60 }, (_, i) => {
-    const angle = (i * 360) / 60;
-    const isMajor = i % 5 === 0;
-    const r1 = 252;
-    const r2 = isMajor ? 240 : 246;
-    const p1 = polarToCartesian(r1, angle);
-    const p2 = polarToCartesian(r2, angle);
-    const textPos = polarToCartesian(232, angle);
-    return {
-      index: i,
-      x1: p1.x,
-      y1: p1.y,
-      x2: p2.x,
-      y2: p2.y,
-      isMajor,
-      angle,
-      textPos,
-      label: isMajor ? String(i) : "",
-    };
-  });
+  // Rotation angles: wheels turn clockwise so upcoming items (left) rotate in to 12 o'clock
+  let minuteRotation = $derived(currentMinute * 6 + (currentSecond / 60) * 6);
+  let hourRotation = $derived(currentHour * 15 + (currentMinute / 60) * 15);
+  let dateRotation = $derived((currentDate - 1) * (360 / daysInMonth));
+  let dayRotation = $derived(currentDay * (360 / 7));
+  let monthRotation = $derived(currentMonth * 30 + ((currentDate - 1) / daysInMonth) * 30);
+  let secondRotation = $derived(currentSecond * 6);
 
-  // 24 Hour ticks for middle ring (1..24)
-  const hourTicks = Array.from({ length: 24 }, (_, i) => {
-    const hour = i + 1;
-    const angle = (hour * 360) / 24;
-    const p1 = polarToCartesian(216, angle);
-    const p2 = polarToCartesian(206, angle);
-    const textPos = polarToCartesian(198, angle);
-    return {
-      hour,
-      x1: p1.x,
-      y1: p1.y,
-      x2: p2.x,
-      y2: p2.y,
-      textPos,
-      angle,
-    };
-  });
-
-  // Day of week positions (7 segments)
-  const daySegments = DAYS.map((name, i) => {
-    const angle = (i * 360) / 7;
-    const pos = polarToCartesian(172, angle);
-    const lineP1 = polarToCartesian(186, angle - 360 / 14);
-    const lineP2 = polarToCartesian(160, angle - 360 / 14);
-    return {
-      name,
-      index: i,
-      pos,
-      angle,
-      lineP1,
-      lineP2,
-    };
-  });
-
-  // Month positions (12 segments)
-  const monthSegments = MONTHS.map((name, i) => {
-    const angle = (i * 360) / 12;
-    const pos = polarToCartesian(142, angle);
-    const lineP1 = polarToCartesian(156, angle - 360 / 24);
-    const lineP2 = polarToCartesian(128, angle - 360 / 24);
-    return {
-      name,
-      index: i,
-      pos,
-      angle,
-      lineP1,
-      lineP2,
-    };
-  });
+  // Arrays for rings
+  let datesArray = $derived(Array.from({ length: daysInMonth }, (_, i) => i + 1));
+  const hoursArray = Array.from({ length: 24 }, (_, i) => i);
+  const minutesArray = Array.from({ length: 60 }, (_, i) => i);
+  const outerTicks = Array.from({ length: 120 }, (_, i) => i);
 </script>
 
 <div
@@ -118,201 +58,267 @@
   style:height={`${size}px`}
 >
   <svg
-    viewBox="0 0 540 540"
+    viewBox="0 0 700 700"
     width={size}
     height={size}
     class="astrolabe-svg"
   >
     <defs>
-      <radialGradient id="astrolabe-glow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="rgba(110, 160, 255, 0.12)" />
-        <stop offset="50%" stop-color="rgba(50, 80, 180, 0.05)" />
+      <!-- Deep celestial radial background glow -->
+      <radialGradient id="celestial-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(30, 40, 60, 0.45)" />
+        <stop offset="60%" stop-color="rgba(15, 20, 30, 0.2)" />
         <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
       </radialGradient>
-      <linearGradient id="active-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <!-- Subtle ring shading -->
+      <radialGradient id="disc-fill" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(24, 28, 38, 0.85)" />
+        <stop offset="70%" stop-color="rgba(14, 18, 25, 0.65)" />
+        <stop offset="100%" stop-color="rgba(8, 10, 15, 0.4)" />
+      </radialGradient>
+      <!-- Highlight gradient for active readings -->
+      <linearGradient id="active-highlight" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stop-color="#ffffff" />
-        <stop offset="100%" stop-color="#93c5fd" />
+        <stop offset="100%" stop-color="#cbd5e1" />
       </linearGradient>
     </defs>
 
-    <!-- Background celestial glow -->
-    <circle cx={cx} cy={cy} r="255" fill="url(#astrolabe-glow)" />
+    <!-- Outer celestial glow -->
+    <circle cx={cx} cy={cy} r="348" fill="url(#celestial-glow)" />
 
-    <!-- Concentric Circles -->
-    <circle cx={cx} cy={cy} r="254" fill="none" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1.2" />
-    <circle cx={cx} cy={cy} r="250" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="0.8" stroke-dasharray="3 3" />
-    <circle cx={cx} cy={cy} r="222" fill="none" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
-    <circle cx={cx} cy={cy} r="188" fill="none" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" />
-    <circle cx={cx} cy={cy} r="158" fill="none" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" stroke-dasharray="2 3" />
-    <circle cx={cx} cy={cy} r="128" fill="none" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1.2" />
-    <circle cx={cx} cy={cy} r="88" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1" stroke-dasharray="4 4" />
-    <circle cx={cx} cy={cy} r="52" fill="none" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1" />
+    <!-- Static Concentric Ring Bands & Borders -->
+    <circle cx={cx} cy={cy} r="345" fill="none" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1.2" />
+    <circle cx={cx} cy={cy} r="328" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="0.8" stroke-dasharray="3 4" />
+    <circle cx={cx} cy={cy} r="312" fill="url(#disc-fill)" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
+    <circle cx={cx} cy={cy} r="250" fill="none" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" />
+    <circle cx={cx} cy={cy} r="192" fill="none" stroke="rgba(255, 255, 255, 0.15)" stroke-width="0.9" />
+    <circle cx={cx} cy={cy} r="138" fill="none" stroke="rgba(255, 255, 255, 0.14)" stroke-width="0.9" stroke-dasharray="2 3" />
+    <circle cx={cx} cy={cy} r="92" fill="none" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1" />
+    <circle cx={cx} cy={cy} r="46" fill="rgba(18, 22, 30, 0.9)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.2" />
 
-    <!-- Celestial Crosshairs -->
-    <line x1={cx} y1="12" x2={cx} y2="528" stroke="rgba(255, 255, 255, 0.07)" stroke-width="0.8" />
-    <line x1="12" y1={cy} x2="528" y2={cy} stroke="rgba(255, 255, 255, 0.07)" stroke-width="0.8" />
-    <line x1="60" y1="60" x2="480" y2="480" stroke="rgba(255, 255, 255, 0.04)" stroke-width="0.8" stroke-dasharray="4 6" />
-    <line x1="60" y1="480" x2="480" y2="60" stroke="rgba(255, 255, 255, 0.04)" stroke-width="0.8" stroke-dasharray="4 6" />
+    <!-- Crosshair Lines (Subtle) -->
+    <line x1={cx} y1="4" x2={cx} y2="696" stroke="rgba(255, 255, 255, 0.06)" stroke-width="0.8" stroke-dasharray="4 6" />
+    <line x1="4" y1={cy} x2="696" y2={cy} stroke="rgba(255, 255, 255, 0.06)" stroke-width="0.8" stroke-dasharray="4 6" />
 
-    <!-- Minute Ticks & Numbers -->
-    {#each minuteTicks as tick}
-      <line
-        x1={tick.x1}
-        y1={tick.y1}
-        x2={tick.x2}
-        y2={tick.y2}
-        stroke={tick.isMajor ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.12)"}
-        stroke-width={tick.isMajor ? "1.2" : "0.7"}
-      />
-      {#if tick.isMajor}
-        <text
-          x={tick.textPos.x}
-          y={tick.textPos.y}
-          text-anchor="middle"
-          dominant-baseline="central"
-          fill="rgba(255, 255, 255, 0.38)"
-          font-size="8.5"
-          font-family="system-ui, -apple-system, sans-serif"
-          font-weight="500"
-        >
-          {tick.label}
-        </text>
-      {/if}
-    {/each}
+    <!-- Outer Graduation Ticks (120 ticks around rim, rotates with seconds) -->
+    <g transform={`rotate(${secondRotation}, ${cx}, ${cy})`}>
+      {#each outerTicks as i}
+        {@const isMajor = i % 10 === 0}
+        {@const isMed = i % 5 === 0}
+        <g transform={`rotate(${i * 3}, ${cx}, ${cy})`}>
+          <line
+            x1={cx}
+            y1={350 - 345}
+            x2={cx}
+            y2={350 - (isMajor ? 333 : isMed ? 337 : 340)}
+            stroke={isMajor ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.12)"}
+            stroke-width={isMajor ? 1.2 : 0.7}
+          />
+        </g>
+      {/each}
+    </g>
 
-    <!-- 24 Hour Ticks & Numbers -->
-    {#each hourTicks as tick}
-      <line
-        x1={tick.x1}
-        y1={tick.y1}
-        x2={tick.x2}
-        y2={tick.y2}
-        stroke="rgba(255, 255, 255, 0.22)"
-        stroke-width="1"
-      />
-      {#if tick.hour % 2 === 0}
-        <text
-          x={tick.textPos.x}
-          y={tick.textPos.y}
-          text-anchor="middle"
-          dominant-baseline="central"
-          fill="rgba(255, 255, 255, 0.42)"
-          font-size="8"
-          font-family="system-ui, -apple-system, sans-serif"
-        >
-          {tick.hour}
-        </text>
-      {/if}
-    {/each}
+    <!-- ================= RING 5: MINUTES (r = 281) ================= -->
+    <g transform={`rotate(${minuteRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-minute">
+      {#each minutesArray as m}
+        {@const ang = -m * 6}
+        {@const isMajor = m % 5 === 0}
+        {@const isActive = m === currentMinute}
+        <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
+          <!-- Minute Tick -->
+          <line
+            x1={cx}
+            y1={350 - 312}
+            x2={cx}
+            y2={350 - (isMajor ? 300 : 306)}
+            stroke={isActive ? "#ffffff" : isMajor ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.14)"}
+            stroke-width={isActive ? 1.5 : isMajor ? 1.1 : 0.7}
+          />
+          <!-- Minute Label -->
+          <text
+            x={cx}
+            y={350 - 281}
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.42)"}
+            font-size={isActive ? "10" : "8"}
+            font-weight={isActive ? "700" : "400"}
+            font-family="system-ui, -apple-system, sans-serif"
+          >
+            {m}
+          </text>
+        </g>
+      {/each}
+    </g>
 
-    <!-- Day of Week Ring -->
-    {#each daySegments as seg}
-      <line
-        x1={seg.lineP1.x}
-        y1={seg.lineP1.y}
-        x2={seg.lineP2.x}
-        y2={seg.lineP2.y}
-        stroke="rgba(255, 255, 255, 0.12)"
-        stroke-width="0.8"
-      />
-      <text
-        x={seg.pos.x}
-        y={seg.pos.y}
-        text-anchor="middle"
-        dominant-baseline="central"
-        fill={seg.index === currentDayIndex ? "url(#active-gold)" : "rgba(255, 255, 255, 0.35)"}
-        font-weight={seg.index === currentDayIndex ? "700" : "400"}
-        font-size="9"
-        font-family="system-ui, -apple-system, sans-serif"
-      >
-        {seg.name}
-      </text>
-    {/each}
+    <!-- ================= RING 4: HOURS (r = 221) ================= -->
+    <g transform={`rotate(${hourRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-hour">
+      {#each hoursArray as h}
+        {@const ang = -h * 15}
+        {@const isActive = h === currentHour}
+        <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
+          <!-- Hour Tick -->
+          <line
+            x1={cx}
+            y1={350 - 250}
+            x2={cx}
+            y2={350 - 240}
+            stroke={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.25)"}
+            stroke-width={isActive ? 1.5 : 1}
+          />
+          <!-- Hour Label -->
+          <text
+            x={cx}
+            y={350 - 221}
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.45)"}
+            font-size={isActive ? "11" : "9.5"}
+            font-weight={isActive ? "700" : "500"}
+            font-family="system-ui, -apple-system, sans-serif"
+          >
+            {h}
+          </text>
+        </g>
+      {/each}
+    </g>
 
-    <!-- Month Ring -->
-    {#each monthSegments as seg}
-      <line
-        x1={seg.lineP1.x}
-        y1={seg.lineP1.y}
-        x2={seg.lineP2.x}
-        y2={seg.lineP2.y}
-        stroke="rgba(255, 255, 255, 0.1)"
-        stroke-width="0.8"
-      />
-      <text
-        x={seg.pos.x}
-        y={seg.pos.y}
-        text-anchor="middle"
-        dominant-baseline="central"
-        fill={seg.index === currentMonthIndex ? "url(#active-gold)" : "rgba(255, 255, 255, 0.32)"}
-        font-weight={seg.index === currentMonthIndex ? "700" : "400"}
-        font-size="8.5"
-        font-family="system-ui, -apple-system, sans-serif"
-      >
-        {seg.name}
-      </text>
-    {/each}
+    <!-- ================= RING 3: DATES (r = 165) ================= -->
+    <g transform={`rotate(${dateRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-date">
+      {#each datesArray as d, idx}
+        {@const ang = -idx * (360 / daysInMonth)}
+        {@const isActive = d === currentDate}
+        <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
+          <!-- Date Tick -->
+          <line
+            x1={cx}
+            y1={350 - 192}
+            x2={cx}
+            y2={350 - 183}
+            stroke={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.18)"}
+            stroke-width={isActive ? 1.4 : 0.8}
+          />
+          <!-- Date Label -->
+          <text
+            x={cx}
+            y={350 - 165}
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.45)"}
+            font-size={isActive ? "11" : "9"}
+            font-weight={isActive ? "700" : "500"}
+            font-family="system-ui, -apple-system, sans-serif"
+          >
+            {d}
+          </text>
+        </g>
+      {/each}
+    </g>
 
-    <!-- Center Ring Content: Year, Month, Day, Date -->
+    <!-- ================= RING 2: DAY OF WEEK (r = 115) ================= -->
+    <g transform={`rotate(${dayRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-day">
+      {#each DAYS as day, idx}
+        {@const ang = -idx * (360 / 7)}
+        {@const isActive = idx === currentDay}
+        <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
+          <!-- Day Tick -->
+          <line
+            x1={cx}
+            y1={350 - 138}
+            x2={cx}
+            y2={350 - 129}
+            stroke={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.2)"}
+            stroke-width={isActive ? 1.5 : 0.9}
+          />
+          <!-- Day Label -->
+          <text
+            x={cx}
+            y={350 - 115}
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.48)"}
+            font-size={isActive ? "11.5" : "10"}
+            font-weight={isActive ? "700" : "500"}
+            font-family="system-ui, -apple-system, sans-serif"
+          >
+            {day}
+          </text>
+        </g>
+      {/each}
+    </g>
+
+    <!-- ================= RING 1: MONTHS (r = 69) ================= -->
+    <g transform={`rotate(${monthRotation}, ${cx}, ${cy})`} class="dial-wheel wheel-month">
+      {#each MONTHS as mth, idx}
+        {@const ang = -idx * 30}
+        {@const isActive = idx === currentMonth}
+        <g transform={`rotate(${ang}, ${cx}, ${cy})`}>
+          <!-- Month Tick -->
+          <line
+            x1={cx}
+            y1={350 - 92}
+            x2={cx}
+            y2={350 - 83}
+            stroke={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.2)"}
+            stroke-width={isActive ? 1.4 : 0.8}
+          />
+          <!-- Month Label -->
+          <text
+            x={cx}
+            y={350 - 69}
+            text-anchor="middle"
+            dominant-baseline="central"
+            fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.5)"}
+            font-size={isActive ? "11" : "9.5"}
+            font-weight={isActive ? "700" : "500"}
+            font-family="system-ui, -apple-system, sans-serif"
+          >
+            {mth}
+          </text>
+        </g>
+      {/each}
+    </g>
+
+    <!-- ================= CENTER DISC: YEAR ================= -->
+    <circle cx={cx} cy={cy} r="40" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="0.8" stroke-dasharray="2 3" />
     <text
       x={cx}
-      y={cy - 28}
+      y={cy}
       text-anchor="middle"
-      fill="rgba(255, 255, 255, 0.55)"
-      font-size="11"
-      font-weight="600"
-      letter-spacing="0.1em"
+      dominant-baseline="central"
+      fill="#ffffff"
+      font-size="13"
+      font-weight="700"
+      letter-spacing="0.06em"
       font-family="system-ui, -apple-system, sans-serif"
     >
       {currentYear}
     </text>
 
-    <text
-      x={cx}
-      y={cy - 8}
-      text-anchor="middle"
-      fill="rgba(255, 255, 255, 0.85)"
-      font-size="13"
-      font-weight="600"
-      font-family="system-ui, -apple-system, sans-serif"
-    >
-      {MONTHS[currentMonthIndex]}
-    </text>
+    <!-- ================= VERTICAL 12 O'CLOCK APEX INDICATOR ================= -->
+    <!-- Small luminous top ticks at 12 o'clock apex marking active reading axis -->
+    <line x1={cx} y1={350 - 312} x2={cx} y2={350 - 318} stroke="#ffffff" stroke-width="2" />
+    <line x1={cx} y1={350 - 250} x2={cx} y2={350 - 256} stroke="#ffffff" stroke-width="1.8" />
+    <line x1={cx} y1={350 - 192} x2={cx} y2={350 - 198} stroke="#ffffff" stroke-width="1.6" />
+    <line x1={cx} y1={350 - 138} x2={cx} y2={350 - 144} stroke="#ffffff" stroke-width="1.5" />
+    <line x1={cx} y1={350 - 92} x2={cx} y2={350 - 98} stroke="#ffffff" stroke-width="1.5" />
+    <line x1={cx} y1={350 - 46} x2={cx} y2={350 - 52} stroke="#ffffff" stroke-width="1.5" />
 
-    <text
-      x={cx}
-      y={cy + 12}
-      text-anchor="middle"
-      fill="rgba(255, 255, 255, 0.5)"
-      font-size="9.5"
-      font-family="system-ui, -apple-system, sans-serif"
-    >
-      {DAYS[currentDayIndex]}
-    </text>
-
-    <text
-      x={cx}
-      y={cy + 34}
-      text-anchor="middle"
+    <!-- Top Apex Marker Pip -->
+    <polygon
+      points={`${cx - 3.5},10 ${cx + 3.5},10 ${cx},16`}
       fill="#ffffff"
-      font-size="16"
-      font-weight="700"
-      font-family="system-ui, -apple-system, sans-serif"
-    >
-      {currentDate}
-    </text>
+      opacity="0.9"
+    />
   </svg>
 </div>
 
 <style>
   .astrolabe-wrapper {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -58%);
-    opacity: 0.75;
-    filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.8));
-    animation: astrolabe-fade 1.2s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    position: relative;
+    opacity: 0.92;
+    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.95));
+    animation: astrolabe-fade 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
 
   .astrolabe-svg {
@@ -320,14 +326,27 @@
     overflow: visible;
   }
 
+  .astrolabe-svg text {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dial-wheel {
+    transform-origin: 350px 350px;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .wheel-minute {
+    transition: transform 0.4s linear;
+  }
+
   @keyframes astrolabe-fade {
     from {
       opacity: 0;
-      transform: translate(-50%, -58%) scale(0.95);
+      transform: scale(0.96);
     }
     to {
-      opacity: 0.75;
-      transform: translate(-50%, -58%) scale(1);
+      opacity: 0.92;
+      transform: scale(1);
     }
   }
 </style>
