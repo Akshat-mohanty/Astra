@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { onMount, untrack, type Snippet } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import * as m from "$shared/i18n/messages";
   import { groundPath, notchShape, notchWidth } from "../lib/ground";
   import { layout } from "../lib/layout";
   import { decode, SCENES, scene as skyScene, seen, type Scene } from "$shared/sky";
-  import AstrolabeDial from "./AstrolabeDial.svelte";
 
   let {
     search,
@@ -23,7 +22,6 @@
 
   let width = $state(0);
   let height = $state(0);
-  let now = $state(new Date());
 
   let page = $derived(layout(width, height, { controls: [], clock: false }));
   let scene = $derived(skyScene());
@@ -45,27 +43,6 @@
   let ground = $derived(groundPath(width, height, page.notch));
   let lip = $derived(notchShape(width, height, page.notch));
   let fieldWidth = $derived(notchWidth(width, page.notch));
-
-  onMount(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    function update() {
-      now = new Date();
-      clearTimeout(timer);
-      if (document.visibilityState === "visible") {
-        timer = setTimeout(update, 1000 - (Date.now() % 1000));
-      }
-    }
-    function visibility() {
-      clearTimeout(timer);
-      if (document.visibilityState === "visible") update();
-    }
-    update();
-    document.addEventListener("visibilitychange", visibility);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("visibilitychange", visibility);
-    };
-  });
 </script>
 
 <section
@@ -77,7 +54,7 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
 >
-  <!-- Background Wallpaper: Dark Horseman from browsermock -->
+  <!-- Background Wallpaper: Dark Horseman -->
   {#if ground}
     <div class="page" aria-hidden="true" style:clip-path={`path(evenodd, "${ground}")`}>
       <div
@@ -98,15 +75,10 @@
     <path d={lip} stroke="url(#notch-lip)" />
   </svg>
 
-  <!-- Edge-to-Edge Search Notch Field (no extra buttons, no astra text) -->
+  <!-- Edge-to-Edge Search Notch Field -->
   <div class="field" style:width={`${fieldWidth}px`} style:height={`${page.notch.height}px`}>
     {@render search()}
   </div>
-
-  <!-- Center Celestial Dial on Dark Horseman -->
-  <main class="center-stage">
-    <AstrolabeDial {now} size={Math.min(740, Math.max(480, width * 0.52))} />
-  </main>
 </section>
 
 <style>
@@ -145,7 +117,7 @@
   .sky {
     background-repeat: no-repeat;
     background-size: cover;
-    background-position: center 36%;
+    background-position: center center;
     opacity: 1;
   }
 
@@ -175,17 +147,5 @@
     inset-inline: 0;
     margin-inline: auto;
     pointer-events: auto;
-  }
-
-  /* Center Stage */
-  .center-stage {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-8%);
-    pointer-events: none;
-    z-index: 5;
   }
 </style>
