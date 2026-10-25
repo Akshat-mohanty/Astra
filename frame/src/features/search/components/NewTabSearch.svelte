@@ -166,6 +166,34 @@
         />
       </span>
     {/if}
+
+    <div class="controls-row">
+      <button type="button" class="add-btn" id="add-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Add tabs or files</span>
+      </button>
+
+      <div class="right-actions">
+        <button type="button" class="action-icon-btn" id="mic-btn" aria-label="Voice input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </button>
+
+        <button type="submit" class="submit-arrow-btn" aria-label="Submit" onclick={(e) => { e.preventDefault(); surface.submit(); }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 
   {#if visible}
@@ -218,7 +246,7 @@
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid transparent;
-    border-radius: 28px;
+    border-radius: 24px;
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.55),
       0 2px 8px rgba(0, 0, 0, 0.3);
@@ -276,10 +304,76 @@
 
   .clear {
     position: absolute;
-    inset-block: 0;
+    inset-block-start: 10px;
     inset-inline-end: 14px;
     display: flex;
     align-items: center;
+  }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px 12px 14px;
+  }
+
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 450;
+    cursor: default;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .add-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+  }
+
+  .right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .action-icon-btn,
+  .submit-arrow-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.75);
+    cursor: default;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .action-icon-btn:hover,
+  .submit-arrow-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .submit-arrow-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0c1014;
+  }
+
+  .submit-arrow-btn:hover {
+    background: #ffffff;
+    color: #0c1014;
   }
 
   /* The results drop out into the page below it, read as the

@@ -13,47 +13,44 @@
   import RenderBoundary from "$shared/ui/RenderBoundary";
   import { loadSettings } from "$features/settings";
   import { AddressField, findInPage } from "$features/address";
-  import { Dock } from "$features/dock";
-  import { DownloadPulse, DownloadStatus } from "$features/downloads";
-  import { UpdateNotice } from "$features/updates";
-  import { ExtensionActions, ManageExtensions } from "$features/extensions";
-  import { loadWebExtensionManager, StoreInstallRail } from "$features/webext";
-  import { sidebarTree } from "$features/tabs";
-  import { SidebarBody } from "$features/tabs";
-  import { TabRail } from "$features/tabs";
-  import { loadNavigationError, loadTabCapacityState } from "$features/tabs";
-  import { selectionGlide } from "$features/tabs";
-  import { requestTab } from "$session/work-tab.svelte";
-  import { uiCommands as ui } from "$domain/ui-commands";
-  import { untrack } from "svelte";
-  import { blocker } from "$domain/blocker";
-  import { BlockerShield, HidingBar, hideElements, toggleSiteProtection } from "$features/blocker";
+import { Dock } from "$features/dock";
+import { DownloadPulse, DownloadStatus } from "$features/downloads";
+import { UpdateNotice } from "$features/updates";
+import { loadWebExtensionManager } from "$features/webext";
+import { sidebarTree } from "$features/tabs";
+import { SidebarBody } from "$features/tabs";
+import { TabRail } from "$features/tabs";
+import { loadNavigationError, loadTabCapacityState } from "$features/tabs";
+import { selectionGlide } from "$features/tabs";
+import { requestTab } from "$session/work-tab.svelte";
+import { uiCommands as ui } from "$domain/ui-commands";
+import { untrack } from "svelte";
+import { HidingBar, hideElements, toggleSiteProtection } from "$features/blocker";
 
-  import { onMount } from "svelte";
-  import { events } from "$shared/ipc/native-events";
-  import { askSettings, handleNativeSection } from "$features/settings";
-  import * as m from "$shared/i18n/messages";
-  import { surface as browserPage } from "$domain/surface";
-  import { loadToolSlot } from "$features/tools";
-  import * as toolHost from "$session/tools.svelte";
-  import * as notices from "$session/notice.svelte";
-  import { SettingsNavigation } from "$features/settings";
-  import { loadLibraryPage } from "$features/library";
-  import { loadHistoryPage } from "$features/history";
-  import { bookmarkReveal } from "$features/bookmarks";
-  import { loadTasksPage } from "$features/tasks";
-  import { loadFocusCover, loadTimePage } from "$features/time";
-  import { focus } from "$domain/time";
-  import { loadNewTabSearch } from "$features/search";
-  import { loadNewTab } from "$features/newtab";
-  import {
-    ModeTabs,
-    PrivateBar,
-    Sidebar,
-    SidebarSearch,
-    SidebarNotice,
-    UtilityTray,
-  } from "$features/sidebar";
+import { onMount } from "svelte";
+import { events } from "$shared/ipc/native-events";
+import { askSettings, handleNativeSection } from "$features/settings";
+import * as m from "$shared/i18n/messages";
+import { surface as browserPage } from "$domain/surface";
+import { loadToolSlot } from "$features/tools";
+import * as toolHost from "$session/tools.svelte";
+import * as notices from "$session/notice.svelte";
+import { SettingsNavigation } from "$features/settings";
+import { loadLibraryPage } from "$features/library";
+import { loadHistoryPage } from "$features/history";
+import { bookmarkReveal } from "$features/bookmarks";
+import { loadTasksPage } from "$features/tasks";
+import { loadFocusCover, loadTimePage } from "$features/time";
+import { focus } from "$domain/time";
+import { loadNewTabSearch } from "$features/search";
+import { loadNewTab } from "$features/newtab";
+import {
+  ModeTabs,
+  PrivateBar,
+  Sidebar,
+  SidebarSearch,
+  SidebarNotice,
+} from "$features/sidebar";
   import { IS_WINDOWS } from "$shared/platform";
   import { installChromeMenu } from "$shared/lib/chrome-menu";
   import { tabs } from "$domain/tabs";
@@ -182,7 +179,6 @@
     if (copied) notices.show(m.notice_link_copied());
   }
 
-  let protectionMenuActivated = $state(0);
   let handledCommand = 0;
   $effect(() => {
     const command = ui.uiCommand();
@@ -277,15 +273,20 @@
   data-astra-surface={browserPage.currentPage() ?? "browse"}
   data-private={incognito || undefined}
 >
-  <Sidebar
-    >{#snippet browserBody(compact)}
-      {#if compact && (inWork || paneled)}
-        {#if !inWork}<AddressField {compact} /><StoreInstallRail />{/if}
+  <div class="top-address-container" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100; inline-size: min(580px, calc(100% - 240px)); pointer-events: auto;">
+    {#if !inWork}
+      <AddressField compact={false} />
+    {/if}
+  </div>
+      <Sidebar
+        >{#snippet browserBody(compact)}
+       {#if compact && (inWork || paneled)}
         {#if paneled && IS_WINDOWS}
           {#if browserPage.currentPage() === "settings"}<ModeTabs compact standalone />{/if}
           <div class="rail-search"><SidebarSearch /></div>
         {:else if paneled}<ModeTabs compact standalone />{/if}
-      {:else if compact}<AddressField {compact} /><StoreInstallRail />
+      {:else if compact}
+        <!-- empty compact view -->
       {:else if !incognito && preferences.enabled("work")}<div class="sidebar-head">
           <ModeTabs />
         </div>{/if}
@@ -300,21 +301,6 @@
             whole column, field included; the tray rides the field itself,
             because everything in it acts on the page the field names.
           -->
-            <AddressField {compact}>
-              {#snippet trailing()}
-                <UtilityTray
-                  onopen={() => {
-                    protectionMenuActivated += 1;
-                    void blocker.refresh();
-                  }}
-                >
-                  <BlockerShield labelled activated={protectionMenuActivated} />
-                  <ExtensionActions />
-                  <ManageExtensions />
-                </UtilityTray>
-              {/snippet}
-            </AddressField>
-
             <HidingBar />
             {#if splitting}<p class="shrink-0 px-3 pb-1 text-[12px] text-accent" aria-live="polite">
                 {m.choose_split()}
