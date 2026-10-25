@@ -217,31 +217,29 @@
     background: rgba(12, 16, 20, 0.78);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid transparent;
     border-radius: 28px;
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.55),
-      0 2px 8px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 2px 8px rgba(0, 0, 0, 0.3);
+    outline: none;
     transition:
-      border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .bar:hover {
-    border-color: rgba(255, 255, 255, 0.22);
+    border-color: transparent;
     background: rgba(16, 21, 26, 0.85);
   }
 
   .bar:focus-within {
-    border-color: rgba(255, 255, 255, 0.75);
+    border-color: transparent;
     background: rgba(14, 18, 22, 0.94);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.65),
-      0 0 0 1px rgba(255, 255, 255, 0.4),
-      0 0 24px rgba(255, 255, 255, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      0 2px 8px rgba(0, 0, 0, 0.4);
+    outline: none;
   }
 
   .dock .bar :global(.ui-search[data-size]),
@@ -251,7 +249,16 @@
     padding-inline: 20px;
     gap: 12px;
     border-radius: 28px;
+    border: none;
+    outline: none;
     background: transparent;
+    box-shadow: none;
+  }
+
+  .dock .bar :global(.ui-search input),
+  .dock .bar :global(.ui-search input:focus) {
+    outline: none;
+    border: none;
     box-shadow: none;
   }
 
