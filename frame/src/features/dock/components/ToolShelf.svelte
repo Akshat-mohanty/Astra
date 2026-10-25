@@ -110,14 +110,27 @@
     triggerClass={["case", tools.activeTool() !== null && "case-lit"].filter(Boolean).join(" ")}
     panelClass="shelf-stack sidebar-softens"
   >
-    {#snippet trigger()}{#if foot.face}<ProfileAvatar
-          view={foot.face}
-          size={compact ? 36 : 40}
-        />{:else}<Icon
-          icon={UserIcon}
-          size={compact ? 16 : 17}
-          strokeWidth={1.7}
-        />{/if}{#if compact}<NoticePip />{/if}{/snippet}
+    {#snippet trigger()}
+      {#if compact}
+        {#if foot.face}
+          <ProfileAvatar view={foot.face} size={36} />
+        {:else}
+          <Icon icon={UserIcon} size={16} strokeWidth={1.7} />
+        {/if}
+        <NoticePip />
+      {:else}
+        <div class="profile-trigger-inner">
+          {#if foot.face}
+            <ProfileAvatar view={foot.face} size={22} />
+          {:else}
+            <span class="profile-avatar-placeholder">
+              <Icon icon={UserIcon} size={14} strokeWidth={1.8} />
+            </span>
+          {/if}
+          <span class="profile-trigger-name">{name || "Profile"}</span>
+        </div>
+      {/if}
+    {/snippet}
     <div class="shelf-head" role="presentation" style:--step={headStep}>
       <button
         type="button"
@@ -180,19 +193,24 @@
   .shelf {
     position: relative;
     z-index: 20;
-    flex: none;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 
-  /* You, at the head of the row: lit the way the current tab is, with light
-     caught only along its top edge, and round where every kept site is
-     square, so it reads as yours rather than as one more site. */
-  .shelf :global(.case) {
+  .shelf :global(.ui-disclosure) {
+    margin-inline: auto;
+  }
+
+  /* Compact trigger */
+  .shelf[data-compact="true"] :global(.case) {
     position: relative;
     display: grid;
     place-items: center;
     width: 40px;
     height: 40px;
-    margin-inline: 2px;
+    margin-inline: auto;
     border: 0;
     border-radius: var(--radius-capsule);
     background: var(--row-active);
@@ -205,16 +223,67 @@
       scale var(--motion-slow) var(--ease-spring);
   }
 
+  /* Expanded trigger: center-aligned pill with profile name */
+  .shelf:not([data-compact="true"]) :global(.case) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 5px 14px;
+    margin-inline: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-capsule, 9999px);
+    background: var(--row-active, rgba(255, 255, 255, 0.08));
+    box-shadow: var(--shine-top);
+    color: var(--color-text, #ffffff);
+    cursor: default;
+    transition:
+      background-color var(--motion-fast) var(--ease-out),
+      border-color var(--motion-fast) var(--ease-out),
+      color var(--motion-fast) var(--ease-out),
+      scale var(--motion-slow) var(--ease-spring);
+  }
+
   .shelf :global(.case:hover),
   .shelf :global(.case[data-state="open"]),
   .shelf :global(.case.case-lit) {
-    background: var(--row-pressed);
+    background: var(--row-pressed, rgba(255, 255, 255, 0.14));
+    border-color: rgba(255, 255, 255, 0.2);
     color: var(--color-text);
   }
 
   .shelf :global(.case:active) {
-    scale: 0.94;
+    scale: 0.96;
     transition-duration: var(--motion-instant);
+  }
+
+  .profile-trigger-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .profile-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-label-secondary, rgba(255, 255, 255, 0.7));
+  }
+
+  .profile-trigger-name {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--color-text, #ffffff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
   }
 
   /* A chosen picture fills the lit circle; its light still catches the top. */
@@ -246,9 +315,22 @@
 
   /* The stack rises out of the case rather than dropping from it, and never
      past the window: a short one scrolls its rows instead. */
-  .shelf :global(.shelf-stack) {
+  .shelf:not([data-compact="true"]) :global(.shelf-stack) {
     top: auto;
     bottom: calc(100% + 8px);
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    min-width: min(232px, calc(var(--sidebar-width, 320px) - 8px));
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform-origin: bottom center;
+  }
+
+  .shelf[data-compact="true"] :global(.shelf-stack) {
+    top: auto;
+    bottom: calc(100% + 8px);
+    inset-inline-start: 0;
     min-width: min(232px, calc(var(--sidebar-width, 320px) - 8px));
     max-height: calc(100vh - 120px);
     overflow-y: auto;

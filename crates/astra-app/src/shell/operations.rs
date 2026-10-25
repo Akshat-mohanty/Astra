@@ -127,8 +127,9 @@ impl Shell {
             return operation_result(OperationOutcome::Rejected, OperationReason::NoFocusedWindow);
         };
         let placement = if essential {
-            Placement::Favorites {
-                profile: window.profile,
+            Placement::Space {
+                space: window.space,
+                section: SpaceSection::Pinned,
             }
         } else {
             Placement::Space {

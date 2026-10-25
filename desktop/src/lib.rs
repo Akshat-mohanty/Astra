@@ -5514,9 +5514,9 @@ fn build_tab_menu(
     let bookmark = item(3, "Bookmark Tab", context.page)?;
     let first = PredefinedMenuItem::separator(handle)?;
     let keep = if context.essential {
-        item(5, "Remove from Essentials", true)?
+        item(5, "Unpin Tab", true)?
     } else {
-        item(4, "Add to Essentials", context.page)?
+        item(4, "Pin Tab", true)?
     };
     let split = item(6, "Open in Split View", context.can_split)?;
     let second = PredefinedMenuItem::separator(handle)?;

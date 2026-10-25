@@ -12,23 +12,18 @@
   import LazyView from "$shared/ui/LazyView";
   import RenderBoundary from "$shared/ui/RenderBoundary";
   import { loadSettings } from "$features/settings";
-  import { EssentialTile } from "$features/essentials";
   import { AddressField, findInPage } from "$features/address";
   import { Dock } from "$features/dock";
   import { DownloadPulse, DownloadStatus } from "$features/downloads";
   import { UpdateNotice } from "$features/updates";
-  import { EssentialsRail } from "$features/essentials";
   import { ExtensionActions, ManageExtensions } from "$features/extensions";
   import { loadWebExtensionManager, StoreInstallRail } from "$features/webext";
   import { sidebarTree } from "$features/tabs";
   import { SidebarBody } from "$features/tabs";
-  import { TabList } from "$features/tabs";
   import { TabRail } from "$features/tabs";
   import { loadNavigationError, loadTabCapacityState } from "$features/tabs";
   import { selectionGlide } from "$features/tabs";
-  import * as tabDrag from "$session/tab-drag.svelte";
   import { requestTab } from "$session/work-tab.svelte";
-  import { expanded as sidebarWidth } from "$session/sidebar-mode.svelte";
   import { uiCommands as ui } from "$domain/ui-commands";
   import { untrack } from "svelte";
   import { blocker } from "$domain/blocker";
@@ -145,22 +140,6 @@
     });
   });
 
-  // Kept sites fill the row beside the tool shelf first; the rest stack in
-  // rows of even columns above it. The floor is the narrowest a tile may get
-  // before a row gives one up; the lead is the shelf, its rule and their gaps
-  // (--dock-tile, --dock-shelf-gap), which the row beside it does not have.
-  const TILE_FLOOR = 48;
-  const TILE_GAP = 6;
-  const SHELF_LEAD = 65;
-  let sitesWidth = $state(0);
-  // Until the row has been measured, the column's own width stands in for
-  // it, so the first frame is already split the way the measured one will be.
-  let besideRoom = $derived(sitesWidth || Math.max(0, sidebarWidth() - SHELF_LEAD));
-  let beside = $derived(Math.max(1, Math.floor((besideRoom + TILE_GAP) / (TILE_FLOOR + TILE_GAP))));
-  let dockColumns = $derived(
-    Math.max(1, Math.floor((besideRoom + SHELF_LEAD + TILE_GAP) / (TILE_FLOOR + TILE_GAP))),
-  );
-
   // The current tab's plate travels to the next current tab. Measured before
   // the change lands and played after it, across every list in the column.
   // Another space's list is a different sheet, so a plate never crosses to it:
@@ -192,16 +171,9 @@
     });
   });
   let tree = $derived(sidebarTree(tabs.sidebarNodes(), tabs.tabs()));
-  let keptBeside = $derived(tree.favorites.slice(0, beside));
-  let keptAbove = $derived(tree.favorites.slice(beside));
   // The rail shows one flat list. Folders and split grouping are shapes that
   // need labels, so they stay in the expanded body.
-  let railTabs = $derived(
-    tabs.tabs().filter((tab) => !railEssentials.some((essential) => essential.id === tab.id)),
-  );
-  let railEssentials = $derived(
-    tree.favorites.flatMap((entry) => (entry.kind === "tab" ? [entry.tab] : [])),
-  );
+  let railTabs = $derived(tabs.tabs());
   let railClosable = $derived(
     new Set(tree.today.flatMap((entry) => (entry.kind === "tab" ? [entry.tab.id] : []))),
   );
@@ -347,7 +319,7 @@
             {#if splitting}<p class="shrink-0 px-3 pb-1 text-[12px] text-accent" aria-live="polite">
                 {m.choose_split()}
               </p>{/if}
-            <SidebarBody pinned={tree.pinned} today={tree.today} {splitting} onSelect={selectTab} />
+            <SidebarBody pinned={[...tree.pinned, ...tree.favorites]} today={tree.today} {splitting} onSelect={selectTab} />
             <!-- Brief notices and downloads sit at the foot of the column, by the dock. -->
             <SidebarNotice />
             {#if tabs.profile()?.id}<DownloadStatus
@@ -369,60 +341,10 @@
           compact
           tools={!inWork}
           foot={inWork ? accountFoot : undefined}
-        >
-          {#snippet sites()}<EssentialsRail
-              entries={railEssentials}
-              onSelect={selectTab}
-            />{/snippet}
-        </Dock>{:else if incognito}
+        />{:else if incognito}
         <!-- A private window keeps nothing, so it has no tools or kept sites;
              its foot names the scope and closes it. -->
-        <PrivateBar />{:else}<Dock>
-          {#snippet above()}
-            <div
-              class="dock-sites"
-              data-essentials-drop
-              data-over={tabDrag.overEssentials()}
-              hidden={keptAbove.length === 0}
-            >
-              <TabList
-                entries={keptAbove}
-                section="favorites"
-                variant="essentials"
-                columns={dockColumns}
-                label={m.essentials()}
-                {splitting}
-                onSelect={selectTab}
-                >{#snippet essentialTile(props)}<EssentialTile {...props} />{/snippet}</TabList
-              >
-            </div>
-          {/snippet}
-          {#snippet sites()}
-            <div
-              class="dock-sites"
-              bind:clientWidth={sitesWidth}
-              data-essentials-drop
-              data-over={tabDrag.overEssentials()}
-              data-empty={tree.favorites.length === 0}
-            >
-              {#if tree.favorites.length === 0}<span class="dock-sites-hint"
-                  >{m.essential_drop_hint()}</span
-                >{/if}
-              <TabList
-                entries={keptBeside}
-                section="favorites"
-                variant="essentials"
-                label={m.essentials()}
-                {splitting}
-                onSelect={selectTab}
-                >{#snippet essentialTile(props)}<EssentialTile {...props} />{/snippet}</TabList
-              >
-            </div>
-            {#if tabDrag.moveFailed()}<p class="sidebar-move-error" role="alert">
-                {m.essential_move_failed()}
-              </p>{/if}
-          {/snippet}
-        </Dock>{/if}{/snippet}{#snippet settingsNavigation()}<SettingsNavigation
+        <PrivateBar />{:else}<Dock />{/if}{/snippet}{#snippet settingsNavigation()}<SettingsNavigation
       />{/snippet}{#snippet toolPanel(kind)}<LazyView
         loader={loadToolSlot}
         loadingLabel={m.surface_loading()}

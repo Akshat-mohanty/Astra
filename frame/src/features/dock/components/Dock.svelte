@@ -37,15 +37,12 @@
   {#if above}<div class="dock-above" data-under-panel>{@render above()}</div>{/if}
   <!-- In the row the profile leads; down the rail it closes the column. -->
   <div class="dock-base">
-    {#if tools && !compact}<ToolShelf />
-      <span class="dock-rule" aria-hidden="true"></span>{/if}
+    {#if tools && !compact}<ToolShelf />{/if}
     {#if sites}<div class="dock-sites-slot" data-under-panel={compact || undefined}>
         {@render sites()}
       </div>{/if}
-    {#if tools && compact}<span class="dock-rule" aria-hidden="true"></span><ToolShelf
-        compact
-      />{/if}
-    {#if foot}<span class="dock-rule" aria-hidden="true"></span>{@render foot()}{/if}
+    {#if tools && compact}<ToolShelf compact />{/if}
+    {#if foot}{@render foot()}{/if}
   </div>
 </footer>
 
@@ -72,17 +69,9 @@
   .dock-base {
     display: flex;
     align-items: center;
+    justify-content: center;
+    width: 100%;
     gap: var(--dock-shelf-gap);
-  }
-
-  /* Ours on one side of the rule, the web's on the other. */
-  .dock-rule {
-    flex: none;
-    align-self: center;
-    width: 1px;
-    height: calc(var(--dock-tile) - 14px);
-    border-radius: var(--radius-capsule);
-    background: var(--color-border);
   }
 
   .dock-sites-slot {
@@ -107,10 +96,6 @@
     gap: 8px;
   }
 
-  .dock[data-compact="true"] .dock-rule {
-    width: 22px;
-    height: 1px;
-  }
 
   .dock[data-compact="true"] .dock-sites-slot {
     flex: none;
