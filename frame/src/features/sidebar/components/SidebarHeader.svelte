@@ -18,7 +18,6 @@
   import { fullscreen } from "$shared/lib/fullscreen.svelte";
   import IconButton from "$shared/ui/IconButton";
   import ModeTabs from "./ModeTabs.svelte";
-  import SidebarSearch from "./SidebarSearch.svelte";
   import WindowControls from "$shared/ui/WindowControls";
 
   let {
@@ -106,6 +105,13 @@
     {/if}
     <ModeTabs compact />
     <div class="flex items-center gap-0.5">
+      <IconButton
+        icon={SidebarLeftIcon}
+        label="Expand sidebar"
+        size={15}
+        buttonSize={26}
+        onclick={ontoggle}
+      />
       <!-- Its menu acts on the page and the column's shape; Work has neither. -->
       {#if pageControls}<IconButton
           icon={EllipsisIcon}
@@ -115,7 +121,6 @@
           haspopup
           onclick={openSidebarMenu}
         />{/if}
-      <SidebarSearch small />
     </div>
     <span class="mt-[6px] mb-[7px] h-px w-[22px] rounded-full bg-border" aria-hidden="true"></span>
   </header>
@@ -135,7 +140,7 @@
          lights; search stands there instead. -->
     {#if launcher && IS_WINDOWS}<span class="flex w-14 shrink-0 justify-center"
         ><ModeTabs compact /></span
-      >{:else if launcher}<span class="ms-1.5 flex"><SidebarSearch /></span>{:else}<IconButton
+      >{:else}<IconButton
         icon={SidebarLeftIcon}
         label={m.ui_compact_mode()}
         onclick={ontoggle}
