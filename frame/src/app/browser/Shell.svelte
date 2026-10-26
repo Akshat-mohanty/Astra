@@ -374,7 +374,7 @@ import {
   <div class="stage-column">
     <div
       class="top-address-bar"
-      class:hidden-top-bar={newTabShown || browserPage.currentPage() !== null || inWork}
+      class:hidden-top-bar={browserPage.currentPage() !== null || inWork}
       style:padding-inline-start={closedSidebar && lights ? "calc(var(--traffic-light-inset, 60px) + 8px)" : "12px"}
     >
       <div class="top-nav-controls" role="group" aria-label={m.ui_navigation()}>
@@ -414,15 +414,17 @@ import {
           onclick={tabs.reloadActive}
         />
       </div>
-      <div class="top-address-field-wrap">
-        <AddressField compact={false} />
-      </div>
-      <div
-        class="top-nav-spacer"
-        style:flex={closedSidebar && lights ? "0 0 calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "0 0 124px"}
-        style:width={closedSidebar && lights ? "calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "124px"}
-        aria-hidden="true"
-      ></div>
+      {#if !newTabShown}
+        <div class="top-address-field-wrap">
+          <AddressField compact={false} />
+        </div>
+        <div
+          class="top-nav-spacer"
+          style:flex={closedSidebar && lights ? "0 0 calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "0 0 124px"}
+          style:width={closedSidebar && lights ? "calc(124px + var(--traffic-light-inset, 60px) - 4px)" : "124px"}
+          aria-hidden="true"
+        ></div>
+      {/if}
     </div>
     {#if browserPage.navigationFailed()}<div class="navigation-error" role="alert">
         {m.browser_nav_failed()}
