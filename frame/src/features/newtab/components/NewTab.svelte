@@ -1,7 +1,7 @@
 <script lang="ts">
   import { type Snippet } from "svelte";
   import * as m from "$shared/i18n/messages";
-  import GlyphSwell from "./GlyphSwell.svelte";
+  import KineticGrid from "./KineticGrid.svelte";
 
   let {
     fromEmpty = false,
@@ -26,13 +26,14 @@
   class:animate-from-empty={fromEmpty}
   aria-label={m.new_tab()}
 >
-  <!-- Background: Animated Glyph Swell canvas covering the whole surface -->
+  <!-- Background: Interactive Kinetic Grid canvas covering the whole surface -->
   <div class="page" aria-hidden="true">
-    <GlyphSwell colors={["#07090a", "rgba(255, 255, 255, 0.42)", "#ffffff"]} cell={15} />
+    <KineticGrid globalColor="default" />
   </div>
 
   <!-- Centered Search Field -->
   <div class="search-container">
+    <h1 class="welcome-heading">Welcome Adrien</h1>
     <div class="search-wrapper">
       {@render search()}
     </div>
@@ -45,7 +46,7 @@
     block-size: 100%;
     inline-size: 100%;
     overflow: hidden;
-    background: #07090a;
+    background: #161618;
     isolation: isolate;
     color: var(--color-text, #ffffff);
     user-select: none;
@@ -56,19 +57,33 @@
     inset: 0;
     inline-size: 100%;
     block-size: 100%;
-    background: #07090a;
+    background: #161618;
   }
 
   .search-container {
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding-bottom: 6vh;
     padding-inline: 24px;
     pointer-events: none;
     z-index: 20;
+  }
+
+  .welcome-heading {
+    margin: 0 0 36px 0;
+    color: #fff;
+    font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-align: center;
+    pointer-events: auto;
+    user-select: none;
   }
 
   .search-wrapper {
@@ -83,6 +98,10 @@
 
   .newtab.animate-from-empty .page {
     animation: newtab-bg-fade 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .newtab.animate-from-empty .welcome-heading {
+    animation: newtab-search-rise 580ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
   }
 
   .newtab.animate-from-empty .search-wrapper {
@@ -129,6 +148,7 @@
   @media (prefers-reduced-motion: reduce) {
     .newtab.animate-from-empty,
     .newtab.animate-from-empty .page,
+    .newtab.animate-from-empty .welcome-heading,
     .newtab.animate-from-empty .search-wrapper {
       animation: none;
     }

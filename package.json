@@ -9,7 +9,9 @@
     "build": "pnpm -C desktop build",
     "bundle:app": "pnpm --dir desktop exec tauri build --debug -b app",
     "frame:dev": "pnpm -C frame dev",
-    "frame:build": "pnpm -C frame build"
+    "frame:build": "pnpm -C frame build",
+    "website:dev": "npx serve website -l 3000",
+    "website:aether": "npx serve website-aether -l 3001"
   },
   "packageManager": "pnpm@11.17.0"
 }
