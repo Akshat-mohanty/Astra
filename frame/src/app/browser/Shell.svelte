@@ -504,6 +504,10 @@ import {
           >
         </div>
       </main>
+    {:else if tabs.activeTab() === undefined && browserPage.currentPage() === null}
+      <main class="min-w-0 flex-1 ps-2">
+        <div class="empty-stage-pane h-full w-full"></div>
+      </main>
     {/if}
     {#if browserPage.currentPage() !== null}
       <main class="internal-stage">
@@ -602,6 +606,12 @@ import {
     min-height: 0;
   }
 
+  .empty-stage-pane {
+    border-radius: var(--content-radius);
+    border: 1px solid var(--color-border-strong);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
   .top-address-bar {
     height: 38px;
     min-height: 38px;
@@ -613,6 +623,7 @@ import {
     padding-inline: 12px;
     z-index: 50;
     pointer-events: auto;
+    margin-top: -4.5px;
   }
 
   .top-address-bar.hidden-top-bar {

@@ -323,6 +323,59 @@ pub(super) fn filter_windows_context_menu(
         && presented.load(Ordering::Acquire)
         && unsafe { GetAncestor(parent, GA_ROOT) == GetForegroundWindow() }
 }
+#[cfg(target_os = "macos")]
+pub(super) fn filter_macos_context_menu(menu: &objc2_app_kit::NSMenu) {
+    use objc2_foundation::NSString;
+    let items = menu.itemArray();
+    let mut has_new_tab = false;
+    let mut link_item_index = None;
+    let mut link_target = None;
+    let mut link_action = None;
+
+    for (index, item) in items.iter().enumerate() {
+        let tag = item.tag();
+        let title = item.title().to_string();
+        if tag == 2 || title.contains("Open Link in New Window") || title.contains("New Window") {
+            item.setTitle(&NSString::from_str("Open Link in New Tab"));
+            has_new_tab = true;
+        } else if tag == 5 || title.contains("Open Image in New Window") {
+            item.setTitle(&NSString::from_str("Open Image in New Tab"));
+        } else if tag == 10 || title.contains("Open Media in New Window") || title.contains("Open Video in New Window") {
+            item.setTitle(&NSString::from_str("Open Video in New Tab"));
+        }
+
+        if tag == 1 || tag == 4 || title.contains("Open Link") || title.contains("Copy Link") {
+            if link_item_index.is_none() {
+                link_item_index = Some(index);
+                link_target = item.target();
+                link_action = item.action();
+            }
+        }
+    }
+
+    // Fallback: If WebKit did not include Tag 2 ("Open Link in New Window"), but this is a link context,
+    // insert "Open Link in New Tab" right above/at the link position.
+    if !has_new_tab {
+        if let (Some(index), Some(target), Some(action)) = (link_item_index, link_target, link_action) {
+            use objc2::MainThreadOnly;
+            let mtm = objc2_foundation::MainThreadMarker::new();
+            if let Some(mtm) = mtm {
+                let new_item = unsafe {
+                    objc2_app_kit::NSMenuItem::initWithTitle_action_keyEquivalent(
+                        objc2_app_kit::NSMenuItem::alloc(mtm),
+                        &NSString::from_str("Open Link in New Tab"),
+                        Some(action),
+                        &NSString::from_str(""),
+                    )
+                };
+                new_item.setTag(2);
+                unsafe { new_item.setTarget(Some(&target)) };
+                menu.insertItem_atIndex(&new_item, index as objc2_foundation::NSInteger);
+            }
+        }
+    }
+}
+
 #[cfg(any(target_os = "windows", test))]
 pub(super) fn windows_menu_item_allowed(name: &str) -> bool {
     matches!(

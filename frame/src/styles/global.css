@@ -115,6 +115,7 @@ button {
    a boundary the material has already made, and states it hard. */
 .content-pane {
   border-radius: var(--content-radius);
+  border: 1px solid var(--color-border-strong);
   background: var(--color-page);
 }
 

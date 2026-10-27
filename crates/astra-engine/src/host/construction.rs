@@ -1310,7 +1310,15 @@ impl EngineHost {
         }
         #[cfg(target_os = "macos")]
         {
-            builder = builder.with_user_agent(crate::platform::imp::safari_user_agent());
+            use wry::WebViewBuilderExtMacos;
+            builder = builder
+                .with_user_agent(crate::platform::imp::safari_user_agent())
+                .with_context_menu_handler(move |_event, menu| {
+                    if let Some(menu) = menu.as_ref() {
+                        super::page_open::filter_macos_context_menu(menu);
+                    }
+                    menu
+                });
         }
 
         #[cfg(target_os = "windows")]

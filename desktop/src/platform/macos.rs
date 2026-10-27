@@ -256,9 +256,72 @@ pub fn to_window(x: f64, y: f64) -> (f64, f64) {
         .translate(x, y)
 }
 
+fn install_context_menu_observer() {
+    use block2::RcBlock;
+    use objc2_app_kit::{NSMenu, NSMenuItem, NSMenuDidBeginTrackingNotification};
+    use objc2_foundation::NSNotificationCenter;
+    use std::ptr::NonNull;
+
+    static INSTALLED: std::sync::Once = std::sync::Once::new();
+    INSTALLED.call_once(|| {
+        let center = NSNotificationCenter::defaultCenter();
+        let block = RcBlock::new(|notification: NonNull<objc2_foundation::NSNotification>| {
+            let notification = unsafe { notification.as_ref() };
+            let Some(object) = notification.object() else {
+                return;
+            };
+            let Some(menu) = object.downcast_ref::<NSMenu>() else {
+                return;
+            };
+            let mtm = match MainThreadMarker::new() {
+                Some(mtm) => mtm,
+                None => return,
+            };
+            let items = menu.itemArray();
+            let mut already_has_new_tab = false;
+            let mut new_window_index = None;
+            for (index, item) in items.iter().enumerate() {
+                let title = item.title().to_string();
+                if title == "Open Link in New Tab" {
+                    already_has_new_tab = true;
+                    break;
+                }
+                if title == "Open Link in New Window" {
+                    new_window_index = Some((index, item.clone()));
+                }
+            }
+            if !already_has_new_tab {
+                if let Some((index, item)) = new_window_index {
+                    let new_item = unsafe {
+                        NSMenuItem::initWithTitle_action_keyEquivalent(
+                            NSMenuItem::alloc(mtm),
+                            &NSString::from_str("Open Link in New Tab"),
+                            item.action(),
+                            &NSString::from_str(""),
+                        )
+                    };
+                    new_item.setTag(item.tag());
+                    unsafe { new_item.setTarget(item.target().as_deref()) };
+                    menu.insertItem_atIndex(&new_item, index as objc2_foundation::NSInteger);
+                }
+            }
+        });
+
+        unsafe {
+            center.addObserverForName_object_queue_usingBlock(
+                Some(NSMenuDidBeginTrackingNotification),
+                None,
+                None,
+                &block,
+            );
+        }
+    });
+}
+
 pub fn init(window: &WebviewWindow) -> bool {
     crate::material::install(window, false);
     super::window_controls::install(window);
+    install_context_menu_observer();
     if !harden_privileged(window) {
         return false;
     }
