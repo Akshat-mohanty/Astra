@@ -22,12 +22,11 @@ impl Shell {
         call: HistoryCall,
         done: HistoryCompletion,
     ) {
-        let authorized = self
+        let focused = self
             .windows
             .focused()
-            .map(|window| window.profile)
-            .is_some_and(|profile| profile == expected_profile);
-        if !authorized || !call.validate() {
+            .is_some_and(|window| window.profile == expected_profile);
+        if !focused || !call.validate() {
             done.finish(HistoryResponse::Error {
                 error: HistoryError::Invalid,
             });

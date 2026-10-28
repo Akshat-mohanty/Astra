@@ -221,7 +221,7 @@ pub const REGISTRY: &[CommandSpec] = &[
     command(
         "browser.history",
         "Show All History",
-        split("CmdOrCtrl+Shift+Y", "Ctrl+Shift+H"),
+        split("CmdOrCtrl+Y", "Ctrl+H"),
         Group::History,
     ),
     command(
@@ -293,7 +293,7 @@ pub const REGISTRY: &[CommandSpec] = &[
     command(
         "tool.history",
         "History",
-        split("CmdOrCtrl+Y", "Ctrl+H"),
+        Keys::NONE,
         Group::Window,
     ),
     command(
@@ -695,14 +695,9 @@ mod tests {
 
     #[test]
     fn history_follows_each_platform_convention() {
-        // The platform's history key opens the quick panel; the full page is
-        // the same key with Shift.
-        let history = get("tool.history").expect("history panel command");
-        assert_eq!(history.keys.on(Platform::Mac), Some("CmdOrCtrl+Y"));
-        assert_eq!(history.keys.on(Platform::Other), Some("Ctrl+H"));
         let page = get("browser.history").expect("history page command");
-        assert_eq!(page.keys.on(Platform::Mac), Some("CmdOrCtrl+Shift+Y"));
-        assert_eq!(page.keys.on(Platform::Other), Some("Ctrl+Shift+H"));
+        assert_eq!(page.keys.on(Platform::Mac), Some("CmdOrCtrl+Y"));
+        assert_eq!(page.keys.on(Platform::Other), Some("Ctrl+H"));
     }
 
     #[test]

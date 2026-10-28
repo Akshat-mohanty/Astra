@@ -465,7 +465,7 @@ fn normalize_schema_sql(sql: &str) -> String {
             }
         }
     }
-    normalized
+    normalized.replace("astra-userscript-source-v1", "astra-userscript-source-v1")
 }
 
 fn invalid_schema(message: &str) -> rusqlite::Error {

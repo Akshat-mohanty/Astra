@@ -12,6 +12,10 @@ let initialized = false;
 let initializing: Promise<void> | null = null;
 export const activeTool = () => tool;
 export function open(kind: ToolKind) {
+  if (kind === "history") {
+    void browser.open("history");
+    return;
+  }
   // Work keeps the column, so a tool opens beside its canvas; any other page gives way to Browse.
   const page = browser.currentPage();
   if (page !== null && page !== "work") {
@@ -32,9 +36,13 @@ async function initialize(owner: number) {
   const unsubscribe = await events.uiCommand.listen(({ payload }) => {
     if (owner !== generation) return;
     const kind = payload.slice(5);
+    if (payload === "tool.history") {
+      void browser.open("history");
+      return;
+    }
     if (
       payload.startsWith("tool.") &&
-      ["notes", "tasks", "ai", "time", "history", "downloads", "bookmarks"].includes(kind)
+      ["notes", "tasks", "ai", "time", "downloads", "bookmarks"].includes(kind)
     )
       open(kind as ToolKind);
     if (payload === "browser.return" && queued) {

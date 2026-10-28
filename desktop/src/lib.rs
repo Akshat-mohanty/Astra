@@ -2137,12 +2137,16 @@ pub(crate) fn restore_browser_chrome(
         if (rows.length !== 1) return '';
         const row = rows[0];
         if (row.dataset.astraTabUrl !== (active.url ?? '') || row.dataset.astraProjectionRevision !== active.projection_revision || row.querySelector('[data-astra-tab-label]')?.textContent !== active.title) return '';
-        const address = document.querySelector('[data-astra-address]');
-        if (!(address instanceof HTMLInputElement)) return '';
-        const host = active.url ? new URL(active.url).host : '';
-        if (address.value !== host) {{ address.value = host; address.dispatchEvent(new Event('input', {{ bubbles: true }})); }}
-        if (address.value !== host) return '';
-        if (!!document.querySelector('[data-astra-new-tab]') !== ((active.content ?? 'web') === 'web' && !active.url && !active.loading)) return '';
+        const isNewTab = (active.content ?? 'web') === 'web' && !active.url && !active.loading;
+        if (!!document.querySelector('[data-astra-new-tab]') !== isNewTab) return '';
+        if (!isNewTab) {{
+          const address = document.querySelector('[data-astra-address]');
+          if (!(address instanceof HTMLInputElement)) return '';
+          let host = '';
+          try {{ host = active.url ? new URL(active.url).host : ''; }} catch (_) {{ return ''; }}
+          if (address.value !== host) {{ address.value = host; address.dispatchEvent(new Event('input', {{ bubbles: true }})); }}
+          if (address.value !== host) return '';
+        }}
       }}
       void document.documentElement.getBoundingClientRect();
       return {expected};
@@ -3491,13 +3495,23 @@ fn execute_command(app: &tauri::AppHandle, id: &str) -> astra_ipc::OperationAdmi
             rejected_operation()
         };
     }
+    if id == "tool.history" {
+        return app
+            .try_state::<Handle>()
+            .map_or_else(rejected_operation, |shell| {
+                dispatch_operation(
+                    app,
+                    &shell,
+                    Command::ShowBrowserPage(Some(astra_app::BrowserPage::History)),
+                )
+            });
+    }
     if matches!(
         id,
         "tool.notes"
             | "tool.tasks"
             | "tool.ai"
             | "tool.time"
-            | "tool.history"
             | "tool.downloads"
             | "tool.bookmarks"
             | "extensions.manage"
