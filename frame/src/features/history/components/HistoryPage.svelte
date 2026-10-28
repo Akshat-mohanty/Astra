@@ -1,12 +1,11 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { ArrowLeft02Icon, Clock01Icon, Search01Icon } from "@hugeicons/core-free-icons";
+  import { ArrowLeft02Icon, Cancel01Icon, Clock01Icon, Delete02Icon, Search01Icon } from "@hugeicons/core-free-icons";
   import type { HistoryRange } from "$shared/ipc/bindings";
   import { commands } from "$shared/ipc/bindings";
   import Button from "$shared/ui/Button";
   import Icon from "$shared/ui/Icon";
   import IconButton from "$shared/ui/IconButton";
-  import SearchField from "$shared/ui/SearchField";
   import Select from "$shared/ui/Select";
   import { surface as browser } from "$domain/surface";
   import { tabs } from "$domain/tabs";
@@ -18,10 +17,8 @@
   let session = $state.raw(untrack(() => historySession(profile, "page")));
   let query = $state("");
   let armed = $state(false);
+  let selectedUrls = $state(new Set<string>());
 
-  // Only the owning profile decides which session this is. Starting one reads
-  // its own state, so a tracked body would restart the session on every change
-  // it made — including the query the reader just typed.
   $effect(() => {
     const owner = profile;
     if (!owner || owner === "unbound") return;
@@ -39,6 +36,7 @@
     { value: "day", label: m.history_range_day() },
     { value: "week", label: m.history_range_week() },
   ];
+
   let confirmLabel = $derived(
     {
       everything: m.history_clear_confirm_all(),
@@ -48,248 +46,435 @@
     }[session.range],
   );
 
-  // Navigating in place returns from this page natively, so the row lands in
-  // the tab the reader was already looking at.
   const open = (url: string, newTab: boolean) => commands.browserOpenUrl(url, newTab);
 
-  // Clearing cannot be undone, so the button states what it is about to remove
-  // and only acts on a second, deliberate press.
   function clear() {
     if (!armed) {
       armed = true;
       return;
     }
     armed = false;
+    selectedUrls = new Set();
     void session.clear();
+  }
+
+  function handleSearch(value: string) {
+    query = value;
+    session.search(value);
   }
 
   function clearSearch() {
     query = "";
     session.search("");
   }
+
+  function cancelSelection() {
+    selectedUrls = new Set();
+  }
+
+  async function deleteSelected() {
+    if (!selectedUrls.size) return;
+    const urls = Array.from(selectedUrls);
+    selectedUrls = new Set();
+    await session.forget(urls);
+  }
 </script>
 
 <svelte:window
   onkeydown={(event) => {
-    if (event.key === "Escape") armed = false;
+    if (event.key === "Escape") {
+      armed = false;
+      if (selectedUrls.size > 0) cancelSelection();
+    }
   }}
 />
 
-<section class="library-shell history-shell">
-  <header class="internal-toolbar history-toolbar">
-    <div class="toolbar-left">
+<section class="chrome-history-shell">
+  <!-- Chromium Top Bar -->
+  <header class="chrome-topbar">
+    <div class="topbar-left">
       <IconButton
         icon={ArrowLeft02Icon}
         label={m.settings_back()}
-        size={16}
-        buttonSize={30}
+        size={18}
+        buttonSize={36}
         onclick={() => void browser.close()}
       />
-      <div class="toolbar-badge">
-        <Icon icon={Clock01Icon} size={15} />
-        <span class="toolbar-current">{m.browser_history_title()}</span>
+      <h1 class="history-title">{m.browser_history_title()}</h1>
+    </div>
+
+    <div class="topbar-center">
+      <div class="chrome-searchbox">
+        <Icon icon={Search01Icon} size={16} />
+        <input
+          type="search"
+          class="search-input"
+          placeholder={m.history_search()}
+          value={query}
+          oninput={(e) => handleSearch(e.currentTarget.value)}
+        />
+        {#if query.trim()}
+          <button type="button" class="search-clear-btn" aria-label="Clear search" onclick={clearSearch}>
+            <Icon icon={Cancel01Icon} size={15} />
+          </button>
+        {/if}
       </div>
     </div>
+
+    <div class="topbar-right"></div>
   </header>
 
-  <div class="content">
-    <div class="history-hero">
-      <div class="hero-text">
-        <h1 class="hero-title">{m.browser_history_title()}</h1>
-        <p class="hero-subtitle">Search, inspect, and organize your visited pages and web activity.</p>
-      </div>
+  <!-- Split Body: Chromium Sidebar Drawer + Main Area -->
+  <div class="chrome-body">
+    <aside class="chrome-sidebar">
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-item active">
+          <Icon icon={Clock01Icon} size={18} />
+          <span class="nav-label">{m.browser_history_title()}</span>
+        </button>
 
-      <div class="controls-card">
-        <div class="bar">
-          <SearchField
-            label={m.history_search()}
-            placeholder={m.history_search()}
-            size="page"
-            value={query}
-            oninput={(value) => {
-              query = value;
-              session.search(value);
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section">
+          <span class="section-title">Time Range</span>
+          <Select
+            label={m.history_range()}
+            labelHidden
+            options={ranges}
+            value={session.range}
+            onchange={(value) => {
+              armed = false;
+              session.scope(value as HistoryRange);
             }}
           />
-          <div class="filter-group">
-            <Select
-              label={m.history_range()}
-              labelHidden
-              options={ranges}
-              value={session.range}
-              onchange={(value) => {
-                armed = false;
-                session.scope(value as HistoryRange);
-              }}
-            />
-            <Button
-              variant={armed ? "danger" : "secondary"}
-              disabled={session.busy || session.empty}
-              onblur={() => (armed = false)}
-              onclick={clear}>{armed ? confirmLabel : m.history_clear()}</Button
-            >
-          </div>
         </div>
-      </div>
-    </div>
 
-    {#if session.error}
-      <div class="empty-wrap">
-        <div class="empty-card">
-          <div class="empty-icon-glow">
-            <Icon icon={Clock01Icon} size={28} />
-          </div>
-          <h2 class="empty-title">{m.history_unavailable()}</h2>
-          <p class="empty-desc">{m.history_unavailable_help()}</p>
-          <Button variant="secondary" onclick={() => session.retry()}>{m.surface_retry()}</Button>
+        <div class="sidebar-section">
+          <Button
+            variant={armed ? "danger" : "secondary"}
+            disabled={session.busy || session.empty}
+            onblur={() => (armed = false)}
+            onclick={clear}
+          >
+            <Icon icon={Delete02Icon} size={16} />
+            <span>{armed ? confirmLabel : m.history_clear()}</span>
+          </Button>
         </div>
-      </div>
-    {:else if session.empty}
-      <div class="empty-wrap">
-        <div class="empty-card">
-          <div class="empty-icon-glow">
-            <Icon icon={query.trim() ? Search01Icon : Clock01Icon} size={28} />
+      </nav>
+    </aside>
+
+    <main class="chrome-main">
+      <div class="chrome-container">
+        <!-- Chromium Selection Action Bar -->
+        {#if selectedUrls.size > 0}
+          <div class="chrome-selection-bar" role="toolbar" aria-label="History item selection">
+            <span class="selection-count">
+              {selectedUrls.size} {selectedUrls.size === 1 ? "item" : "items"} selected
+            </span>
+            <div class="selection-actions">
+              <button type="button" class="btn-cancel" onclick={cancelSelection}>
+                Cancel
+              </button>
+              <button type="button" class="btn-delete" onclick={deleteSelected}>
+                Delete
+              </button>
+            </div>
           </div>
-          <h2 class="empty-title">
-            {query.trim() ? m.history_no_matches() : m.browser_history_empty()}
-          </h2>
-          <p class="empty-desc">
-            {query.trim() ? m.history_no_matches_help() : m.history_empty_help()}
-          </p>
-          {#if query.trim()}
-            <Button variant="secondary" onclick={clearSearch}>Clear search</Button>
-          {/if}
-        </div>
+        {/if}
+
+        {#if session.error}
+          <div class="empty-wrap">
+            <div class="empty-card">
+              <Icon icon={Clock01Icon} size={36} />
+              <h2 class="empty-title">{m.history_unavailable()}</h2>
+              <p class="empty-desc">{m.history_unavailable_help()}</p>
+              <Button variant="secondary" onclick={() => session.retry()}>{m.surface_retry()}</Button>
+            </div>
+          </div>
+        {:else if session.empty}
+          <div class="empty-wrap">
+            <div class="empty-card">
+              <Icon icon={query.trim() ? Search01Icon : Clock01Icon} size={36} />
+              <h2 class="empty-title">
+                {query.trim() ? m.history_no_matches() : m.browser_history_empty()}
+              </h2>
+              <p class="empty-desc">
+                {query.trim() ? m.history_no_matches_help() : m.history_empty_help()}
+              </p>
+              {#if query.trim()}
+                <Button variant="secondary" onclick={clearSearch}>Clear search</Button>
+              {/if}
+            </div>
+          </div>
+        {:else}
+          <HistoryList
+            {session}
+            bind:selectedUrls
+            onopen={(url, newTab) => void open(url, newTab)}
+            onmorefromsite={(host) => handleSearch(host)}
+          />
+        {/if}
       </div>
-    {:else}
-      <div class="list-wrapper">
-        <HistoryList {session} onopen={(url, newTab) => void open(url, newTab)} />
-      </div>
-    {/if}
+    </main>
   </div>
 </section>
 
 <style>
-  .history-shell {
+  .chrome-history-shell {
     position: relative;
-    background:
-      radial-gradient(110% 60% at 50% -10%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
-      var(--color-page, #161618);
-    border: 1px solid var(--color-border);
-    border-radius: var(--content-radius, 14px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #202124;
+    color: #e8eaed;
     overflow: hidden;
   }
 
-  .history-toolbar {
+  .chrome-topbar {
+    height: 56px;
+    background: #292a2d;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    flex: none;
+    z-index: 10;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 240px;
+    flex: none;
+  }
+
+  .history-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #e8eaed;
+    letter-spacing: -0.01em;
+  }
+
+  .topbar-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    max-width: 720px;
+  }
+
+  .chrome-searchbox {
+    width: 100%;
+    height: 38px;
+    background: #202124;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    color: #9aa0a6;
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .chrome-searchbox:focus-within {
+    background: #18191c;
+    border-color: #8ab4f8;
+    box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+    color: #8ab4f8;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e8eaed;
+    font-size: 14px;
+  }
+
+  .search-input::placeholder {
+    color: #9aa0a6;
+  }
+
+  .search-clear-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 50%;
+    color: #9aa0a6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-clear-btn:hover {
+    color: #e8eaed;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .topbar-right {
+    width: 240px;
+    flex: none;
+  }
+
+  .chrome-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .chrome-sidebar {
+    width: 256px;
+    background: #292a2d;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px 12px;
+    flex: none;
+    overflow-y: auto;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: #bdc1c6;
+    font-size: 13.5px;
+    font-weight: 450;
+    cursor: pointer;
+    text-align: start;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .nav-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e8eaed;
+  }
+
+  .nav-item.active {
+    background: #394457;
+    color: #8ab4f8;
+    font-weight: 500;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 4px;
+  }
+
+  .sidebar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 6px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9aa0a6;
+    margin-left: 6px;
+  }
+
+  .chrome-main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    background: #202124;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chrome-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .chrome-selection-bar {
     height: 48px;
-    padding-inline: 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: #292a2d;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
-  .toolbar-left {
+  .selection-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8eaed;
+  }
+
+  .selection-actions {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .toolbar-badge {
-    display: flex;
-    align-items: center;
-    gap: 7px;
+  .btn-cancel {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: #8ab4f8;
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text);
-    padding: 3px 10px 3px 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background-color 120ms ease;
   }
 
-  .toolbar-current {
-    color: var(--color-text);
+  .btn-cancel:hover {
+    background: rgba(138, 180, 248, 0.08);
   }
 
-  .content {
-    --library-gutter: clamp(20px, 5vw, 64px);
-    --library-column: 860px;
-
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
+  .btn-delete {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: none;
+    background: #8ab4f8;
+    color: #202124;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 120ms ease;
   }
 
-  .history-hero {
-    flex: none;
-    padding-inline: max(var(--library-gutter), calc((100% - var(--library-column)) / 2));
-    padding-top: 28px;
-    padding-bottom: 18px;
-  }
-
-  .hero-text {
-    margin-bottom: 20px;
-  }
-
-  .hero-title {
-    margin: 0;
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    color: var(--color-text);
-  }
-
-  .hero-subtitle {
-    margin: 6px 0 0;
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: var(--color-muted);
-  }
-
-  .controls-card {
-    background: rgba(255, 255, 255, 0.035);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card, 16px);
-    padding: 8px 10px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  .bar :global(.ui-search) {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .filter-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: none;
-  }
-
-  .list-wrapper {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+  .btn-delete:hover {
+    background: #a8c7fa;
   }
 
   .empty-wrap {
-    flex: 1;
-    display: grid;
-    place-items: center;
-    padding: 40px var(--library-gutter);
+    display: flex;
+    justify-content: center;
+    padding-top: 80px;
   }
 
   .empty-card {
@@ -297,39 +482,22 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    max-width: 420px;
-    padding: 40px 32px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-panel, 22px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  }
-
-  .empty-icon-glow {
-    display: grid;
-    place-items: center;
-    width: 60px;
-    height: 60px;
-    margin-bottom: 18px;
-    border-radius: var(--radius-card, 18px);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 28px rgba(255, 255, 255, 0.04);
-    color: var(--color-text);
+    gap: 12px;
+    max-width: 400px;
+    color: #9aa0a6;
   }
 
   .empty-title {
     margin: 0;
-    font-size: 17px;
-    font-weight: 550;
-    letter-spacing: -0.015em;
-    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 500;
+    color: #e8eaed;
   }
 
   .empty-desc {
-    margin: 8px 0 20px;
+    margin: 0 0 8px;
     font-size: 13.5px;
-    line-height: 1.55;
-    color: var(--color-muted);
+    line-height: 1.5;
+    color: #9aa0a6;
   }
 </style>

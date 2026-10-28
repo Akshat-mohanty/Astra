@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { Delete02Icon, Globe02Icon } from "@hugeicons/core-free-icons";
+  import { Delete02Icon, Globe02Icon, MoreVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons";
   import FavIcon from "$shared/ui/FavIcon";
+  import Icon from "$shared/ui/Icon";
   import IconButton from "$shared/ui/IconButton";
   import { favicons } from "$domain/favicons";
   import * as m from "$shared/i18n/messages";
-  import { hostOf, matchRange, timeLabel, toRows, visitedAt } from "../lib/history-model";
+  import { hostOf, matchRange, timeLabel, toRows, visitedAt, type HistoryRow } from "../lib/history-model";
   import { createVirtualWindow } from "$shared/lib/virtual-window.svelte";
   import { everyWhileVisible } from "$shared/lib/visible-interval";
   import type { HistorySession } from "../lib/history-session.svelte";
@@ -13,23 +14,36 @@
     session,
     density = "page",
     onopen,
+    selectedUrls = $bindable(new Set<string>()),
+    onmorefromsite,
   }: {
     session: HistorySession;
     density?: "page" | "panel";
     onopen: (url: string, newTab: boolean) => void;
+    selectedUrls?: Set<string>;
+    onmorefromsite?: (host: string) => void;
   } = $props();
 
-  const heights = $derived(density === "page" ? { day: 38, visit: 44 } : { day: 32, visit: 34 });
+  const heights = $derived(
+    density === "page"
+      ? { day: 48, visit: 40, visitLast: 56 }
+      : { day: 32, visit: 34, visitLast: 34 },
+  );
 
   let scroller: HTMLElement | undefined = $state();
   let selected = $state<string | null>(null);
+  let openMenuRowId = $state<string | null>(null);
 
   let today = $state(new Date());
   let rows = $derived(
     toRows(session.visits, today, { today: m.history_today(), yesterday: m.history_yesterday() }),
   );
   const virtual = createVirtualWindow({
-    heights: () => rows.map((row) => (row.kind === "day" ? heights.day : heights.visit)),
+    heights: () =>
+      rows.map((row) => {
+        if (row.kind === "day") return heights.day;
+        return row.isLastInDay ? heights.visitLast : heights.visit;
+      }),
   });
   let slice = $derived(virtual.window);
   let visible = $derived(rows.slice(slice.first, slice.last));
@@ -41,6 +55,33 @@
       if (now.getDate() !== today.getDate()) today = now;
     }),
   );
+
+  const FULL_DATE_FORMAT = new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  function displayDayLabel(row: Extract<HistoryRow, { kind: "day" }>): string {
+    if (density !== "page") return row.label;
+    const parts = row.day.split("-").map(Number);
+    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      const full = FULL_DATE_FORMAT.format(d);
+      if (row.label === m.history_today()) return `${m.history_today()} - ${full}`;
+      if (row.label === m.history_yesterday()) return `${m.history_yesterday()} - ${full}`;
+      return full;
+    }
+    return row.label;
+  }
+
+  function toggleSelect(url: string) {
+    const next = new Set(selectedUrls);
+    if (next.has(url)) next.delete(url);
+    else next.add(url);
+    selectedUrls = next;
+  }
 
   function onscroll(event: Event & { currentTarget: HTMLElement }) {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
@@ -60,9 +101,6 @@
     const target = visits[next];
     if (!target) return;
     selected = target.id;
-    // A jump lands outside the drawn window, where the row has no element for
-    // scrollIntoView to find. Carry the day heading with the row it opens, so
-    // a jumped-to visit is never stranded under a heading left off-screen.
     const index = rows.indexOf(target);
     virtual.scrollToIndex(rows[index - 1]?.kind === "day" ? index - 1 : index);
   }
@@ -100,6 +138,12 @@
   }
 </script>
 
+<svelte:window
+  onclick={() => {
+    if (openMenuRowId) openMenuRowId = null;
+  }}
+/>
+
 <div
   class="scroller"
   class:scrolls={density === "page"}
@@ -121,21 +165,27 @@
         style:block-size={`${heights.day}px`}
         data-virtual-index={slice.first + offset}
       >
-        {row.label}<span class="count">{row.count}</span>
+        <span class="day-title">{displayDayLabel(row)}</span>
+        {#if density === "panel"}
+          <span class="count">{row.count}</span>
+        {/if}
       </h2>
     {:else}
       {@const at = visitedAt(row.visit)}
       {@const range = matchRange(row.visit.title, session.query)}
       {@const site = favicons.mark(row.visit.icon, row.visit.url)}
+      {@const isChecked = selectedUrls.has(row.visit.url)}
       <div
         class="visit"
+        class:is-last={row.isLastInDay}
+        class:checked={isChecked}
         class:selected={selected === row.id}
         data-row={row.id}
         data-virtual-index={slice.first + offset}
         id={row.id}
         style:block-size={`${heights.visit}px`}
         role="option"
-        aria-selected={selected === row.id}
+        aria-selected={isChecked || selected === row.id}
         tabindex="-1"
         onpointermove={() => (selected = row.id)}
         onclick={(event) => onopen(row.visit.url, event.metaKey || event.ctrlKey)}
@@ -146,6 +196,20 @@
           }
         }}
       >
+        {#if density === "page"}
+          <div class="checkbox-col">
+            <input
+              type="checkbox"
+              class="chrome-checkbox"
+              checked={isChecked}
+              onchange={() => toggleSelect(row.visit.url)}
+              onclick={(e) => e.stopPropagation()}
+              aria-label={`Select ${row.visit.title}`}
+            />
+          </div>
+          <time datetime={at.toISOString()}>{timeLabel(at)}</time>
+        {/if}
+
         <div class="fav-plate">
           <FavIcon
             image={site?.image ?? null}
@@ -155,25 +219,86 @@
             fallback={Globe02Icon}
           />
         </div>
-        <span class="title"
-          >{#if range}{row.visit.title.slice(0, range[0])}<mark
+
+        <span class="title">
+          {#if range}
+            {row.visit.title.slice(0, range[0])}<mark
               >{row.visit.title.slice(range[0], range[1])}</mark
-            >{row.visit.title.slice(range[1])}{:else}{row.visit.title}{/if}</span
-        >
+            >{row.visit.title.slice(range[1])}
+          {:else}
+            {row.visit.title}
+          {/if}
+        </span>
+
         <span class="host">{hostOf(row.visit.url)}</span>
-        <time datetime={at.toISOString()}>{timeLabel(at)}</time>
-        <span class="forget"
-          ><IconButton
+
+        {#if density === "panel"}
+          <time datetime={at.toISOString()}>{timeLabel(at)}</time>
+        {/if}
+
+        <div class="actions-col">
+          <IconButton
             icon={Delete02Icon}
             label={m.history_forget()}
             size={14}
-            buttonSize={22}
+            buttonSize={26}
             onclick={(event) => {
               event.stopPropagation();
               void session.forget([row.visit.url]);
             }}
-          /></span
-        >
+          />
+          {#if density === "page"}
+            <div class="more-menu-container">
+              <button
+                type="button"
+                class="more-btn"
+                aria-label="More actions"
+                onclick={(e) => {
+                  e.stopPropagation();
+                  openMenuRowId = openMenuRowId === row.id ? null : row.id;
+                }}
+              >
+                <Icon icon={MoreVerticalIcon} size={15} />
+              </button>
+              {#if openMenuRowId === row.id}
+                <div
+                  class="chrome-popup-menu"
+                  role="menu"
+                  tabindex="-1"
+                  onclick={(e) => e.stopPropagation()}
+                  onkeydown={(e) => {
+                    if (e.key === "Escape") openMenuRowId = null;
+                  }}
+                >
+                  <button
+                    type="button"
+                    class="popup-item"
+                    role="menuitem"
+                    onclick={() => {
+                      openMenuRowId = null;
+                      onmorefromsite?.(hostOf(row.visit.url));
+                    }}
+                  >
+                    <Icon icon={Search01Icon} size={14} />
+                    <span>More from this site</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="popup-item danger"
+                    role="menuitem"
+                    onclick={() => {
+                      openMenuRowId = null;
+                      void session.forget([row.visit.url]);
+                    }}
+                  >
+                    <Icon icon={Delete02Icon} size={14} />
+                    <span>{m.history_forget()}</span>
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
     {/if}
   {/each}
@@ -188,10 +313,6 @@
 </div>
 
 <style>
-  /* The scroller is the pane, not the column inside it: when the column itself
-     scrolled, the bar came up the middle of the window instead of down its
-     edge. The reading column is made by padding rather than by a wrapper, so
-     the virtual list keeps its rows as direct children. */
   .scroller {
     flex: 1;
     min-height: 0;
@@ -200,18 +321,32 @@
   }
 
   .scroller[data-density="page"] {
-    --library-gutter: clamp(20px, 5vw, 64px);
-    --library-column: 860px;
-
-    padding-inline: max(var(--library-gutter), calc((100% - var(--library-column)) / 2));
-    padding-block-end: 48px;
+    width: 100%;
+    padding-bottom: 32px;
   }
 
   .scroller[data-density="panel"] {
     padding: 8px 8px 12px;
   }
 
-  .day {
+  /* Day Header */
+  .scroller[data-density="page"] .day {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8eaed;
+    background: #292a2d;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-sizing: border-box;
+  }
+
+  .scroller[data-density="panel"] .day {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -219,23 +354,13 @@
     padding: 10px 10px 8px;
     font-size: 12px;
     font-weight: 600;
-    letter-spacing: -0.01em;
     color: var(--color-text);
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: color-mix(in srgb, var(--color-page, #161618) 85%, transparent);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  /* The sidebar tool does not sit on the page ground, so a sticky heading
-     there would paint the wrong colour over the rows behind it. */
-  .scroller[data-density="panel"] .day {
-    position: static;
-    background: none;
-    backdrop-filter: none;
-    border-bottom: none;
+  .day-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8eaed;
   }
 
   .count {
@@ -248,39 +373,83 @@
     border-radius: 999px;
   }
 
-  /* A table, not a row of floated parts: the host, the time and the delete
-     button each hold a column of their own, so every title truncates at the
-     same x and the three trailing columns line up down the page. */
-  .visit {
+  /* Chromium Page Visit Rows */
+  .scroller[data-density="page"] .visit {
     display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) auto 64px 26px;
+    grid-template-columns: 24px 68px 20px minmax(0, 1fr) auto 60px;
     align-items: center;
     gap: 12px;
+    padding: 0 16px;
+    background: #292a2d;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color 100ms ease;
+  }
+
+  .scroller[data-density="page"] .visit.is-last {
+    margin-bottom: 16px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .scroller[data-density="page"] .visit:hover {
+    background: #333539;
+  }
+
+  .scroller[data-density="page"] .visit.checked {
+    background: rgba(138, 180, 248, 0.12);
+  }
+
+  .scroller[data-density="page"] .visit.selected {
+    outline: 1px solid rgba(138, 180, 248, 0.3);
+  }
+
+  /* Panel Visit Rows */
+  .scroller[data-density="panel"] .visit {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) 22px;
+    align-items: center;
+    gap: 10px;
     padding: 0 10px;
     border-radius: var(--radius-row, 12px);
     cursor: default;
-    transition: background-color 140ms ease, box-shadow 140ms ease;
+    transition: background-color 140ms ease;
   }
 
-  .fav-plate {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    flex: none;
-  }
-
-  .visit:hover {
+  .scroller[data-density="panel"] .visit:hover {
     background: var(--row-hover);
   }
 
-  /* The pointer and the caret land on the same plate every other list in the
-     product uses for the row it is on. */
-  .visit.selected {
+  .scroller[data-density="panel"] .visit.selected {
     background: var(--row-active);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .checkbox-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chrome-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #8ab4f8;
+    cursor: pointer;
+    border-radius: 2px;
+    margin: 0;
+  }
+
+  .fav-plate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: none;
   }
 
   .title {
@@ -289,54 +458,124 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     font-size: 13.5px;
-    color: var(--color-text);
+    color: #e8eaed;
     font-weight: 450;
   }
 
-  /* The part the typing accounts for carries the weight; the rest recedes. */
+  .scroller[data-density="page"] .title:hover {
+    color: #8ab4f8;
+    text-decoration: underline;
+  }
+
   mark {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--color-text);
+    background: rgba(138, 180, 248, 0.25);
+    color: #8ab4f8;
     font-weight: 600;
     border-radius: 2px;
     padding: 0 2px;
   }
 
   .host {
-    max-width: 180px;
+    max-width: 200px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     text-align: end;
-    font-size: 11.5px;
-    color: var(--color-muted);
-    font-family: var(--font-mono, ui-monospace, monospace);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    padding: 2px 7px;
-    border-radius: 6px;
+    font-size: 12px;
+    color: #9aa0a6;
   }
 
   time {
-    text-align: end;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
-    color: var(--color-faint);
+    color: #9aa0a6;
+    white-space: nowrap;
   }
 
-  /* Its column is always there, so revealing it never shifts the row under
-     the pointer. */
-  .forget {
+  .actions-col {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
     visibility: hidden;
     opacity: 0;
     transition: opacity 120ms ease;
   }
 
-  .forget:focus-within,
-  .visit:hover .forget,
-  .visit.selected .forget {
+  .actions-col:focus-within,
+  .visit:hover .actions-col,
+  .visit.selected .actions-col {
     visibility: visible;
     opacity: 1;
+  }
+
+  .more-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .chrome-popup-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    width: 180px;
+    background: #28292c;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .popup-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #e8eaed;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: start;
+    transition: background-color 100ms ease;
+  }
+
+  .popup-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .popup-item.danger {
+    color: #f28b82;
+  }
+
+  .popup-item.danger:hover {
+    background: rgba(242, 139, 130, 0.12);
+  }
+
+  .more-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: #9aa0a6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8eaed;
   }
 
   .spacer {
@@ -347,26 +586,23 @@
   .more {
     display: block;
     width: 100%;
-    margin: 12px 0 0;
+    margin: 16px 0 0;
     padding: 10px;
     border: 0;
     background: none;
     font-size: 12px;
-    color: var(--color-muted);
+    color: #9aa0a6;
     text-align: center;
   }
 
   .more {
-    cursor: default;
-    border-radius: var(--radius-row);
+    cursor: pointer;
+    border-radius: 4px;
+    color: #8ab4f8;
   }
 
   .more:hover {
-    background: var(--color-fill-hover);
-  }
-
-  .scroller[data-density="panel"] .visit {
-    grid-template-columns: 16px minmax(0, 1fr) 22px;
+    background: rgba(138, 180, 248, 0.08);
   }
 
   .scroller[data-density="panel"] .title {
@@ -381,12 +617,6 @@
   @media (prefers-reduced-motion: reduce) {
     .visit {
       transition: none;
-    }
-  }
-
-  @media (forced-colors: active) {
-    .visit.selected {
-      outline: 1px solid Highlight;
     }
   }
 </style>
