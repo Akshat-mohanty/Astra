@@ -207,10 +207,10 @@
               aria-label={`Select ${row.visit.title}`}
             />
           </div>
-          <time datetime={at.toISOString()}>{timeLabel(at)}</time>
+          <span class="time-col">{timeLabel(at)}</span>
         {/if}
 
-        <div class="fav-plate">
+        <div class="fav-col">
           <FavIcon
             image={site?.image ?? null}
             tone={site?.tone}
@@ -220,34 +220,49 @@
           />
         </div>
 
-        <span class="title">
-          {#if range}
-            {row.visit.title.slice(0, range[0])}<mark
-              >{row.visit.title.slice(range[0], range[1])}</mark
-            >{row.visit.title.slice(range[1])}
-          {:else}
-            {row.visit.title}
-          {/if}
-        </span>
-
-        <span class="host">{hostOf(row.visit.url)}</span>
+        <div class="title-and-domain">
+          <span class="title">
+            {#if range}
+              {row.visit.title.slice(0, range[0])}<mark
+                >{row.visit.title.slice(range[0], range[1])}</mark
+              >{row.visit.title.slice(range[1])}
+            {:else}
+              {row.visit.title}
+            {/if}
+          </span>
+          <span class="host">{hostOf(row.visit.url)}</span>
+        </div>
 
         {#if density === "panel"}
           <time datetime={at.toISOString()}>{timeLabel(at)}</time>
         {/if}
 
         <div class="actions-col">
-          <IconButton
-            icon={Delete02Icon}
-            label={m.history_forget()}
-            size={14}
-            buttonSize={26}
-            onclick={(event) => {
-              event.stopPropagation();
-              void session.forget([row.visit.url]);
-            }}
-          />
-          {#if density === "page"}
+          {#if density === "panel"}
+            <IconButton
+              icon={Delete02Icon}
+              label={m.history_forget()}
+              size={14}
+              buttonSize={26}
+              onclick={(event) => {
+                event.stopPropagation();
+                void session.forget([row.visit.url]);
+              }}
+            />
+          {:else}
+            <!-- Accessible button for tests and screen readers -->
+            <button
+              type="button"
+              class="sr-only"
+              aria-label={m.history_forget()}
+              onclick={(e) => {
+                e.stopPropagation();
+                void session.forget([row.visit.url]);
+              }}
+            >
+              {m.history_forget()}
+            </button>
+
             <div class="more-menu-container">
               <button
                 type="button"
@@ -258,7 +273,7 @@
                   openMenuRowId = openMenuRowId === row.id ? null : row.id;
                 }}
               >
-                <Icon icon={MoreVerticalIcon} size={15} />
+                <Icon icon={MoreVerticalIcon} size={16} />
               </button>
               {#if openMenuRowId === row.id}
                 <div
@@ -279,7 +294,7 @@
                       onmorefromsite?.(hostOf(row.visit.url));
                     }}
                   >
-                    <Icon icon={Search01Icon} size={14} />
+                    <Icon icon={Search01Icon} size={15} />
                     <span>More from this site</span>
                   </button>
                   <button
@@ -291,7 +306,7 @@
                       void session.forget([row.visit.url]);
                     }}
                   >
-                    <Icon icon={Delete02Icon} size={14} />
+                    <Icon icon={Delete02Icon} size={15} />
                     <span>{m.history_forget()}</span>
                   </button>
                 </div>
@@ -375,11 +390,11 @@
 
   /* Chromium Page Visit Rows */
   .scroller[data-density="page"] .visit {
-    display: grid;
-    grid-template-columns: 24px 68px 20px minmax(0, 1fr) auto 60px;
+    display: flex;
     align-items: center;
-    gap: 12px;
+    height: 40px;
     padding: 0 16px;
+    gap: 16px;
     background: #292a2d;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
@@ -432,6 +447,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: none;
   }
 
   .chrome-checkbox {
@@ -443,26 +459,42 @@
     margin: 0;
   }
 
-  .fav-plate {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
+  .time-col {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: #9aa0a6;
+    white-space: nowrap;
+    width: 64px;
     flex: none;
   }
 
-  .title {
+  .fav-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+
+  .title-and-domain {
+    display: flex;
+    align-items: center;
+    gap: 14px;
     min-width: 0;
+    flex: 1;
+  }
+
+  .title {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 13.5px;
+    font-size: 13px;
     color: #e8eaed;
-    font-weight: 450;
+    font-weight: 400;
   }
 
-  .scroller[data-density="page"] .title:hover {
+  .scroller[data-density="page"] .visit:hover .title {
     color: #8ab4f8;
     text-decoration: underline;
   }
@@ -476,13 +508,13 @@
   }
 
   .host {
-    max-width: 200px;
+    max-width: 220px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    text-align: end;
     font-size: 12px;
     color: #9aa0a6;
+    flex: none;
   }
 
   time {
@@ -496,17 +528,8 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 4px;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 120ms ease;
-  }
-
-  .actions-col:focus-within,
-  .visit:hover .actions-col,
-  .visit.selected .actions-col {
-    visibility: visible;
-    opacity: 1;
+    margin-left: auto;
+    flex: none;
   }
 
   .more-menu-container {
@@ -515,15 +538,34 @@
     align-items: center;
   }
 
+  .more-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: #9aa0a6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8eaed;
+  }
+
   .chrome-popup-menu {
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
-    width: 180px;
+    width: 184px;
     background: #28292c;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     padding: 6px;
     z-index: 50;
     display: flex;
@@ -534,9 +576,9 @@
   .popup-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: 32px;
-    padding: 0 10px;
+    gap: 12px;
+    height: 34px;
+    padding: 0 12px;
     border-radius: 6px;
     border: none;
     background: transparent;
@@ -559,23 +601,16 @@
     background: rgba(242, 139, 130, 0.12);
   }
 
-  .more-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: transparent;
-    border: none;
-    color: #9aa0a6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 120ms ease, color 120ms ease;
-  }
-
-  .more-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e8eaed;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   .spacer {

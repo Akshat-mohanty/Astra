@@ -1,6 +1,14 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { ArrowLeft02Icon, Cancel01Icon, Clock01Icon, Delete02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+  import {
+    ArrowLeft02Icon,
+    Cancel01Icon,
+    Clock01Icon,
+    Delete02Icon,
+    LinkSquare02Icon,
+    Search01Icon,
+    SmartPhone01Icon,
+  } from "@hugeicons/core-free-icons";
   import type { HistoryRange } from "$shared/ipc/bindings";
   import { commands } from "$shared/ipc/bindings";
   import Button from "$shared/ui/Button";
@@ -91,41 +99,74 @@
 
 <section class="chrome-history-shell">
   <!-- Chromium Top Bar -->
-  <header class="chrome-topbar">
-    <div class="topbar-left">
-      <IconButton
-        icon={ArrowLeft02Icon}
-        label={m.settings_back()}
-        size={18}
-        buttonSize={36}
-        onclick={() => void browser.close()}
-      />
-      <h1 class="history-title">{m.browser_history_title()}</h1>
-    </div>
-
-    <div class="topbar-center">
-      <div class="chrome-searchbox">
-        <Icon icon={Search01Icon} size={16} />
-        <input
-          type="search"
-          class="search-input"
-          placeholder={m.history_search()}
-          value={query}
-          oninput={(e) => handleSearch(e.currentTarget.value)}
-        />
-        {#if query.trim()}
-          <button type="button" class="search-clear-btn" aria-label="Clear search" onclick={clearSearch}>
-            <Icon icon={Cancel01Icon} size={15} />
+  <header class="chrome-topbar" class:selection-mode={selectedUrls.size > 0}>
+    {#if selectedUrls.size > 0}
+      <!-- Selection Bar in Chromium Topbar -->
+      <div class="selection-topbar-content">
+        <div class="selection-left">
+          <IconButton
+            icon={Cancel01Icon}
+            label="Cancel selection"
+            size={18}
+            buttonSize={36}
+            onclick={cancelSelection}
+          />
+          <span class="selection-count">
+            {selectedUrls.size} {selectedUrls.size === 1 ? "item" : "items"} selected
+          </span>
+        </div>
+        <div class="selection-right">
+          <button type="button" class="btn-chrome-cancel" onclick={cancelSelection}>
+            Cancel
           </button>
-        {/if}
+          <button type="button" class="btn-chrome-delete" onclick={deleteSelected}>
+            Delete
+          </button>
+        </div>
       </div>
-    </div>
+    {:else}
+      <!-- Normal Chromium Header -->
+      <div class="topbar-left">
+        <IconButton
+          icon={ArrowLeft02Icon}
+          label={m.settings_back()}
+          size={18}
+          buttonSize={36}
+          onclick={() => void browser.close()}
+        />
+        <h1 class="history-title">{m.browser_history_title()}</h1>
+      </div>
 
-    <div class="topbar-right"></div>
+      <div class="topbar-center">
+        <div class="chrome-searchbox">
+          <Icon icon={Search01Icon} size={16} />
+          <input
+            type="search"
+            class="search-input"
+            placeholder={m.history_search()}
+            value={query}
+            oninput={(e) => handleSearch(e.currentTarget.value)}
+          />
+          {#if query.trim()}
+            <button
+              type="button"
+              class="search-clear-btn"
+              aria-label="Clear search"
+              onclick={clearSearch}
+            >
+              <Icon icon={Cancel01Icon} size={15} />
+            </button>
+          {/if}
+        </div>
+      </div>
+
+      <div class="topbar-right"></div>
+    {/if}
   </header>
 
-  <!-- Split Body: Chromium Sidebar Drawer + Main Area -->
+  <!-- Split Body: Sidebar Navigation + Main History Content -->
   <div class="chrome-body">
+    <!-- Left Navigation Drawer -->
     <aside class="chrome-sidebar">
       <nav class="sidebar-nav">
         <button type="button" class="nav-item active">
@@ -133,54 +174,50 @@
           <span class="nav-label">{m.browser_history_title()}</span>
         </button>
 
-        <div class="sidebar-divider"></div>
+        <button type="button" class="nav-item">
+          <Icon icon={SmartPhone01Icon} size={18} />
+          <span class="nav-label">Tabs from other devices</span>
+        </button>
 
-        <div class="sidebar-section">
-          <span class="section-title">Time Range</span>
-          <Select
-            label={m.history_range()}
-            labelHidden
-            options={ranges}
-            value={session.range}
-            onchange={(value) => {
-              armed = false;
-              session.scope(value as HistoryRange);
-            }}
-          />
-        </div>
-
-        <div class="sidebar-section">
-          <Button
-            variant={armed ? "danger" : "secondary"}
-            disabled={session.busy || session.empty}
-            onblur={() => (armed = false)}
-            onclick={clear}
-          >
-            <Icon icon={Delete02Icon} size={16} />
-            <span>{armed ? confirmLabel : m.history_clear()}</span>
-          </Button>
-        </div>
+        <button
+          type="button"
+          class="nav-item clear-nav-item"
+          class:armed
+          aria-label={armed ? confirmLabel : m.history_clear()}
+          onblur={() => (armed = false)}
+          onclick={clear}
+        >
+          <div class="nav-item-left">
+            <Icon icon={Delete02Icon} size={18} />
+            <span class="nav-label">{armed ? confirmLabel : "Clear browsing data"}</span>
+          </div>
+          <Icon icon={LinkSquare02Icon} size={14} class="nav-trailing-icon" />
+        </button>
       </nav>
     </aside>
 
+    <!-- Main Content Area -->
     <main class="chrome-main">
       <div class="chrome-container">
-        <!-- Chromium Selection Action Bar -->
-        {#if selectedUrls.size > 0}
-          <div class="chrome-selection-bar" role="toolbar" aria-label="History item selection">
-            <span class="selection-count">
-              {selectedUrls.size} {selectedUrls.size === 1 ? "item" : "items"} selected
-            </span>
-            <div class="selection-actions">
-              <button type="button" class="btn-cancel" onclick={cancelSelection}>
-                Cancel
-              </button>
-              <button type="button" class="btn-delete" onclick={deleteSelected}>
-                Delete
-              </button>
-            </div>
+        <!-- Chromium Subtabs: By Date / By Group -->
+        <div class="chrome-subtabs-row">
+          <div class="chrome-subtabs">
+            <button type="button" class="subtab active">By date</button>
+            <button type="button" class="subtab">By group</button>
           </div>
-        {/if}
+          <div class="range-filter">
+            <Select
+              label={m.history_range()}
+              labelHidden
+              options={ranges}
+              value={session.range}
+              onchange={(value) => {
+                armed = false;
+                session.scope(value as HistoryRange);
+              }}
+            />
+          </div>
+        </div>
 
         {#if session.error}
           <div class="empty-wrap">
@@ -228,6 +265,7 @@
     flex-direction: column;
     background: #202124;
     color: #e8eaed;
+    font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     overflow: hidden;
   }
 
@@ -241,6 +279,11 @@
     gap: 16px;
     flex: none;
     z-index: 10;
+    transition: background-color 150ms ease;
+  }
+
+  .chrome-topbar.selection-mode {
+    background: #394457;
   }
 
   .topbar-left {
@@ -263,7 +306,7 @@
     flex: 1;
     display: flex;
     justify-content: center;
-    max-width: 720px;
+    max-width: 680px;
   }
 
   .chrome-searchbox {
@@ -322,6 +365,65 @@
     flex: none;
   }
 
+  /* Selection Mode Header */
+  .selection-topbar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 8px;
+  }
+
+  .selection-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .selection-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e8eaed;
+  }
+
+  .selection-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-chrome-cancel {
+    background: transparent;
+    border: none;
+    color: #8ab4f8;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .btn-chrome-cancel:hover {
+    background: rgba(138, 180, 248, 0.08);
+  }
+
+  .btn-chrome-delete {
+    background: #8ab4f8;
+    color: #202124;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .btn-chrome-delete:hover {
+    background: #a8c7fa;
+  }
+
   .chrome-body {
     flex: 1;
     min-height: 0;
@@ -332,7 +434,7 @@
     width: 256px;
     background: #292a2d;
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 16px 12px;
+    padding: 12px 0;
     flex: none;
     overflow-y: auto;
   }
@@ -340,23 +442,26 @@
   .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 2px;
   }
 
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     height: 40px;
-    padding: 0 16px;
-    border-radius: 999px;
+    margin-inline-end: 12px;
+    padding-inline-start: 24px;
+    padding-inline-end: 16px;
+    border-radius: 0 20px 20px 0;
     border: none;
     background: transparent;
     color: #bdc1c6;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 450;
     cursor: pointer;
     text-align: start;
+    width: calc(100% - 12px);
     transition: background-color 150ms ease, color 150ms ease;
   }
 
@@ -371,26 +476,26 @@
     font-weight: 500;
   }
 
-  .sidebar-divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.06);
-    margin: 4px 4px;
+  .clear-nav-item {
+    justify-content: space-between;
   }
 
-  .sidebar-section {
+  .clear-nav-item .nav-item-left {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 0 6px;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
   }
 
-  .section-title {
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .clear-nav-item :global(.nav-trailing-icon) {
     color: #9aa0a6;
-    margin-left: 6px;
+    flex: none;
+  }
+
+  .clear-nav-item.armed {
+    background: rgba(242, 139, 130, 0.15);
+    color: #f28b82;
+    font-weight: 500;
   }
 
   .chrome-main {
@@ -412,63 +517,50 @@
     flex: 1;
   }
 
-  .chrome-selection-bar {
-    height: 48px;
-    background: #292a2d;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 0 20px;
+  /* Subtabs */
+  .chrome-subtabs-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 2px;
   }
 
-  .selection-count {
-    font-size: 14px;
+  .chrome-subtabs {
+    display: flex;
+    gap: 24px;
+  }
+
+  .subtab {
+    background: none;
+    border: none;
+    padding: 8px 4px 12px;
+    font-size: 13.5px;
     font-weight: 500;
+    color: #9aa0a6;
+    cursor: pointer;
+    position: relative;
+    transition: color 150ms ease;
+  }
+
+  .subtab:hover {
     color: #e8eaed;
   }
 
-  .selection-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .btn-cancel {
-    height: 32px;
-    padding: 0 16px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: transparent;
+  .subtab.active {
     color: #8ab4f8;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 120ms ease;
   }
 
-  .btn-cancel:hover {
-    background: rgba(138, 180, 248, 0.08);
-  }
-
-  .btn-delete {
-    height: 32px;
-    padding: 0 16px;
-    border-radius: 4px;
-    border: none;
+  .subtab.active::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
     background: #8ab4f8;
-    color: #202124;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 120ms ease;
-  }
-
-  .btn-delete:hover {
-    background: #a8c7fa;
+    border-radius: 3px 3px 0 0;
   }
 
   .empty-wrap {
