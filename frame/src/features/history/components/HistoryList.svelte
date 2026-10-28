@@ -146,13 +146,15 @@
           }
         }}
       >
-        <FavIcon
-          image={site?.image ?? null}
-          tone={site?.tone}
-          size={16}
-          lit
-          fallback={Globe02Icon}
-        />
+        <div class="fav-plate">
+          <FavIcon
+            image={site?.image ?? null}
+            tone={site?.tone}
+            size={16}
+            lit
+            fallback={Globe02Icon}
+          />
+        </div>
         <span class="title"
           >{#if range}{row.visit.title.slice(0, range[0])}<mark
               >{row.visit.title.slice(range[0], range[1])}</mark
@@ -198,8 +200,11 @@
   }
 
   .scroller[data-density="page"] {
+    --library-gutter: clamp(20px, 5vw, 64px);
+    --library-column: 860px;
+
     padding-inline: max(var(--library-gutter), calc((100% - var(--library-column)) / 2));
-    padding-block-end: 24px;
+    padding-block-end: 48px;
   }
 
   .scroller[data-density="panel"] {
@@ -208,18 +213,20 @@
 
   .day {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
     margin: 0;
-    padding: 0 10px 6px;
-    font-size: var(--text-label);
-    font-weight: 550;
-    letter-spacing: 0.01em;
-    color: var(--color-muted);
+    padding: 10px 10px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text);
     position: sticky;
     top: 0;
-    z-index: 1;
-    background: var(--color-page);
+    z-index: 2;
+    background: color-mix(in srgb, var(--color-page, #161618) 85%, transparent);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   }
 
   /* The sidebar tool does not sit on the page ground, so a sticky heading
@@ -227,33 +234,53 @@
   .scroller[data-density="panel"] .day {
     position: static;
     background: none;
+    backdrop-filter: none;
+    border-bottom: none;
   }
 
   .count {
-    font-weight: 400;
+    font-weight: 500;
+    font-size: 11px;
     color: var(--color-faint);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1px 7px;
+    border-radius: 999px;
   }
 
   /* A table, not a row of floated parts: the host, the time and the delete
      button each hold a column of their own, so every title truncates at the
-     same x and the three trailing columns line up down the page. As flex
-     siblings the host slid left and right with its own length and a long
-     title ran into it. */
+     same x and the three trailing columns line up down the page. */
   .visit {
     display: grid;
-    grid-template-columns: 16px minmax(0, 1fr) auto 62px 22px;
+    grid-template-columns: 24px minmax(0, 1fr) auto 64px 26px;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 0 10px;
-    border-radius: var(--radius-row);
+    border-radius: var(--radius-row, 12px);
     cursor: default;
-    transition: background-color var(--motion-instant) var(--ease-smooth);
+    transition: background-color 140ms ease, box-shadow 140ms ease;
+  }
+
+  .fav-plate {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    flex: none;
+  }
+
+  .visit:hover {
+    background: var(--row-hover);
   }
 
   /* The pointer and the caret land on the same plate every other list in the
      product uses for the row it is on. */
   .visit.selected {
     background: var(--row-active);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
 
   .title {
@@ -261,15 +288,18 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: var(--text-body);
+    font-size: 13.5px;
     color: var(--color-text);
+    font-weight: 450;
   }
 
   /* The part the typing accounts for carries the weight; the rest recedes. */
   mark {
-    background: none;
+    background: rgba(255, 255, 255, 0.15);
     color: var(--color-text);
-    font-weight: 550;
+    font-weight: 600;
+    border-radius: 2px;
+    padding: 0 2px;
   }
 
   .host {
@@ -278,13 +308,18 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     text-align: end;
-    font-size: var(--text-label);
-    color: var(--color-faint);
+    font-size: 11.5px;
+    color: var(--color-muted);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 2px 7px;
+    border-radius: 6px;
   }
 
   time {
     text-align: end;
-    font-size: var(--text-label);
+    font-size: 12px;
     font-variant-numeric: tabular-nums;
     color: var(--color-faint);
   }
@@ -293,14 +328,15 @@
      the pointer. */
   .forget {
     visibility: hidden;
+    opacity: 0;
+    transition: opacity 120ms ease;
   }
 
-  .forget:focus-within {
-    visibility: visible;
-  }
-
+  .forget:focus-within,
+  .visit:hover .forget,
   .visit.selected .forget {
     visibility: visible;
+    opacity: 1;
   }
 
   .spacer {

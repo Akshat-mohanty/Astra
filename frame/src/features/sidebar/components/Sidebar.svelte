@@ -63,6 +63,7 @@
   // returns to that page.
   let navigating = $derived(settings);
   let paneled = $derived(settings || tools.activeTool() !== null);
+  let railMode = $derived(navigating || railPage || paneled);
   let compact = $derived(navigating || railPage || isCompact() || tools.activeTool() !== null);
 
   // A change of shape is one continuous change: every mark travels from the
@@ -214,9 +215,9 @@
     data-glide-host
     data-launch={motion.launchState()}
   >
-    {#key compact}<div class="sidebar-browser-column" class:sidebar-tool-rail={paneled}>
+    {#key railMode}<div class="sidebar-browser-column" class:sidebar-tool-rail={paneled}>
         {#if settings && IS_MAC}<div class="sidebar-lights" aria-hidden="true"></div>{/if}
-        {@render browserBody(compact)}
+        {@render browserBody(railMode)}
         {@render dock(compact)}
       </div>{/key}
     {#if settings}<div class="sidebar-tool-host">
@@ -230,9 +231,10 @@
 <style>
   :global(.browser-sidebar) {
     transition:
-      width var(--motion-page) var(--ease-emphasized),
-      opacity var(--motion-page) var(--ease-emphasized);
+      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden !important;
+    will-change: width, opacity;
   }
 
   :global(.browser-sidebar[data-sidebar-resizing="true"]) {
@@ -243,21 +245,36 @@
     width: 0 !important;
     min-width: 0 !important;
     max-width: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    opacity: 0;
+    pointer-events: none;
     visibility: hidden;
+    transition:
+      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 320ms;
+  }
+
+  :global(.browser-sidebar:not(.hidden-sidebar)) {
+    transition:
+      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 0s;
   }
 
   :global(.browser-sidebar > header),
   :global(.browser-sidebar > .sidebar-columns) {
-    width: var(--sidebar-expanded-width, 240px);
-    min-width: var(--sidebar-expanded-width, 240px);
-    transition: transform var(--motion-page) var(--ease-emphasized);
+    width: var(--sidebar-expanded-width, 216px);
+    min-width: var(--sidebar-expanded-width, 216px);
+    transition:
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
   }
 
   :global(.browser-sidebar.hidden-sidebar > header),
   :global(.browser-sidebar.hidden-sidebar > .sidebar-columns) {
-    transform: translateX(-16px);
+    transform: translateX(-24px);
+    opacity: 0;
   }
 
   /* A panel open in the column (the space switcher, the tray on the address,

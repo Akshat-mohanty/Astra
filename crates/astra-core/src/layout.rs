@@ -20,7 +20,7 @@ pub struct Metrics {
 impl Default for Metrics {
     fn default() -> Self {
         Self {
-            sidebar_width: 240.0,
+            sidebar_width: 216.0,
             padding: 8.0,
             gap: 8.0,
             caption: 0.0,
@@ -163,7 +163,7 @@ mod tests {
             Metrics::default(),
             true,
         );
-        assert_eq!(l.content, Some(Rect::new(256.0, 52.0, 936.0, 740.0)));
+        assert_eq!(l.content, Some(Rect::new(232.0, 52.0, 960.0, 740.0)));
     }
 
     #[test]

@@ -1,10 +1,9 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import { ArrowLeft02Icon, Clock01Icon } from "@hugeicons/core-free-icons";
+  import { ArrowLeft02Icon, Clock01Icon, Search01Icon } from "@hugeicons/core-free-icons";
   import type { HistoryRange } from "$shared/ipc/bindings";
   import { commands } from "$shared/ipc/bindings";
   import Button from "$shared/ui/Button";
-  import EmptyState from "$shared/ui/EmptyState";
   import Icon from "$shared/ui/Icon";
   import IconButton from "$shared/ui/IconButton";
   import SearchField from "$shared/ui/SearchField";
@@ -63,6 +62,11 @@
     armed = false;
     void session.clear();
   }
+
+  function clearSearch() {
+    query = "";
+    session.search("");
+  }
 </script>
 
 <svelte:window
@@ -71,101 +75,195 @@
   }}
 />
 
-<section class="library-shell">
-  <header class="internal-toolbar">
-    <IconButton
-      icon={ArrowLeft02Icon}
-      label={m.settings_back()}
-      onclick={() => void browser.close()}
-    /><span class="toolbar-current">{m.browser_history_title()}</span>
+<section class="library-shell history-shell">
+  <header class="internal-toolbar history-toolbar">
+    <div class="toolbar-left">
+      <IconButton
+        icon={ArrowLeft02Icon}
+        label={m.settings_back()}
+        size={16}
+        buttonSize={30}
+        onclick={() => void browser.close()}
+      />
+      <div class="toolbar-badge">
+        <Icon icon={Clock01Icon} size={15} />
+        <span class="toolbar-current">{m.browser_history_title()}</span>
+      </div>
+    </div>
   </header>
 
   <div class="content">
-    <div class="controls">
-      <div class="bar">
-        <SearchField
-          label={m.history_search()}
-          placeholder={m.history_search()}
-          size="chrome"
-          value={query}
-          oninput={(value) => {
-            query = value;
-            session.search(value);
-          }}
-        />
-        <Select
-          label={m.history_range()}
-          labelHidden
-          options={ranges}
-          value={session.range}
-          onchange={(value) => {
-            armed = false;
-            session.scope(value as HistoryRange);
-          }}
-        />
-        <Button
-          variant={armed ? "danger" : "secondary"}
-          disabled={session.busy || session.empty}
-          onblur={() => (armed = false)}
-          onclick={clear}>{armed ? confirmLabel : m.history_clear()}</Button
-        >
+    <div class="history-hero">
+      <div class="hero-text">
+        <h1 class="hero-title">{m.browser_history_title()}</h1>
+        <p class="hero-subtitle">Search, inspect, and organize your visited pages and web activity.</p>
+      </div>
+
+      <div class="controls-card">
+        <div class="bar">
+          <SearchField
+            label={m.history_search()}
+            placeholder={m.history_search()}
+            size="page"
+            value={query}
+            oninput={(value) => {
+              query = value;
+              session.search(value);
+            }}
+          />
+          <div class="filter-group">
+            <Select
+              label={m.history_range()}
+              labelHidden
+              options={ranges}
+              value={session.range}
+              onchange={(value) => {
+                armed = false;
+                session.scope(value as HistoryRange);
+              }}
+            />
+            <Button
+              variant={armed ? "danger" : "secondary"}
+              disabled={session.busy || session.empty}
+              onblur={() => (armed = false)}
+              onclick={clear}>{armed ? confirmLabel : m.history_clear()}</Button
+            >
+          </div>
+        </div>
       </div>
     </div>
 
     {#if session.error}
-      <div class="empty">
-        <EmptyState title={m.history_unavailable()} description={m.history_unavailable_help()}>
-          {#snippet icon()}<Icon icon={Clock01Icon} size={28} />{/snippet}
-          {#snippet action()}
-            <Button onclick={() => session.retry()}>{m.surface_retry()}</Button>
-          {/snippet}
-        </EmptyState>
+      <div class="empty-wrap">
+        <div class="empty-card">
+          <div class="empty-icon-glow">
+            <Icon icon={Clock01Icon} size={28} />
+          </div>
+          <h2 class="empty-title">{m.history_unavailable()}</h2>
+          <p class="empty-desc">{m.history_unavailable_help()}</p>
+          <Button variant="secondary" onclick={() => session.retry()}>{m.surface_retry()}</Button>
+        </div>
       </div>
     {:else if session.empty}
-      <div class="empty">
-        <EmptyState
-          title={query.trim() ? m.history_no_matches() : m.browser_history_empty()}
-          description={query.trim() ? m.history_no_matches_help() : m.history_empty_help()}
-        >
-          {#snippet icon()}<Icon icon={Clock01Icon} size={28} />{/snippet}
-        </EmptyState>
+      <div class="empty-wrap">
+        <div class="empty-card">
+          <div class="empty-icon-glow">
+            <Icon icon={query.trim() ? Search01Icon : Clock01Icon} size={28} />
+          </div>
+          <h2 class="empty-title">
+            {query.trim() ? m.history_no_matches() : m.browser_history_empty()}
+          </h2>
+          <p class="empty-desc">
+            {query.trim() ? m.history_no_matches_help() : m.history_empty_help()}
+          </p>
+          {#if query.trim()}
+            <Button variant="secondary" onclick={clearSearch}>Clear search</Button>
+          {/if}
+        </div>
       </div>
     {:else}
-      <HistoryList {session} onopen={(url, newTab) => void open(url, newTab)} />
+      <div class="list-wrapper">
+        <HistoryList {session} onopen={(url, newTab) => void open(url, newTab)} />
+      </div>
     {/if}
   </div>
 </section>
 
 <style>
-  /* The reading column, published for the list as well: the controls and the
-     rows they act on have to sit on the same two edges, and the list makes its
-     column out of the scroller's padding rather than a wrapper. */
+  .history-shell {
+    position: relative;
+    background:
+      radial-gradient(110% 60% at 50% -10%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
+      var(--color-page, #161618);
+    border: 1px solid var(--color-border);
+    border-radius: var(--content-radius, 14px);
+    overflow: hidden;
+  }
+
+  .history-toolbar {
+    height: 48px;
+    padding-inline: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toolbar-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+    padding: 3px 10px 3px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .toolbar-current {
+    color: var(--color-text);
+  }
+
   .content {
-    --library-gutter: clamp(16px, 4vw, 48px);
-    --library-column: 820px;
+    --library-gutter: clamp(20px, 5vw, 64px);
+    --library-column: 860px;
 
     display: flex;
     flex-direction: column;
     flex: 1;
     min-width: 0;
     min-height: 0;
+    overflow: hidden;
   }
 
-  .controls {
+  .history-hero {
     flex: none;
     padding-inline: max(var(--library-gutter), calc((100% - var(--library-column)) / 2));
+    padding-top: 28px;
+    padding-bottom: 18px;
+  }
 
-    /* The scroller below reserves a 12px gutter for its bar, so the bar over
-       it has to give up the same 12px or the two columns sit 6px apart. */
-    padding-inline-end: max(var(--library-gutter), calc((100% - var(--library-column)) / 2 + 12px));
+  .hero-text {
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: var(--color-text);
+  }
+
+  .hero-subtitle {
+    margin: 6px 0 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .controls-card {
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card, 16px);
+    padding: 8px 10px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   }
 
   .bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
-    padding-block: 4px 14px;
   }
 
   .bar :global(.ui-search) {
@@ -173,7 +271,65 @@
     min-width: 0;
   }
 
-  .empty {
-    padding-inline: var(--library-gutter);
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+
+  .list-wrapper {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .empty-wrap {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 40px var(--library-gutter);
+  }
+
+  .empty-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 420px;
+    padding: 40px 32px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel, 22px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  .empty-icon-glow {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 18px;
+    border-radius: var(--radius-card, 18px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 28px rgba(255, 255, 255, 0.04);
+    color: var(--color-text);
+  }
+
+  .empty-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 550;
+    letter-spacing: -0.015em;
+    color: var(--color-text);
+  }
+
+  .empty-desc {
+    margin: 8px 0 20px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--color-muted);
   }
 </style>
