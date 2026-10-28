@@ -3,7 +3,14 @@ import type { HistoryVisitView } from "$shared/ipc/bindings";
 /** A visit row, or the heading that opens the day it belongs to. */
 export type HistoryRow =
   | { kind: "day"; id: string; day: string; label: string; count: number }
-  | { kind: "visit"; id: string; day: string; visit: HistoryVisitView };
+  | {
+      kind: "visit";
+      id: string;
+      day: string;
+      visit: HistoryVisitView;
+      isFirstInDay?: boolean;
+      isLastInDay?: boolean;
+    };
 
 const DAY_LABEL = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -59,10 +66,13 @@ export function toRows(
   const rows: HistoryRow[] = [];
   let openDay: string | null = null;
   let heading: Extract<HistoryRow, { kind: "day" }> | null = null;
+  let lastVisit: Extract<HistoryRow, { kind: "visit" }> | null = null;
+
   for (const visit of visits) {
     const at = visitedAt(visit);
     const day = dayKey(at);
     if (day !== openDay) {
+      if (lastVisit) lastVisit.isLastInDay = true;
       openDay = day;
       heading = {
         kind: "day",
@@ -72,10 +82,32 @@ export function toRows(
         count: 0,
       };
       rows.push(heading);
+      const visitRow: Extract<HistoryRow, { kind: "visit" }> = {
+        kind: "visit",
+        id: `visit:${visit.id}`,
+        day,
+        visit,
+        isFirstInDay: true,
+        isLastInDay: false,
+      };
+      rows.push(visitRow);
+      lastVisit = visitRow;
+    } else {
+      const visitRow: Extract<HistoryRow, { kind: "visit" }> = {
+        kind: "visit",
+        id: `visit:${visit.id}`,
+        day,
+        visit,
+        isFirstInDay: false,
+        isLastInDay: false,
+      };
+      rows.push(visitRow);
+      lastVisit = visitRow;
     }
     if (heading) heading.count += 1;
-    rows.push({ kind: "visit", id: `visit:${visit.id}`, day, visit });
   }
+  if (lastVisit) lastVisit.isLastInDay = true;
+
   return rows;
 }
 
