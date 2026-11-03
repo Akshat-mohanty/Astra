@@ -22,7 +22,12 @@ if [ -d "$APP_BUNDLE" ]; then
         echo "==> Code-signing with identity: $IDENTITY..."
     fi
 
-    codesign --force --deep --sign "$IDENTITY" --identifier app.astra "$APP_BUNDLE"
+    ENTITLEMENTS_FLAG=()
+    if [ -f "$REPO_ROOT/desktop/Entitlements.plist" ]; then
+        ENTITLEMENTS_FLAG=(--entitlements "$REPO_ROOT/desktop/Entitlements.plist")
+    fi
+
+    codesign --force --deep --sign "$IDENTITY" "${ENTITLEMENTS_FLAG[@]}" --identifier app.astra "$APP_BUNDLE"
 
     echo "==> Installing Astra.app to /Applications/Astra.app..."
     rm -rf /Applications/Astra.app
