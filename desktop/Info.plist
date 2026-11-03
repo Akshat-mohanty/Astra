@@ -2,12 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <key>LSEnvironment</key>
+  <dict>
+    <key>MallocLargeCache</key>
+    <string>0</string>
+  </dict>
   <key>NSCameraUsageDescription</key>
   <string>Astra uses the camera only when you allow a website to access it.</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>Astra uses the microphone while you dictate in Work, and for a website only when you allow it.</string>
+  <key>NSLocationUsageDescription</key>
+  <string>Astra shares your location with a website only when you allow it.</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Astra shares your location with a website only when you allow it.</string>
   <key>NSSpeechRecognitionUsageDescription</key>
   <string>Astra turns what you dictate in Work into text on this Mac.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Websites you open can reach devices on your network, such as your router, printer or a video call.</string>
   <key>NSDownloadsFolderUsageDescription</key>
   <string>Astra saves the files you download to your Downloads folder.</string>
   <key>NSDesktopFolderUsageDescription</key>

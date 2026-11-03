@@ -25,6 +25,9 @@ if ! /usr/bin/codesign -dv "$bin" 2>&1 | grep -qx "Identifier=$identifier"; then
         /usr/bin/codesign --force --sign "$identity" --identifier "$identifier" \
             --timestamp=none "$bin" 2>/dev/null ||
             echo "dev-sign-run: could not sign $bin; the Keychain may ask again" >&2
+    else
+        /usr/bin/codesign --force --sign - --identifier "$identifier" \
+            --timestamp=none "$bin" 2>/dev/null || true
     fi
 fi
 

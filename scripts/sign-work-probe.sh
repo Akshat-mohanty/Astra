@@ -25,10 +25,11 @@ if [ -z "$identity" ]; then
     fi
 fi
 if [ -z "$identity" ]; then
-    echo 'No code signing identity found. Set APPLE_SIGNING_IDENTITY or install a "Developer ID Application" or "Apple Development" certificate.' >&2
-    exit 1
+    echo 'No code signing identity found. Falling back to ad-hoc signing.' >&2
+    /usr/bin/codesign --force --sign - \
+        --identifier app.astra.work-integration.probe --timestamp=none "$probe"
+else
+    /usr/bin/codesign --force --sign "$identity" --keychain "$keychain" \
+        --identifier app.astra.work-integration.probe --timestamp=none "$probe"
 fi
-
-/usr/bin/codesign --force --sign "$identity" --keychain "$keychain" \
-    --identifier app.astra.work-integration.probe --timestamp=none "$probe"
 /usr/bin/codesign --verify --strict "$probe"
