@@ -4,6 +4,28 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# 1. Mount external storage build workspace if available
+SPARSE_IMAGE="/Volumes/android/Astra build material/AstraBuild.sparseimage"
+if [ ! -d "/Volumes/AstraBuild" ] && [ -f "$SPARSE_IMAGE" ]; then
+    echo "==> Mounting external build workspace from $SPARSE_IMAGE..."
+    diskutil image attach "$SPARSE_IMAGE" -mountOptions nobrowse 2>/dev/null || \
+        hdiutil attach "$SPARSE_IMAGE" -nobrowse 2>/dev/null || true
+fi
+
+# 2. Redirect build cache to external storage if mounted
+if [ -d "/Volumes/AstraBuild" ]; then
+    mkdir -p "/Volumes/AstraBuild/target"
+    if [ ! -L "$REPO_ROOT/target" ] || [ "$(readlink "$REPO_ROOT/target")" != "/Volumes/AstraBuild/target" ]; then
+        echo "==> Linking target -> /Volumes/AstraBuild/target to save local disk space..."
+        if [ -d "$REPO_ROOT/target" ] && [ ! -L "$REPO_ROOT/target" ]; then
+            rm -rf "$REPO_ROOT/target"
+        fi
+        ln -sfn "/Volumes/AstraBuild/target" "$REPO_ROOT/target"
+    fi
+    export CARGO_TARGET_DIR="/Volumes/AstraBuild/target"
+    echo "==> Using external build cache at $CARGO_TARGET_DIR"
+fi
+
 echo "==> Building Astra app bundle..."
 pnpm run bundle:app
 
@@ -35,6 +57,12 @@ if [ -d "$APP_BUNDLE" ]; then
 
     # Clear quarantine attribute if set
     xattr -cr /Applications/Astra.app 2>/dev/null || true
+
+    # Keep a working backup on the external workspace if available
+    if [ -d "/Volumes/AstraBuild" ]; then
+        rm -rf "/Volumes/AstraBuild/Astra.app.working_backup" 2>/dev/null || true
+        cp -R "/Applications/Astra.app" "/Volumes/AstraBuild/Astra.app.working_backup" 2>/dev/null || true
+    fi
 
     echo "==> Astra.app installed and signed successfully!"
 else
