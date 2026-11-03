@@ -11,7 +11,7 @@
   {#key flow.editing.id}{#await loadEditor() then { default: SpaceEditor }}<SpaceEditor
         space={flow.editing}
         fresh={flow.fresh}
-        deletable={flow.spaces.length > 1}
+        deletable={true}
         onclose={(done) => flow.finished(done)}
       />{/await}{/key}
 {:else}

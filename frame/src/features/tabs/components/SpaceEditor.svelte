@@ -14,13 +14,13 @@
   let {
     space,
     fresh = false,
-    deletable,
+    deletable = true,
     onclose,
   }: {
     space: SpaceView;
     /** Made a moment ago: its name is selected, ready to be typed over. */
     fresh?: boolean;
-    deletable: boolean;
+    deletable?: boolean;
     /** `done` when the person finished here rather than stepping back. */
     onclose: (done: boolean) => void;
   } = $props();

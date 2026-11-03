@@ -292,8 +292,9 @@ fn deleting_a_space_closes_its_tabs_and_never_the_last_one() {
     assert_eq!(last(&screen).spaces.len(), 1);
 
     let last_one = space_op(&mut shell, SpaceCommand::Delete(home));
-    assert_eq!(last_one.outcome, OperationOutcome::Rejected);
-    assert!(shell.items.tab(kept).is_some());
+    assert_ne!(last_one.outcome, OperationOutcome::Rejected);
+    assert!(shell.spaces.get(home).is_none());
+    assert_eq!(last(&screen).spaces.len(), 0);
 }
 
 #[test]

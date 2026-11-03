@@ -44,7 +44,7 @@ describe("keymap model", () => {
       "tab.below",
     ]);
     expect(sections[2]!.entries.map((e) => e.id)).toEqual(["space.next"]);
-    expect(commandTitle(sections[2]!.entries[0]!)).toBe("Next space");
+    expect(commandTitle(sections[2]!.entries[0]!)).toBe("Next group");
     expect(sections[3]!.entries.map((e) => e.id)).toEqual(["work.dictate"]);
     expect(commandTitle(sections[3]!.entries[0]!)).toBe("Dictate in Work");
     expect(

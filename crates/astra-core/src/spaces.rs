@@ -267,12 +267,8 @@ impl Spaces {
         true
     }
 
-    /// Removes one space, never a profile's last.
+    /// Removes one space.
     pub fn remove(&mut self, id: SpaceId) -> Option<Space> {
-        let profile = self.get(id)?.profile;
-        if self.of(profile).len() < 2 {
-            return None;
-        }
         self.order.retain(|x| *x != id);
         self.map.remove(&id)
     }
@@ -399,15 +395,14 @@ mod tests {
     }
 
     #[test]
-    fn a_profile_always_keeps_one_space() {
+    fn removing_spaces() {
         let mut spaces = Spaces::default();
         for (id, profile) in [(1, 1), (2, 1), (3, 2)] {
             assert!(spaces.insert(space(id, profile)));
         }
-        assert!(spaces.remove(SpaceId::from(3)).is_none());
         assert!(spaces.remove(SpaceId::from(1)).is_some());
-        assert!(spaces.remove(SpaceId::from(2)).is_none());
+        assert!(spaces.remove(SpaceId::from(2)).is_some());
         assert!(spaces.remove(SpaceId::from(9)).is_none());
-        assert_eq!(spaces.of(ProfileId::from(1)), [SpaceId::from(2)]);
+        assert!(spaces.of(ProfileId::from(1)).is_empty());
     }
 }

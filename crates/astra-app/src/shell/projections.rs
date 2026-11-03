@@ -245,7 +245,7 @@ impl Shell {
         let profile = profiles.get(profile_id)?;
         let active_space = spaces
             .get(space_id)
-            .filter(|space| space.profile == profile.id)?;
+            .filter(|space| space.profile == profile.id);
 
         let profile_view = ProfileView {
             id: profile.id.to_string(),
@@ -263,28 +263,38 @@ impl Shell {
             .collect();
 
         let mut sidebar = SidebarProjection::default();
-        for (placement, section) in [
-            (
+        let roots_to_project = if let Some(space) = active_space {
+            vec![
+                (
+                    Placement::Favorites {
+                        profile: profile.id,
+                    },
+                    SidebarSectionView::Favorites,
+                ),
+                (
+                    Placement::Space {
+                        space: space.id,
+                        section: SpaceSection::Pinned,
+                    },
+                    SidebarSectionView::Pinned,
+                ),
+                (
+                    Placement::Space {
+                        space: space.id,
+                        section: SpaceSection::Today,
+                    },
+                    SidebarSectionView::Today,
+                ),
+            ]
+        } else {
+            vec![(
                 Placement::Favorites {
                     profile: profile.id,
                 },
                 SidebarSectionView::Favorites,
-            ),
-            (
-                Placement::Space {
-                    space: active_space.id,
-                    section: SpaceSection::Pinned,
-                },
-                SidebarSectionView::Pinned,
-            ),
-            (
-                Placement::Space {
-                    space: active_space.id,
-                    section: SpaceSection::Today,
-                },
-                SidebarSectionView::Today,
-            ),
-        ] {
+            )]
+        };
+        for (placement, section) in roots_to_project {
             for id in items.roots(placement) {
                 self.project_sidebar_node(
                     items,
@@ -317,7 +327,7 @@ impl Shell {
             projection_revision: format!("{:032x}", self.next_projection_revision()),
             profile: Some(profile_view),
             spaces,
-            active_space_id: Some(active_space.id.to_string()),
+            active_space_id: active_space.map(|space| space.id.to_string()),
             nodes: sidebar.nodes,
             tabs: sidebar.tabs,
             active: active

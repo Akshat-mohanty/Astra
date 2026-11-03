@@ -364,7 +364,7 @@ impl Shell {
             if self.spaces.insert(Space {
                 id,
                 profile,
-                name: "Space".into(),
+                name: "Group".into(),
                 look: Default::default(),
             }) {
                 return Some(id);

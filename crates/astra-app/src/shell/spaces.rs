@@ -201,15 +201,19 @@ impl Shell {
                 }
                 self.switch_space(id)
             }
-            SpaceCommand::Step(step) => {
+SpaceCommand::Step(step) => {
                 let order = self.spaces.of(profile);
-                let at = order.iter().position(|space| *space == current);
-                let next = at
-                    .and_then(|at| at.checked_add_signed(isize::from(step.signum())))
-                    .and_then(|at| order.get(at).copied());
-                match next {
-                    Some(next) if step != 0 => self.switch_space(next),
-                    _ => unchanged(),
+                if step != 0 {
+                    let at = order.iter().position(|space| *space == current);
+                    let next = at
+                        .and_then(|at| at.checked_add_signed(isize::from(step.signum())))
+                        .and_then(|at| order.get(at).copied());
+                    match next {
+                        Some(next) => self.switch_space(next),
+                        None => unchanged(),
+                    }
+                } else {
+                    unchanged()
                 }
             }
             SpaceCommand::MoveTab { tab, space } => self.move_tab_to_space(profile, tab, space),
@@ -256,7 +260,7 @@ impl Shell {
             return rejected(OperationReason::ItemLimitReached);
         }
         let name = astra_core::spaces::space_name(name)
-            .unwrap_or_else(|| format!("Space {}", count + 1));
+            .unwrap_or_else(|| format!("Group {}", count + 1));
         let Some(space) = (0..8)
             .map(|_| SpaceId::generate())
             .find(|id| self.spaces.create(*id, profile, &name, look.clone()))
@@ -375,9 +379,6 @@ impl Shell {
             return rejected(OperationReason::InvalidScope);
         }
         let order = self.spaces.of(profile);
-        if order.len() < 2 {
-            return rejected(OperationReason::InvalidInput);
-        }
         let mut native = NativeWork::default();
         if id == current {
             if matches!(self.active_browser_page(), Some(crate::BrowserPage::Work)) {
@@ -387,12 +388,16 @@ impl Shell {
             let neighbour = order
                 .get(at + 1)
                 .or_else(|| at.checked_sub(1).and_then(|before| order.get(before)))
-                .copied()
-                .expect("a second space exists");
-            let (effects, blank) = self.show_space(neighbour);
-            native.merge(self.commit(effects));
-            if let Some(blank) = blank {
-                self.close_in_any_space(blank);
+                .copied();
+            if let Some(neighbour) = neighbour {
+                let (effects, blank) = self.show_space(neighbour);
+                native.merge(self.commit(effects));
+                if let Some(blank) = blank {
+                    self.close_in_any_space(blank);
+                }
+            } else if let Some(window) = self.windows.focused_mut() {
+                window.active = None;
+                window.splits = None;
             }
         }
         for root in self.space_roots(id) {
