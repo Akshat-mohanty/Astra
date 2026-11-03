@@ -472,23 +472,23 @@ pub(crate) fn build_menu_section(
     let enabled = !shown.private && !shown.spaces.is_empty();
     let spaces = space_items(handle, overrides, &shown)?;
     let moves = move_items(handle, MOVE_ACTIVE, &shown)?;
-    let move_to = SubmenuBuilder::new(handle, menu_text::label("Move Tab to Space"))
+    let move_to = SubmenuBuilder::new(handle, menu_text::label("Move Tab to Group"))
         .items(&refs(&moves))
         .enabled(enabled && !moves.is_empty())
         .build()?;
-    SubmenuBuilder::new(handle, menu_text::label("Spaces"))
+    SubmenuBuilder::new(handle, menu_text::label("Groups"))
         .items(&refs(&spaces))
         .separator()
         .item(&item("space.next")?)
         .item(&item("space.previous")?)
         .separator()
         .item(
-            &MenuItemBuilder::with_id(NEW, menu_text::label("New Space…"))
+            &MenuItemBuilder::with_id(NEW, menu_text::label("New Group…"))
                 .enabled(enabled)
                 .build(handle)?,
         )
         .item(
-            &MenuItemBuilder::with_id(EDIT, menu_text::label("Edit Space…"))
+            &MenuItemBuilder::with_id(EDIT, menu_text::label("Edit Group…"))
                 .enabled(enabled)
                 .build(handle)?,
         )
@@ -504,10 +504,10 @@ fn build_popup(
     let mut items = space_items(handle, overrides, &shown)?;
     items.push(Box::new(PredefinedMenuItem::separator(handle)?));
     items.push(Box::new(
-        MenuItemBuilder::with_id(NEW, menu_text::label("New Space…")).build(handle)?,
+        MenuItemBuilder::with_id(NEW, menu_text::label("New Group…")).build(handle)?,
     ));
     items.push(Box::new(
-        MenuItemBuilder::with_id(EDIT, menu_text::label("Edit Space…")).build(handle)?,
+        MenuItemBuilder::with_id(EDIT, menu_text::label("Edit Group…")).build(handle)?,
     ));
     Menu::with_items(handle, &refs(&items))
 }
@@ -525,7 +525,7 @@ pub(crate) fn tab_menu_section(
     if moves.is_empty() {
         return Ok(None);
     }
-    SubmenuBuilder::new(handle, menu_text::label("Move to Space"))
+    SubmenuBuilder::new(handle, menu_text::label("Move to Group"))
         .items(&refs(&moves))
         .build()
         .map(Some)

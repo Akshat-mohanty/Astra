@@ -1869,7 +1869,7 @@ fn privileged_app_url(
     #[cfg(not(target_os = "windows"))]
     let fallback = "tauri://localhost";
 
-    let base = if tauri::is_dev() {
+    let base = if tauri::is_dev() && cfg!(debug_assertions) {
         match app.config().build.dev_url.clone() {
             Some(url) => url,
             None => tauri::Url::parse(fallback).map_err(tauri::Error::InvalidUrl)?,
@@ -5450,6 +5450,10 @@ fn build_sidebar_menu(
         items.push(&manage);
     }
     items.extend([&separator as &dyn IsMenuItem<tauri::Wry>, &compact]);
+
+    let new_group =
+        MenuItemBuilder::with_id("space.new", menu_text::label("New Group…")).build(handle)?;
+    items.push(&new_group as &dyn IsMenuItem<tauri::Wry>);
 
     #[cfg(target_os = "macos")]
     {
