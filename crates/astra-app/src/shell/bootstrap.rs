@@ -237,28 +237,31 @@ impl Shell {
             splits = None;
         }
 
-        let Some(space) = active_space
+        let space = active_space
             .or_else(|| {
                 self.profiles
                     .default_profile()
                     .and_then(|p| self.spaces.first_for(p))
-            })
-            .or_else(|| self.create_default_space())
-        else {
-            crate::diagnostic!(
-                "bootstrap: bounded profile/space aggregate cannot create first-run state"
-            );
-            return;
-        };
-        let Some(profile) = self.spaces.get(space).map(|space| space.profile) else {
-            crate::diagnostic!("bootstrap: selected space has no authoritative profile ownership");
-            return;
+            });
+        let profile = match space.and_then(|s| self.spaces.get(s).map(|sp| sp.profile)) {
+            Some(p) => p,
+            None => match self.profiles.default_profile() {
+                Some(p) => p,
+                None => {
+                    crate::diagnostic!(
+                        "bootstrap: bounded profile/space aggregate cannot create first-run state"
+                    );
+                    return;
+                }
+            },
         };
         if !self.start_blocker_profile(profile) {
             crate::diagnostic!(
                 "bootstrap: active profile policy compilation was not admitted; content views remain unavailable"
             );
         }
+
+        let space = space.unwrap_or_else(SpaceId::generate);
 
         // Restore is semi-trusted input. Recheck focus and every pane against
         // the actual window selected after fallback, before creating any
@@ -296,7 +299,11 @@ impl Shell {
         };
         match restored {
             Some(item) => fx.extend(self.focus_tab(item)),
-            None => fx.extend(self.open_tab()),
+            None => {
+                if !self.spaces.of(profile).is_empty() {
+                    fx.extend(self.open_tab());
+                }
+            }
         }
         // Restored/hibernated tabs may not create a native view and therefore
         // have no URL/load callback to trigger favicon hydration. Load the
@@ -330,6 +337,7 @@ impl Shell {
         }
     }
 
+    #[allow(dead_code)]
     pub(super) fn create_default_space(&mut self) -> Option<SpaceId> {
         let mut created_profile = None;
         let profile = if let Some(profile) = self.profiles.default_profile() {

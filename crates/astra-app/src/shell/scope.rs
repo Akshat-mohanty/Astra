@@ -16,7 +16,12 @@ impl Shell {
     pub(super) fn profile_of_item(&self, id: ItemId) -> Option<ProfileId> {
         match self.items.get(id)?.placement {
             Placement::Favorites { profile } => Some(profile),
-            Placement::Space { space, .. } => self.spaces.get(space).map(|s| s.profile),
+            Placement::Space { space, .. } => self
+                .spaces
+                .get(space)
+                .map(|s| s.profile)
+                .or_else(|| self.windows.focused().map(|w| w.profile))
+                .or_else(|| self.profiles.default_profile()),
         }
     }
 
@@ -27,11 +32,11 @@ impl Shell {
         if self.profile_deletion_quarantines(profile) {
             return false;
         }
-        if self
-            .spaces
-            .get(space)
-            .is_none_or(|candidate| candidate.profile != profile)
-        {
+        if let Some(candidate) = self.spaces.get(space) {
+            if candidate.profile != profile {
+                return false;
+            }
+        } else if !self.spaces.of(profile).is_empty() {
             return false;
         }
         let Some(item) = self.items.get(id).filter(|item| item.tab().is_some()) else {
@@ -43,7 +48,13 @@ impl Shell {
             } => item_profile == profile,
             Placement::Space {
                 space: item_space, ..
-            } => item_space == space,
+            } => {
+                if item_space == space {
+                    true
+                } else {
+                    self.spaces.get(space).is_none() && self.spaces.of(profile).is_empty()
+                }
+            }
         }
     }
 

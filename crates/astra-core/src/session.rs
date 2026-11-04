@@ -170,8 +170,25 @@ pub fn snapshot_with_recently_closed(
             );
         }
     }
+    if spaces.is_empty() {
+        if let Some(space_id) = active_space {
+            for section in [
+                crate::item::SpaceSection::Pinned,
+                crate::item::SpaceSection::Today,
+            ] {
+                collect(
+                    items,
+                    Placement::Space {
+                        space: space_id,
+                        section,
+                    },
+                    &mut state.items,
+                );
+            }
+        }
+    }
 
-    let active_space = active_space.filter(|s| state.spaces.iter().any(|x| x.id == *s));
+    let active_space = active_space.filter(|s| state.spaces.iter().any(|x| x.id == *s) || state.spaces.is_empty());
     let persisted = |id: ItemId| state.items.iter().any(|i| i.id == id);
     let in_active_scope = |id: ItemId| {
         active_space.is_some_and(|space| item_in_space_scope(items, spaces, id, space))
@@ -291,7 +308,7 @@ pub fn restore(state: SessionState) -> Restored {
     for i in state.items.into_iter().take(MAX_SESSION_ITEMS) {
         let placement_ok = match i.placement {
             Placement::Favorites { profile } => profiles.get(profile).is_some(),
-            Placement::Space { space, .. } => spaces.get(space).is_some(),
+            Placement::Space { space, .. } => spaces.get(space).is_some() || spaces.is_empty(),
         };
         if !placement_ok {
             continue;
@@ -344,7 +361,9 @@ pub fn restore(state: SessionState) -> Restored {
         });
     }
 
-    let active_space = state.active_space.filter(|id| spaces.get(*id).is_some());
+    let active_space = state
+        .active_space
+        .filter(|id| spaces.get(*id).is_some() || spaces.is_empty());
     let active_item = state.active_item.filter(|id| {
         active_space.is_some_and(|space| item_in_space_scope(&items, &spaces, *id, space))
     });
@@ -417,17 +436,23 @@ fn canonical_recently_closed(
 }
 
 fn item_in_space_scope(items: &Items, spaces: &Spaces, id: ItemId, space: SpaceId) -> bool {
-    let Some(active_space) = spaces.get(space) else {
-        return false;
-    };
     let Some(item) = items.get(id).filter(|item| item.tab().is_some()) else {
         return false;
     };
-    match item.placement {
-        Placement::Favorites { profile } => profile == active_space.profile,
-        Placement::Space {
-            space: item_space, ..
-        } => item_space == space,
+    if let Some(active_space) = spaces.get(space) {
+        match item.placement {
+            Placement::Favorites { profile } => profile == active_space.profile,
+            Placement::Space {
+                space: item_space, ..
+            } => item_space == space,
+        }
+    } else {
+        match item.placement {
+            Placement::Favorites { .. } => true,
+            Placement::Space {
+                space: item_space, ..
+            } => item_space == space,
+        }
     }
 }
 

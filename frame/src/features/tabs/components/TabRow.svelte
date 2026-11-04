@@ -232,9 +232,12 @@
     background: transparent;
     color: var(--color-faint);
     opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     cursor: default;
     transition:
       opacity var(--motion-fast) var(--ease-out),
+      visibility var(--motion-fast) var(--ease-out),
       background-color var(--motion-fast) var(--ease-out),
       color var(--motion-fast) var(--ease-out);
   }
@@ -247,10 +250,14 @@
   :global([data-close-buttons="always"]) .tab-close,
   .tab-close:focus-visible {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .browse-tab:hover .tab-close {
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   @media (forced-colors: active) {

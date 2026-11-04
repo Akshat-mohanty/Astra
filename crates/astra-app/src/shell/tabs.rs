@@ -147,20 +147,9 @@ impl Shell {
         }
         let win = self.windows.focused_mut()?;
         if self.spaces.get(win.space).is_none() {
-            let space = match self.spaces.of(win.profile).first().copied() {
-                Some(space) => space,
-                None => {
-                    let id = SpaceId::generate();
-                    self.spaces.create(
-                        id,
-                        win.profile,
-                        "Group 1",
-                        astra_core::spaces::SpaceLook::default(),
-                    );
-                    id
-                }
-            };
-            win.space = space;
+            if let Some(space) = self.spaces.of(win.profile).first().copied() {
+                win.space = space;
+            }
         }
         let space = win.space;
         let current = win.active;

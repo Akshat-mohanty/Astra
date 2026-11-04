@@ -287,12 +287,28 @@ impl Shell {
                 ),
             ]
         } else {
-            vec![(
-                Placement::Favorites {
-                    profile: profile.id,
-                },
-                SidebarSectionView::Favorites,
-            )]
+            vec![
+                (
+                    Placement::Favorites {
+                        profile: profile.id,
+                    },
+                    SidebarSectionView::Favorites,
+                ),
+                (
+                    Placement::Space {
+                        space: space_id,
+                        section: SpaceSection::Pinned,
+                    },
+                    SidebarSectionView::Pinned,
+                ),
+                (
+                    Placement::Space {
+                        space: space_id,
+                        section: SpaceSection::Today,
+                    },
+                    SidebarSectionView::Today,
+                ),
+            ]
         };
         for (placement, section) in roots_to_project {
             for id in items.roots(placement) {

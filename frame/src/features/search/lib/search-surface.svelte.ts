@@ -350,14 +350,25 @@ export function createSearchSurface(options: {
     if (options.tabId) {
       running = true;
       open = false;
-      void commands.tabsNavigate(options.tabId, trimmed).catch(() => {
-        running = false;
-        failed = true;
-      });
+      void commands
+        .tabsNavigate(options.tabId, trimmed)
+        .then((admission) => {
+          if (admission && admission.outcome === "rejected") {
+            running = false;
+            failed = true;
+          }
+        })
+        .catch(() => {
+          running = false;
+          failed = true;
+        });
       return;
     }
 
-    if (!anchored) {
+    // For launcher: if the query looks like a URL, open it immediately.
+    // This mirrors the Rust side's is_query() classification.
+    const looksLikeUrl = trimmed.includes("://") || /^[a-z0-9.-]+\.[a-z]{2,}(:\d+)?(\/.*)?$/i.test(trimmed);
+    if (looksLikeUrl) {
       running = true;
       open = false;
       void commands.browserOpenUrl(trimmed, background).then(() => {
@@ -370,6 +381,8 @@ export function createSearchSurface(options: {
       return;
     }
 
+    // For other queries (search terms), wait for settled results
+    // then execute via run() which uses launcherRun for non-anchored cases.
     if (row && (settled || row.id === CALCULATION_ID)) {
       void run(row, background);
       return;

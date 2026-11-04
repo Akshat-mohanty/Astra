@@ -398,6 +398,7 @@ SpaceCommand::Step(step) => {
             } else if let Some(window) = self.windows.focused_mut() {
                 window.active = None;
                 window.splits = None;
+                window.space = SpaceId::generate();
             }
         }
         for root in self.space_roots(id) {

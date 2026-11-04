@@ -26,6 +26,9 @@ if [ -d "/Volumes/AstraBuild" ]; then
     echo "==> Using external build cache at $CARGO_TARGET_DIR"
 fi
 
+# Limit concurrent cargo compilation jobs to avoid saturating external USB I/O
+export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
+
 echo "==> Building Astra app bundle..."
 pnpm run bundle:app
 

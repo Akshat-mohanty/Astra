@@ -38,16 +38,14 @@ pub(crate) async fn media_import(
     let Some(profile) = profile_of(&expected_profile) else {
         return refused(ResourceError::Invalid);
     };
-    let picker = app.clone();
-    let picked = tokio::task::spawn_blocking(move || {
-        picker
-            .dialog()
-            .file()
-            .set_title("Add to Work")
-            .blocking_pick_file()
-    })
-    .await
-    .map_err(|_| ())?;
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog()
+        .file()
+        .set_title("Add to Work")
+        .pick_file(move |path| {
+            let _ = tx.send(path);
+        });
+    let picked = rx.await.map_err(|_| ())?;
     let Some(picked) = picked else {
         return Ok(MediaImportV1::Cancelled);
     };
@@ -816,16 +814,14 @@ pub(crate) async fn work_pick_folder(
     {
         return Ok(None);
     }
-    let picker = app.clone();
-    let picked = tokio::task::spawn_blocking(move || {
-        picker
-            .dialog()
-            .file()
-            .set_title("Add a folder to Work")
-            .blocking_pick_folder()
-    })
-    .await
-    .map_err(|_| ())?;
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog()
+        .file()
+        .set_title("Add a folder to Work")
+        .pick_folder(move |path| {
+            let _ = tx.send(path);
+        });
+    let picked = rx.await.map_err(|_| ())?;
     let Some(picked) = picked else {
         return Ok(None);
     };
