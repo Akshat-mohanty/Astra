@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frame/public/astra-icon.png" alt="Astra app icon" width="112" />
+  <img src="website/images/astra-starburst-logo.png" alt="Astra Starburst logo" width="360" />
 </p>
 
 <h1 align="center">Astra</h1>
