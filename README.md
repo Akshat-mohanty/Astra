@@ -4,7 +4,7 @@ A browser with a built in workspace for tasks, notes, focus and AI assisted work
 
 [Website](https://astra.app) · [Source](https://github.com/Akshat-mohanty/Astra)
 
-![Astra browser](website/images/3e91a28487e5271480e3b69e43d9d50d978c3f1d-1921x1081.png)
+![Astra browser](website/images/astra-sunset-swimmers.png)
 
 Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
 
