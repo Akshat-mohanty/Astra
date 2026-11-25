@@ -18,7 +18,7 @@ const MODE_SETTING = "sidebar.mode";
 
 let mode = $state.raw<SidebarMode>("default");
 let desiredMode: SidebarMode = "default";
-let expandedWidth = $state.raw(216);
+let expandedWidth = $state.raw(189);
 let drag: { mode: SidebarMode; desired: SidebarMode; expanded: number; pending: number } | null =
   null;
 let resizeSettlement = $state(0);

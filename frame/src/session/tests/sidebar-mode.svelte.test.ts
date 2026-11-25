@@ -24,6 +24,7 @@ const {
   finishSidebarResize,
   cancelSidebarResize,
   expanded,
+  init,
   resolveDragWidth,
   adoptMode,
   setPanelExtent,
@@ -64,6 +65,18 @@ describe("resolveDragWidth", () => {
 
 describe("which width changes the page travels with", () => {
   const last = () => native.width.mock.calls.at(-1)?.slice(0, 2) as unknown as [number, boolean];
+
+  it("publishes the initial expanded width to native layout", async () => {
+    const listener = vi.fn();
+    vi.stubGlobal("window", { addEventListener: listener });
+    try {
+      await init();
+      expect(expanded()).toBe(189);
+      expect(last()).toEqual([189, false]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 
   it("slides for a deliberate change of shape and follows a drag directly", () => {
     toggleMode();

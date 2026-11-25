@@ -239,8 +239,8 @@
 
   :global(.browser-sidebar > header),
   :global(.browser-sidebar > .sidebar-columns) {
-    width: var(--sidebar-expanded-width, 216px);
-    min-width: var(--sidebar-expanded-width, 216px);
+    width: var(--sidebar-expanded-width);
+    min-width: var(--sidebar-expanded-width);
     transition:
       transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
       opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
