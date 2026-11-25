@@ -23,7 +23,6 @@
   import { theme } from "$domain/appearance";
   import { uiCommands as ui } from "$domain/ui-commands";
   import { surface as browserPage } from "$domain/surface";
-  import * as motion from "$session/motion.svelte";
   import * as tools from "$session/tools.svelte";
   import { preferences } from "$domain/preferences";
   import { keymap } from "$domain/keymap";
@@ -177,7 +176,6 @@
         if (!(await commands.uiReady())) {
           throw new Error("native startup gate rejected UI");
         }
-        motion.reveal();
       } catch {
         // Native owns the fail-closed watchdog. Keep attacker-controlled page
         // data and native internals out of this static diagnostic.
@@ -190,7 +188,6 @@
       theme.dispose();
       browserPage.dispose();
       tools.dispose();
-      motion.dispose();
       preferences.dispose();
       operations.dispose();
       blocker.dispose();

@@ -2,7 +2,6 @@
   import * as m from "$shared/i18n/messages";
   import type { Snippet } from "svelte";
   import { IS_WINDOWS } from "$shared/platform";
-  import * as motion from "$session/motion.svelte";
   import { surface as browserPage } from "$domain/surface";
   import * as tools from "$session/tools.svelte";
   import { untrack } from "svelte";
@@ -188,12 +187,7 @@
     ontoggle={toggleShape}
     pageControls={false}
   />
-  <div
-    bind:this={columns}
-    class="sidebar-columns"
-    data-glide-host
-    data-launch={motion.launchState()}
-  >
+  <div bind:this={columns} class="sidebar-columns" data-glide-host>
     {#key railMode}<div class="sidebar-browser-column" class:sidebar-tool-rail={paneled}>
         {@render browserBody(railMode)}
         {@render dock(compact)}

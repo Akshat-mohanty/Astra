@@ -1,9 +1,3 @@
-<script lang="ts" module>
-  // Rows past the first screenful share the last beat anyway; leaving them
-  // out of the entrance keeps launch from animating hundreds of layers.
-  const CASCADE_ROWS = 15;
-</script>
-
 <script lang="ts">
   import * as m from "$shared/i18n/messages";
   import { Cancel01Icon, Globe02Icon, PuzzleIcon } from "@hugeicons/core-free-icons";
@@ -16,7 +10,6 @@
   import { closeOnMiddleClick } from "../lib/middle-click";
 
   let {
-    cascade = 0,
     tab,
     active,
     grouped = false,
@@ -32,8 +25,6 @@
     onPointerUp,
     onPointerCancel,
   }: {
-    /** This row's place in the launch cascade. */
-    cascade?: number;
     tab: TabView;
     active: boolean;
     grouped?: boolean;
@@ -71,8 +62,6 @@
   class={["browse-tab", grouped && "browse-tab-grouped", className]}
   data-selected={active}
   data-split-candidate={splitCandidate}
-  data-cascade={cascade < CASCADE_ROWS || undefined}
-  style:--cascade={cascade}
 >
   <button
     type="button"

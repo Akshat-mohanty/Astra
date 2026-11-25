@@ -644,25 +644,6 @@
   animation: interface-fade var(--motion-slow) var(--ease-out) both;
 }
 
-/* The launch cascade: the column's contents settle in from the top, one
-   beat apart, so the window arrives as a list being laid out rather than as
-   a picture of one. Past the first screenful every row shares the last
-   beat — nobody watches row forty arrive. */
-.sidebar-columns:is([data-launch="armed"], [data-launch="running"]) [data-cascade] {
-  animation: cascade-in var(--motion-page) var(--ease-emphasized) both;
-  animation-delay: calc(min(var(--cascade), 14) * 20ms);
-}
-/* Armed: every row waits at the start of its entrance until the window is
-   on screen, so none is ever seen before it arrives. */
-.sidebar-columns[data-launch="armed"] [data-cascade] {
-  animation-play-state: paused;
-}
-@keyframes cascade-in {
-  from {
-    opacity: 0;
-    translate: 0 8px;
-  }
-}
 .folder-row {
   width: 100%;
   height: 34px;

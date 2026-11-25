@@ -27,13 +27,7 @@
   gives up a row when a whole row has been filled.
 -->
 <!-- The base of the column settles last, once the list above it has. -->
-<footer
-  class="dock"
-  data-compact={compact}
-  data-foot={foot ? "" : undefined}
-  data-cascade
-  style:--cascade={8}
->
+<footer class="dock" data-compact={compact} data-foot={foot ? "" : undefined}>
   {#if above}<div class="dock-above" data-under-panel>{@render above()}</div>{/if}
   <!-- In the row the profile leads; down the rail it closes the column. -->
   <div class="dock-base">
@@ -95,7 +89,6 @@
     flex-direction: column;
     gap: 8px;
   }
-
 
   .dock[data-compact="true"] .dock-sites-slot {
     flex: none;

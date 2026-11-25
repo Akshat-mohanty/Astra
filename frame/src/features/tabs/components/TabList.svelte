@@ -27,14 +27,11 @@
     essentialTile,
     label,
     splitting,
-    cascadeFrom = 0,
     columns,
     onSelect,
   }: {
     /** Lay the tiles out in rows of this many even columns, filling upwards. */
     columns?: number;
-    /** Where this list's first row falls in the launch cascade. */
-    cascadeFrom?: number;
     entries: SidebarEntry[];
     section: SidebarSectionView;
     variant?: "list" | "essentials";
@@ -202,7 +199,6 @@
         })}
       {:else}
         <TabRow
-          cascade={cascadeFrom + index}
           tab={unit.tab}
           active={unit.tab.id === tabs.activeId()}
           depth={unit.depth}

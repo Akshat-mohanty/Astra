@@ -64,7 +64,7 @@
   The head of the tab list names the space it holds: its name, with its mark
   when it has one, opens the switcher, and the plus opens a tab in it.
 -->
-<div class="space-bar" data-cascade data-under-panel style:--cascade={0} role="presentation">
+<div class="space-bar" data-under-panel role="presentation">
   <button
     bind:this={chip}
     type="button"

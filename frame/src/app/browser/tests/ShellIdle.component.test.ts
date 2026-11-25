@@ -48,7 +48,10 @@ test.each(["browse", "settings"] as const)(
     await surface.init();
     await tabs.init();
     emitNativeEvent("itemsChanged", day(60));
-    await render(Shell);
+    const screen = await render(Shell);
+    const current = screen.container.querySelector<HTMLElement>('[data-astra-tab-id="tab-0"]');
+    expect(current).not.toBeNull();
+    expect(getComputedStyle(current!).opacity).toBe("1");
     if (where === "settings") emitNativeEvent("uiCommand", "browser.settings");
     // Past every arrival and settle motion.
     await new Promise((done) => setTimeout(done, 1500));

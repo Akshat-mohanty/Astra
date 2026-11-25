@@ -81,6 +81,11 @@ wry = { path = "vendor/wry" }
 [profile.dev]
 debug = 1
 
+# The local desktop bundle uses this profile. Optimize SQLite so validating
+# the saved schemas on launch does not run the bundled SQL engine at -O0.
+[profile.dev.package.libsqlite3-sys]
+opt-level = 2
+
 [profile.release]
 # Browser chrome should fail terminally on an invariant violation instead of
 # attempting to unwind through native WebView/Objective-C/COM callbacks.

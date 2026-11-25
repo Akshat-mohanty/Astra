@@ -120,7 +120,7 @@
   `title` gives a real OS tooltip, which is the only label that can appear
   outside the chrome WebView's rectangle.
 -->
-{#if space}<div class="rail-spaces-slot" data-cascade style:--cascade={0}>
+{#if space}<div class="rail-spaces-slot">
     <RailSpaces active={space} />
   </div>{/if}
 <div
@@ -139,11 +139,9 @@
       data-glide-scroller
     >
       <ul bind:this={list} class="rail-list" data-tabs-drop role="list" aria-label={m.open_tabs()}>
-        {#each entries as tab, index (tab.id)}
+        {#each entries as tab (tab.id)}
           {@const active = tab.id === tabs.activeId()}
           <li
-            data-cascade
-            style:--cascade={index + 1}
             data-motion-key={`tab:${tab.id}`}
             data-astra-tab-id={tab.id}
             data-astra-tab-url={tab.url ?? ""}
@@ -188,7 +186,7 @@
               >{/if}
           </li>
         {/each}
-        <li data-cascade style:--cascade={entries.length + 1}>
+        <li>
           <button
             type="button"
             class="rail-item rail-new"

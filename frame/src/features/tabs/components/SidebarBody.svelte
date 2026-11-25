@@ -73,7 +73,7 @@
   the difference by having no close control.
 -->
 <!-- Opening a tab never scrolls away with the tabs it adds to. -->
-{#if spaced}<SpaceBar />{:else}<div class="new-tab-slot" data-cascade style:--cascade={0}>
+{#if spaced}<SpaceBar />{:else}<div class="new-tab-slot">
     <button type="button" class="new-tab" onclick={tabs.open}>
       <Icon icon={Add01Icon} size={16} />
       <span>{m.new_tab()}</span>
@@ -95,27 +95,13 @@
       class="tab-scroller scroll-edges"
       data-glide-scroller
     >
-      <TabList
-        entries={pinned}
-        section="pinned"
-        label={m.pinned_tabs()}
-        cascadeFrom={1}
-        {splitting}
-        {onSelect}
-      />
+      <TabList entries={pinned} section="pinned" label={m.pinned_tabs()} {splitting} {onSelect} />
 
       {#if pinned.length > 0}
         <div class="tab-divider" aria-hidden="true"></div>
       {/if}
 
-      <TabList
-        entries={today}
-        section="today"
-        label={m.open_tabs()}
-        cascadeFrom={pinned.length + 1}
-        {splitting}
-        {onSelect}
-      />
+      <TabList entries={today} section="today" label={m.open_tabs()} {splitting} {onSelect} />
 
       {#if empty && spaced}<SpaceEmpty space={tabs.activeSpace()!} onopen={tabs.open} />{/if}
     </div>

@@ -11,7 +11,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it("holds the cascade until the window is revealed, then runs it once", async () => {
+it("holds the welcome animation until the window is revealed, then runs it once", async () => {
   const launch = await import("../motion.svelte");
   expect(launch.launchState()).toBe("armed");
   launch.reveal();
@@ -22,7 +22,7 @@ it("holds the cascade until the window is revealed, then runs it once", async ()
   expect(launch.launchState()).toBe("idle");
 });
 
-it("never leaves rows held when the reveal does not come", async () => {
+it("never leaves onboarding waiting when the reveal does not come", async () => {
   const launch = await import("../motion.svelte");
   expect(launch.launchState()).toBe("armed");
   vi.advanceTimersByTime(2500);
