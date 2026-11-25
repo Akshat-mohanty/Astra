@@ -57,6 +57,14 @@
   border-radius: var(--content-radius);
   background: var(--color-page);
 }
+.settings-shell {
+  container-type: inline-size;
+}
+.settings-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
 .internal-toolbar {
   display: flex;
   align-items: center;
@@ -151,15 +159,11 @@
   box-shadow: var(--row-rim);
   color: var(--color-text);
 }
-/* The shell owns the page ground for both of its columns, so the content
-   column adds nothing but its own edge. */
 .settings-content {
   min-width: 0;
+  min-height: 0;
   flex: 1;
   overflow-y: auto;
-  border-radius: var(--radius-control) 0 0 0;
-  background: transparent;
-  box-shadow: -1px 0 0 var(--color-border);
   container-type: inline-size;
 }
 
@@ -302,9 +306,6 @@
   .settings-page {
     padding: 24px 20px 40px;
   }
-  .settings-content {
-    border-radius: 0;
-  }
   .astra-wordmark {
     max-width: 65%;
   }
@@ -333,7 +334,6 @@
   box-shadow: var(--shadow-popover);
 }
 
-/* The sidebar owns navigation; Settings gets one uninterrupted reading pane. */
 .browser-sidebar {
   padding-block-start: 0;
 }
@@ -354,21 +354,27 @@
 .sidebar-tool-rail {
   flex: 0 0 56px;
 }
-/* Beside a full-height panel the rail keeps only the lights' row. */
-.sidebar-lights {
-  flex: none;
-  height: var(--titlebar-height);
-}
-.settings-sidebar-navigation {
+.settings-navigation {
   position: relative;
+  min-inline-size: 0;
   min-height: 0;
-  flex: 1;
+  flex: 0 0 clamp(164px, 28cqi, 240px);
   display: flex;
   flex-direction: column;
-  padding: 0 8px;
+  padding: 0 12px;
+  border-inline-end: 1px solid var(--color-border);
 }
-/* Headed like a tool panel: its name, and the way out. */
-/* The panel runs the full height, so its title shares the lights' row. */
+@container (max-width: 520px) {
+  .settings-layout {
+    flex-direction: column;
+  }
+  .settings-navigation {
+    flex: 0 1 auto;
+    max-block-size: 45%;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--color-border);
+  }
+}
 .settings-panel-header {
   display: flex;
   align-items: center;
@@ -384,7 +390,7 @@
   font-weight: 550;
   letter-spacing: -0.015em;
 }
-.settings-sidebar-search {
+.settings-search {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -395,10 +401,10 @@
   margin-bottom: 10px;
   color: var(--color-faint);
 }
-.settings-sidebar-search:hover {
+.settings-search:hover {
   background: var(--color-field-hover);
 }
-.settings-sidebar-search input {
+.settings-search input {
   min-width: 0;
   width: 100%;
   background: transparent;
@@ -407,18 +413,14 @@
   color: var(--color-text);
   font-size: var(--text-body);
 }
-.settings-sidebar-search:focus-within {
+.settings-search:focus-within {
   background: var(--color-field-hover);
   box-shadow: var(--shadow-field-focus);
   color: var(--color-muted);
 }
-.settings-sidebar-navigation .settings-nav-item {
+.settings-navigation .settings-nav-item {
   font-size: 13px;
   padding-block: 8px;
-}
-.settings-shell > .settings-content {
-  border-radius: inherit;
-  box-shadow: none;
 }
 /* A row after a row draws its own inset hairline; this rule only joins a row
    to a section that is not one, so two rows never get two dividers. */
@@ -622,7 +624,7 @@
   .settings-dialog {
     border: 1px solid CanvasText;
   }
-  .settings-sidebar-search {
+  .settings-search {
     border: 1px solid ButtonText;
   }
 }
@@ -869,15 +871,15 @@
 }
 /* Sidebar labels sit a step below full white so they belong to the material;
    only the current item is fully lit. */
-.settings-sidebar-navigation .settings-nav-item,
+.settings-navigation .settings-nav-item,
 .browser-sidebar .folder-row {
   color: var(--color-label-secondary);
 }
-.settings-sidebar-navigation .settings-nav-item:hover,
-.settings-sidebar-navigation .settings-nav-item[aria-current="page"] {
+.settings-navigation .settings-nav-item:hover,
+.settings-navigation .settings-nav-item[aria-current="page"] {
   color: var(--color-text);
 }
-.settings-sidebar-navigation .settings-nav-group h2 {
+.settings-navigation .settings-nav-group h2 {
   font-size: 11px;
   letter-spacing: 0.015em;
   color: var(--color-muted);

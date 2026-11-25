@@ -37,7 +37,7 @@ test("a new tab opened from Settings over a page shows the new tab", async () =>
   const screen = await render(Shell);
   emitNativeEvent("uiCommand", "browser.settings");
   await expect
-    .poll(() => screen.container.querySelector(".settings-sidebar-navigation"))
+    .poll(() => screen.container.querySelector(".internal-stage .settings-navigation"))
     .not.toBeNull();
   // Native restores Browse from its snapshot, then opens the tab.
   emitNativeEvent("browserReturn", {

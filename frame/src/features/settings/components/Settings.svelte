@@ -1,6 +1,6 @@
 <script lang="ts">
   import LazyView from "$shared/ui/LazyView";
-  import { tick, onMount } from "svelte";
+  import { tick, onMount, type Snippet } from "svelte";
   import * as m from "$shared/i18n/messages";
   import { preferences } from "$domain/preferences";
   import {
@@ -15,6 +15,9 @@
   import { ArrowRight01Icon, Search01Icon } from "@hugeicons/core-free-icons";
   import EmptyState from "$shared/ui/EmptyState";
   import Button from "$shared/ui/Button";
+
+  let { navigation }: { navigation: Snippet } = $props();
+
   const loaders = {
     appearance: () => import("./sections/AppearancePage.svelte"),
     general: () => import("./sections/GeneralPage.svelte"),
@@ -92,49 +95,53 @@
 </script>
 
 <section class="settings-shell" aria-label={m.settings_title()}>
-  <div class="settings-content scrolls" bind:this={content}>
-    <div class="settings-page">
-      {#key state.query() ? "search" : current.id}<div class="settings-view">
-          <header class="settings-page-heading">
-            <h1 tabindex="-1">
-              {state.query() ? m.settings_search_results() : current.title()}
-            </h1>
-            {#if !state.query() && current.description()}<p>{current.description()}</p>{/if}
-          </header>
-          {#if preferences.saveFailed()}<div class="settings-feedback" role="alert">
-              {m.settings_save_error()}
-            </div>{/if}
-          {#if state.query()}
-            {#if results.length === 0}<EmptyState
-                title={m.settings_no_results()}
-                description={m.settings_no_results_desc()}
-                >{#snippet icon()}<Icon
-                    icon={Search01Icon}
-                    size={24}
-                  />{/snippet}{#snippet action()}<Button onclick={() => state.setQuery("")}
-                    >{m.settings_clear_search()}</Button
-                  >{/snippet}</EmptyState
-              >
-            {:else}<div class="settings-results">
-                {#each results as result (result.id)}<button
-                    type="button"
-                    onclick={() => state.select(result.section as SettingsSection, result.target)}
-                    ><span
-                      ><span class="settings-result-section"
-                        >{offered.find((section) => section.id === result.section)?.title()}</span
-                      ><strong>{result.label()}</strong><small>{result.description()}</small></span
-                    ><Icon icon={ArrowRight01Icon} size={16} /></button
-                  >{/each}
+  <div class="settings-layout">
+    {@render navigation()}
+    <div class="settings-content scrolls" bind:this={content}>
+      <div class="settings-page">
+        {#key state.query() ? "search" : current.id}<div class="settings-view">
+            <header class="settings-page-heading">
+              <h1 tabindex="-1">
+                {state.query() ? m.settings_search_results() : current.title()}
+              </h1>
+              {#if !state.query() && current.description()}<p>{current.description()}</p>{/if}
+            </header>
+            {#if preferences.saveFailed()}<div class="settings-feedback" role="alert">
+                {m.settings_save_error()}
               </div>{/if}
-          {:else if current.id === "newtab"}<NewTabPage />
-          {:else if loader}<LazyView
-              {loader}
-              loadingLabel={m.surface_loading()}
-              failureLabel={m.surface_render_failed()}
-              retryLabel={m.surface_retry()}>{#snippet children(View)}<View />{/snippet}</LazyView
-            >{/if}
-        </div>{/key}
-      <span class="sr-only" role="status">{preferences.saving() ? m.settings_saving() : ""}</span>
+            {#if state.query()}
+              {#if results.length === 0}<EmptyState
+                  title={m.settings_no_results()}
+                  description={m.settings_no_results_desc()}
+                  >{#snippet icon()}<Icon
+                      icon={Search01Icon}
+                      size={24}
+                    />{/snippet}{#snippet action()}<Button onclick={() => state.setQuery("")}
+                      >{m.settings_clear_search()}</Button
+                    >{/snippet}</EmptyState
+                >
+              {:else}<div class="settings-results">
+                  {#each results as result (result.id)}<button
+                      type="button"
+                      onclick={() => state.select(result.section as SettingsSection, result.target)}
+                      ><span
+                        ><span class="settings-result-section"
+                          >{offered.find((section) => section.id === result.section)?.title()}</span
+                        ><strong>{result.label()}</strong><small>{result.description()}</small
+                        ></span
+                      ><Icon icon={ArrowRight01Icon} size={16} /></button
+                    >{/each}
+                </div>{/if}
+            {:else if current.id === "newtab"}<NewTabPage />
+            {:else if loader}<LazyView
+                {loader}
+                loadingLabel={m.surface_loading()}
+                failureLabel={m.surface_render_failed()}
+                retryLabel={m.surface_retry()}>{#snippet children(View)}<View />{/snippet}</LazyView
+              >{/if}
+          </div>{/key}
+        <span class="sr-only" role="status">{preferences.saving() ? m.settings_saving() : ""}</span>
+      </div>
     </div>
   </div>
 </section>

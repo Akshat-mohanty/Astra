@@ -1,14 +1,13 @@
 <script lang="ts">
   import * as m from "$shared/i18n/messages";
   import type { Snippet } from "svelte";
-  import { IS_MAC, IS_WINDOWS } from "$shared/platform";
+  import { IS_WINDOWS } from "$shared/platform";
   import * as motion from "$session/motion.svelte";
   import { surface as browserPage } from "$domain/surface";
   import * as tools from "$session/tools.svelte";
   import { untrack } from "svelte";
   import {
     COMPACT_WIDTH,
-    PANEL_GAP,
     effectiveWidth,
     expanded,
     isCompact,
@@ -23,18 +22,14 @@
   import SidebarResizeHandle from "./SidebarResizeHandle.svelte";
 
   let {
-    settingsNavigation,
     toolPanel,
     browserBody,
     dock,
   }: {
-    settingsNavigation: Snippet;
     toolPanel: Snippet<[tools.ToolKind]>;
     browserBody: Snippet<[boolean]>;
     dock: Snippet<[boolean]>;
   } = $props();
-  let settings = $derived(browserPage.currentPage() === "settings");
-  const SETTINGS_PANEL = 264;
   let taskPage = $derived(
     browserPage.currentPage() === "tasks" || browserPage.currentPage() === "notes",
   );
@@ -57,14 +52,10 @@
       settledInWork = work;
     });
   });
-  // Settings opens like a tool: the column keeps its tab rail, and its sections
-  // stand in the panel beside it while the page shows the section. Tasks and
-  // Notes are part of browsing too: a tab is one click away and choosing it
-  // returns to that page.
-  let navigating = $derived(settings);
-  let paneled = $derived(settings || tools.activeTool() !== null);
-  let railMode = $derived(navigating || railPage || paneled);
-  let compact = $derived(navigating || railPage || isCompact() || tools.activeTool() !== null);
+  let tool = $derived(tools.activeTool());
+  let paneled = $derived(tool !== null);
+  let railMode = $derived(railPage || paneled);
+  let compact = $derived(railMode || isCompact());
 
   // A change of shape is one continuous change: every mark travels from the
   // old shape into the new one while native slides the page to match. Not
@@ -133,13 +124,7 @@
       shown = next;
     });
   });
-  let width = $derived(
-    navigating
-      ? COMPACT_WIDTH + PANEL_GAP + SETTINGS_PANEL
-      : railPage && tools.activeTool() === null
-        ? COMPACT_WIDTH
-        : effectiveWidth(),
-  );
+  let width = $derived(railPage && !paneled ? COMPACT_WIDTH : effectiveWidth());
 
   // Dispatch runs untracked and behind a sequence guard. Handlers read the
   // state they mutate (the sidebar shape, the tab projection), so a tracked
@@ -185,7 +170,7 @@
   style:width={`${width}px`}
   style:--sidebar-width={`${width}px`}
   style:--sidebar-expanded-width={`${expanded()}px`}
-  data-menu-material={IS_WINDOWS && !settings ? "opaque" : undefined}
+  data-menu-material={IS_WINDOWS ? "opaque" : undefined}
   data-reshaping={reshaping}
   data-sidebar-resizing={sidebarResizeActive()}
   data-sidebar-resize-settling={resizeSettling}
@@ -196,19 +181,13 @@
   class="browser-sidebar relative flex shrink-0 flex-col text-text select-none"
   class:hidden-sidebar={width <= 0}
 >
-  {#if !navigating && !railPage && tools.activeTool() === null}<SidebarResizeHandle
-      {width}
-      disabled={reshaping}
-    />{/if}
-  <!-- Settings stands beside the rail with no head: its panel runs the full
-       height and the rail keeps only the lights' row. A tool keeps the head,
-       with search and the page's own controls. -->
-  {#if !settings}<SidebarHeader
-      compact={headerCompact}
-      launcher={paneled}
-      ontoggle={toggleShape}
-      pageControls={false}
-    />{/if}
+  {#if !railMode}<SidebarResizeHandle {width} disabled={reshaping} />{/if}
+  <SidebarHeader
+    compact={headerCompact}
+    launcher={paneled}
+    ontoggle={toggleShape}
+    pageControls={false}
+  />
   <div
     bind:this={columns}
     class="sidebar-columns"
@@ -216,14 +195,11 @@
     data-launch={motion.launchState()}
   >
     {#key railMode}<div class="sidebar-browser-column" class:sidebar-tool-rail={paneled}>
-        {#if settings && IS_MAC}<div class="sidebar-lights" aria-hidden="true"></div>{/if}
         {@render browserBody(railMode)}
         {@render dock(compact)}
       </div>{/key}
-    {#if settings}<div class="sidebar-tool-host">
-        {@render settingsNavigation()}
-      </div>{:else if tools.activeTool() !== null}<div class="sidebar-tool-host">
-        {@render toolPanel(tools.activeTool()!)}
+    {#if tool !== null}<div class="sidebar-tool-host">
+        {@render toolPanel(tool)}
       </div>{/if}
   </div>
 </aside>

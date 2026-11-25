@@ -18,15 +18,15 @@ afterEach(() => {
   surface.dispose();
   tabs.dispose();
 });
-test("Settings stands beside the tab rail and returns to the same web tab", async () => {
+test("Settings navigation stays in the main view and returns to the same web tab", async () => {
   await surface.init();
   await tabs.init();
   const tab = tabFixture();
   const items = {
     projection_revision: revision(10),
-    profile: null,
-    spaces: [],
-    active_space_id: null,
+    profile: { id: "profile", name: "Personal", kind: "default" as const },
+    spaces: [spaceFixture("space", "Home")],
+    active_space_id: "space",
     nodes: [],
     tabs: [tab],
     active: tab.id,
@@ -34,16 +34,26 @@ test("Settings stands beside the tab rail and returns to the same web tab", asyn
   };
   emitNativeEvent("itemsChanged", items);
   const screen = await render(Shell);
+  const sidebar = screen.container.querySelector<HTMLElement>(".browser-sidebar")!;
+  const width = sidebar.style.width;
+
   emitNativeEvent("uiCommand", "browser.settings");
   expect(screen.container.querySelector('[data-astra-surface="settings"]')).not.toBeNull();
-  expect(screen.container.querySelector(".settings-sidebar-navigation")).not.toBeNull();
-  // The tab stays one click away in the rail beside the settings panel.
-  expect(screen.container.querySelector(`[data-astra-tab-id="${tab.id}"]`)).not.toBeNull();
+  await expect
+    .poll(() => screen.container.querySelector(".internal-stage .settings-navigation"))
+    .not.toBeNull();
+  expect(sidebar.querySelector(".settings-navigation")).toBeNull();
+  expect(sidebar.style.width).toBe(width);
+  expect(
+    sidebar.querySelector(`[data-astra-tab-id="${tab.id}"] [data-astra-tab-label]`)?.textContent,
+  ).toBe(tab.title);
   emitNativeEvent("browserReturn", { ...items, projection_revision: revision(11) });
   expect(screen.container.querySelector('[data-astra-surface="browse"]')).not.toBeNull();
   const rows = screen.container.querySelectorAll(`[data-astra-tab-id="${tab.id}"]`);
   expect(rows).toHaveLength(1);
   expect(rows[0]?.querySelector("[data-astra-tab-label]")?.textContent).toBe(tab.title);
+  expect(sidebar.style.width).toBe(width);
+  expect(screen.container.querySelector(".settings-navigation")).toBeNull();
   expect(screen.container.querySelector<HTMLInputElement>("[data-astra-address]")?.value).toBe(
     "example.com",
   );
@@ -98,7 +108,7 @@ test("Work keeps the column as the rail of tabs, and a tab chosen there opens ov
   await expect.poll(() => screen.container.querySelector(".account-trigger")).toBeNull();
 });
 
-test("leaving Work or Settings gives back the column the window had", async () => {
+test("leaving Work gives back the column the window had", async () => {
   await surface.init();
   await tabs.init();
   const tab = tabFixture();
@@ -131,12 +141,4 @@ test("leaving Work or Settings gives back the column the window had", async () =
     emitNativeEvent("uiCommand", "browser.return");
     await expect.poll(shown).toEqual(browse);
   }
-
-  emitNativeEvent("uiCommand", "browser.settings");
-  await expect
-    .poll(() => screen.container.querySelector(".settings-sidebar-navigation"))
-    .not.toBeNull();
-  emitNativeEvent("browserReturn", { ...items, projection_revision: revision(31) });
-  await expect.poll(shown).toEqual(browse);
-  expect(screen.container.querySelector(".settings-sidebar-navigation")).toBeNull();
 });

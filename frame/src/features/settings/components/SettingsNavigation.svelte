@@ -34,14 +34,7 @@
   });
 </script>
 
-<nav
-  bind:this={nav}
-  class="settings-sidebar-navigation"
-  data-glide-host
-  aria-label={m.settings_title()}
->
-  <!-- A panel beside the rail, headed like every tool's: closing it returns
-       to the page the rail still shows. -->
+<nav bind:this={nav} class="settings-navigation" data-glide-host aria-label={m.settings_title()}>
   <header class="settings-panel-header">
     <h2>{m.settings_title()}</h2>
     <IconButton
@@ -51,7 +44,7 @@
     />
   </header>
   {#await identity then { default: SettingsIdentity }}<SettingsIdentity />{/await}
-  <div class="settings-sidebar-search">
+  <div class="settings-search">
     <Icon icon={Search01Icon} size={14} /><input
       type="search"
       aria-label={m.settings_search()}

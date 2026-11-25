@@ -11,7 +11,7 @@
   const loadNotesPage = () => import("$features/notes").then((notes) => notes.loadNotesPage());
   import LazyView from "$shared/ui/LazyView";
   import RenderBoundary from "$shared/ui/RenderBoundary";
-  import { loadSettings } from "$features/settings";
+  import { loadSettings, SettingsNavigation } from "$features/settings";
   import { AddressField, findInPage } from "$features/address";
   import {
     ArrowLeft02Icon,
@@ -43,7 +43,6 @@ import { surface as browserPage } from "$domain/surface";
 import { loadToolSlot } from "$features/tools";
 import * as toolHost from "$session/tools.svelte";
 import * as notices from "$session/notice.svelte";
-import { SettingsNavigation } from "$features/settings";
 import { loadLibraryPage } from "$features/library";
 import { loadHistoryPage } from "$features/history";
 import { bookmarkReveal } from "$features/bookmarks";
@@ -130,10 +129,7 @@ import {
   });
   let splitting = $state(false);
   let inWork = $derived(browserPage.currentPage() === "work");
-  // Settings stands beside the rail the way a tool panel does.
-  let paneled = $derived(
-    toolHost.activeTool() !== null || browserPage.currentPage() === "settings",
-  );
+  let paneled = $derived(toolHost.activeTool() !== null);
   let incognito = $derived(tabs.profile()?.kind === "incognito");
   // The column's body settles in only when the environment changes, never on launch.
   let modeSwitched = $state(false);
@@ -310,7 +306,6 @@ import {
         >{#snippet browserBody(compact)}
        {#if compact && (inWork || paneled)}
         {#if paneled && IS_WINDOWS}
-          {#if browserPage.currentPage() === "settings"}<ModeTabs compact standalone />{/if}
           <div class="rail-search"><SidebarSearch /></div>
         {:else if paneled}<ModeTabs compact standalone />{/if}
       {:else if compact}
@@ -358,8 +353,7 @@ import {
         />{:else if incognito}
         <!-- A private window keeps nothing, so it has no tools or kept sites;
              its foot names the scope and closes it. -->
-        <PrivateBar />{:else}<Dock />{/if}{/snippet}{#snippet settingsNavigation()}<SettingsNavigation
-      />{/snippet}{#snippet toolPanel(kind)}<LazyView
+        <PrivateBar />{:else}<Dock />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView
         loader={loadToolSlot}
         loadingLabel={m.surface_loading()}
         failureLabel={m.surface_render_failed()}
@@ -524,7 +518,9 @@ import {
                   loadingLabel={m.surface_loading()}
                   failureLabel={m.surface_render_failed()}
                   retryLabel={m.surface_retry()}
-                  >{#snippet children(View)}<View />{/snippet}</LazyView
+                  >{#snippet children(View)}<View
+                      >{#snippet navigation()}<SettingsNavigation />{/snippet}</View
+                    >{/snippet}</LazyView
                 >
               {:else if browserPage.currentPage() === "extensions"}
                 <LazyView
