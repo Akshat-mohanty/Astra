@@ -17,23 +17,34 @@
 
 Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
 
-## Browse
+## Browser features
 
-- Vertical tabs, spaces, profiles, pinned tabs, folders and split view
-- Built in protection against ads and trackers
-- Chrome extension support
-- Import browsing data from supported browsers
-- A new tab page, history, bookmarks and a keyboard driven launcher
+- **Organize your browsing:** vertical tabs, spaces, profiles, pinned tabs, folders and split view.
+- **Find your way around:** an address and search bar, configurable search engines, search suggestions and a keyboard-driven launcher.
+- **Keep the essentials close:** a customizable new tab page, bookmarks, browsing history and downloads.
+- **Bring your setup along:** import browsing data from supported browsers and use Chrome-compatible extensions.
+- **Browse with protection:** built-in ad and tracker blocking with controls for website permissions.
 
-## Work
+## Work features
 
-Work gives AI assisted tasks a visual workspace alongside the browser. Astra includes tools for working with tasks, notes, focus sessions and connected services. You can choose supported AI providers and connect your own credentials.
+- **AI assistant:** ask about the page you are viewing, choose a supported AI provider and connect your own credentials.
+- **A workspace beside the browser:** create and manage tasks and notes, run focus sessions and review time activity.
+- **Connected work:** connect supported services and give the assistant reusable skills and work context.
+- **Voice input:** dictate prompts with a configurable recognition engine and language.
+
+## Personalization and controls
+
+- Adjust the theme, colors, contrast, fonts, density, sidebar appearance and motion.
+- Set your search provider, suggestions, tab behavior, startup behavior and new tab page.
+- Manage site permissions and privacy options, including clearing selected data on exit.
+- Import or export browser settings and data where supported.
+- Check for Astra updates and review release notes from the app.
 
 ## Privacy
 
-- Browsing data and app settings are stored locally
-- Private windows clear their session when closed
-- Credentials are protected by the operating system's secure storage
+- Browsing data and app settings are stored locally.
+- Private windows clear their session when closed.
+- Credentials are protected by the operating system's secure storage.
 
 ## Build from source
 
