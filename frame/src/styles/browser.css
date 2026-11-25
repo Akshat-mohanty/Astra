@@ -628,14 +628,7 @@
     border: 1px solid ButtonText;
   }
 }
-/* A change of shape: the column's width travels on the page's curve, while
-   what it holds keeps its final width, so the morph's measured positions
-   stay true and only the space beside the column moves. */
-.browser-sidebar[data-reshaping="true"] {
-  transition: width var(--motion-page) var(--ease-emphasized);
-}
-/* Width only: the column still fills the sidebar's height, or the dock at
-   its foot rides up under the tabs for the length of the change. */
+/* The contents of the sidebar hold their final width during a shape change. */
 .browser-sidebar[data-reshaping="true"] > .sidebar-columns {
   width: var(--sidebar-width);
 }

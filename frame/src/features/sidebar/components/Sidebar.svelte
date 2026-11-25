@@ -57,8 +57,7 @@
   let compact = $derived(railMode || isCompact());
 
   // A change of shape is one continuous change: every mark travels from the
-  // old shape into the new one while native slides the page to match. Not
-  // on the first shape, which launch brings in with its own cascade.
+  // old shape into the new one while native slides the page to match.
   let columns = $state<HTMLElement>();
   let shown: boolean | null = null;
   let morph: ReturnType<typeof shapeMorph.capture> = null;
@@ -201,34 +200,18 @@
 <style>
   :global(.browser-sidebar) {
     transition:
-      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+      width var(--motion-page) var(--ease-emphasized),
+      opacity var(--motion-slow) var(--ease-emphasized),
+      visibility 0s linear;
     overflow: hidden !important;
     will-change: width, opacity;
   }
 
-  :global(.browser-sidebar[data-sidebar-resizing="true"]) {
-    transition: none !important;
-  }
-
   :global(.browser-sidebar.hidden-sidebar) {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transition:
-      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 220ms cubic-bezier(0.16, 1, 0.3, 1),
-      visibility 0s linear 320ms;
-  }
-
-  :global(.browser-sidebar:not(.hidden-sidebar)) {
-    transition:
-      width 320ms cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
-      visibility 0s linear 0s;
+    transition-delay: 0s, 0s, var(--motion-page);
   }
 
   :global(.browser-sidebar > header),
@@ -236,8 +219,8 @@
     width: var(--sidebar-expanded-width);
     min-width: var(--sidebar-expanded-width);
     transition:
-      transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
-      opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      transform var(--motion-page) var(--ease-emphasized),
+      opacity var(--motion-slow) var(--ease-emphasized);
     will-change: transform, opacity;
   }
 
@@ -261,12 +244,19 @@
     opacity: 0.18;
   }
 
+  :global(.browser-sidebar[data-sidebar-resizing="true"]),
+  :global(.browser-sidebar[data-sidebar-resize-settling="true"]),
+  :global(:root[data-reduce-motion="true"] .browser-sidebar) {
+    transition: none !important;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     :global(.browser-sidebar),
     :global(.browser-sidebar > header),
     :global(.browser-sidebar > .sidebar-columns) {
       transition: none !important;
     }
+
     :global([data-under-panel]) {
       transition: none;
     }

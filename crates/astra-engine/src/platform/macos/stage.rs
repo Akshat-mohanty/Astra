@@ -400,7 +400,8 @@ impl ContentStage {
     /// is on screen and only its horizontal extent changes.
     pub fn can_slide_to(&self, frame: NSRect) -> bool {
         let current = self.motion_target();
-        !self.isHidden()
+        !NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion()
+            && !self.isHidden()
             && current.size.width > 0.0
             && current.origin.y == frame.origin.y
             && current.size.height == frame.size.height
@@ -426,11 +427,9 @@ impl ContentStage {
         let stage = self.retain();
         let changes = block2::RcBlock::new(move |context: NonNull<NSAnimationContext>| {
             let context = unsafe { context.as_ref() };
-            context.setDuration(0.3);
+            context.setDuration(SLIDE_SECONDS);
             context.setAllowsImplicitAnimation(true);
-            context.setTimingFunction(Some(&CAMediaTimingFunction::functionWithControlPoints(
-                0.16, 1.0, 0.3, 1.0,
-            )));
+            context.setTimingFunction(Some(&emphasized()));
             stage.as_super().animator().setFrame(frame);
         });
         NSAnimationContext::runAnimationGroup(&changes);
