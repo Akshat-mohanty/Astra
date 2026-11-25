@@ -19,32 +19,27 @@ Astra is an open source desktop browser built with Rust, Tauri and Svelte. It us
 
 ## Browser features
 
-- **Organize your browsing:** vertical tabs, spaces, profiles, pinned tabs, folders and split view.
-- **Find your way around:** an address and search bar, configurable search engines, search suggestions and a keyboard-driven launcher.
-- **Keep the essentials close:** a customizable new tab page, bookmarks, browsing history and downloads.
-- **Bring your setup along:** import browsing data from supported browsers and use Chrome-compatible extensions.
-- **Browse with protection:** built-in ad and tracker blocking with controls for website permissions.
+Astra keeps open pages in a vertical tab sidebar. Spaces and profiles let you separate browsing contexts, while pinned tabs and folders help keep frequently used pages organized. Split view lets you work with two pages side by side in the same window.
+
+The address bar handles both website addresses and searches. Choose a search provider, manage suggestions, or use the keyboard-driven launcher to reach browser actions quickly. The customizable new tab page, bookmarks, history, and downloads keep everyday browsing tools close at hand.
+
+You can bring browsing data over from supported browsers and add Chrome-compatible extensions. Astra also includes ad and tracker blocking, with controls for managing website permissions.
 
 ## Work features
 
-- **AI assistant:** ask about the page you are viewing, choose a supported AI provider and connect your own credentials.
-- **A workspace beside the browser:** create and manage tasks and notes, run focus sessions and review time activity.
-- **Connected work:** connect supported services and give the assistant reusable skills and work context.
-- **Voice input:** dictate prompts with a configurable recognition engine and language.
+The AI assistant can work with the page you are viewing, so you can ask questions about its content from alongside your browsing workspace. Choose a supported AI provider and connect your own credentials.
+
+Keep work organized with tasks and notes, use focus sessions to set aside time for a task, and review time activity. Astra can also connect supported services and provide the assistant with reusable skills and work context. When you prefer to speak, dictate prompts with a configurable recognition engine and language.
 
 ## Personalization and controls
 
-- Adjust the theme, colors, contrast, fonts, density, sidebar appearance and motion.
-- Set your search provider, suggestions, tab behavior, startup behavior and new tab page.
-- Manage site permissions and privacy options, including clearing selected data on exit.
-- Import or export browser settings and data where supported.
-- Check for Astra updates and review release notes from the app.
+Adjust Astra's appearance with theme, color, contrast, font, density, sidebar, and motion settings. Search settings let you choose a provider and control suggestions, while browser preferences cover tab behavior, startup, and the new tab page.
+
+You can manage website permissions, choose privacy options such as clearing selected data on exit, and import or export browser settings and data where supported. Astra also lets you check for app updates and review release notes.
 
 ## Privacy
 
-- Browsing data and app settings are stored locally.
-- Private windows clear their session when closed.
-- Credentials are protected by the operating system's secure storage.
+Astra stores browsing data and app settings locally. Private windows clear their session when closed, and credentials are protected by the operating system's secure storage. Site permission controls and privacy settings let you choose how the browser handles access and data.
 
 ## Project structure
 
