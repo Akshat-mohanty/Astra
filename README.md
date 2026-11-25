@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="website/images/astra-starburst-logo.png" alt="Astra Starburst logo" width="360" />
+  <img src="readme-assets/astra-starburst-logo.png" alt="Astra Starburst logo" width="360" />
 </p>
 
 <hr />
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="website/images/astra-starburst-over-sunset-sea.png" alt="Astra Starburst Over Sunset Sea" />
+  <img src="readme-assets/astra-starburst-over-sunset-sea.png" alt="Astra Starburst Over Sunset Sea" />
 </p>
 
 Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
