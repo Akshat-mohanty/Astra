@@ -50,3 +50,8 @@ Astra-main/
 user_data/
 
 Astra-main/
+
+# Local site experiments kept out of the Astra repository
+/astra waitsite code/
+/website-aether/
+/website-dia/
