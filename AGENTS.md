@@ -2,6 +2,11 @@
 
 This document provides mandatory operational rules for any AI agent (Kilo, Claude Code, Cursor, AGY, etc.) modifying, building, signing, or running the **Astra** project.
 
+## Task delegation and GitHub pushes
+
+- Start a fresh agent for every new Astra task. Assign the task to that agent and review its work before completion.
+- Commit and push every task's changes to [Astra on GitHub](https://github.com/Akshat-mohanty/Astra) before reporting completion. Keep unrelated changes out of the commit and verify the push succeeded.
+
 ---
 
 ## 1. System Architecture & Critical Storage Policy
