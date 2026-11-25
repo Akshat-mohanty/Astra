@@ -1,66 +1,56 @@
-# Astra Browser & Astra Search 
+# Astra
 
-**Astra** is an ultra-fast, lightweight web browser built on a modern Chromium core with zero bloat, custom Astra branding, integrated **Astra Search**, and **100% native Chrome Web Store extension compatibility**.
+A browser with a built in workspace for tasks, notes, focus and AI assisted work.
 
----
+[Website](https://astra.app) · [Source](https://github.com/Akshat-mohanty/Astra)
 
-## Key Features
+![Astra browser](website/images/3e91a28487e5271480e3b69e43d9d50d978c3f1d-1921x1081.png)
 
-- **Blazing Fast**: Optimized for Apple Silicon (ARM64) with native compiler optimizations.
-- **Chrome Web Store Compatible**: Install any extension directly from the Chrome Web Store out-of-the-box.
-- **Integrated Astra Search**: Minimalist, high-performance search experience and new tab dashboard.
-- **Isolated Profile**: Dedicated user profile stored at `~/Library/Application Support/Astra`, keeping browsing data isolated from other browsers.
-- **Ultra Lightweight**: Low RAM consumption and clean background process footprint.
+Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
 
----
+## Browse
 
-## Project Structure
+- Vertical tabs, spaces, profiles, pinned tabs, folders and split view
+- Built in protection against ads and trackers
+- Chrome extension support
+- Import browsing data from supported browsers
+- A new tab page, history, bookmarks and a keyboard driven launcher
 
-```
-Astra/
-├── docs/
-│   └── architecture.md       # Architecture blueprint and roadmap
-├── scripts/
-│   ├── build.sh              # Build and packaging automation
-│   ├── run.sh                # Launches the canonical Astra.app
-│   ├── generate_icon.py      # Generates custom Astra .icns app icon
-│   ├── env.sh                # Toolchain environment variables
-│   ├── mount_drive.sh        # Optional mount script for external build drives
-│   └── unmount_drive.sh      # Unmount helper
-├── src/
-│   ├── launcher.c            # Native Mach-O bootstrap loader
-│   └── search/
-│       └── index.html        # Astra Search engine UI & New Tab interface
-└── .gitignore
-```
+## Work
 
----
+Work gives AI assisted tasks a visual workspace alongside the browser. Astra includes tools for working with tasks, notes, focus sessions and connected services. You can choose supported AI providers and connect your own credentials.
 
-## Quick Start
+## Privacy
 
-### 1. Launch Astra
-To launch the browser:
-```bash
-./scripts/run.sh
-```
-Or open `/Applications/Astra.app` directly from Spotlight (`Cmd + Space`).
+- Browsing data and app settings are stored locally
+- Private windows clear their session when closed
+- Credentials are protected by the operating system's secure storage
 
-### 2. Generate Custom Icon
-```bash
-python3 ./scripts/generate_icon.py
+## Build from source
+
+### Requirements
+
+- Rust via `rustup`
+- Node.js 24.18 or newer in the 24.x series
+- pnpm
+- Tauri platform prerequisites
+
+```sh
+git clone https://github.com/Akshat-mohanty/Astra.git
+cd Astra
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
----
+On macOS, use `./scripts/build.sh` to build, sign and install the desktop app. The script stores compilation artifacts on the configured external build volume when it is mounted.
 
-## Architecture
+## Project structure
 
-Astra follows a modern hybrid browser architecture (similar to Arc and Vivaldi):
-- High-level interface, branding, and search orchestration.
-- Embedded Chromium runtime for standards-compliant HTML5/CSS/JavaScript rendering and extension APIs.
-- Native macOS bootstrap launcher linking the UI and runtime cleanly without monolithic overhead.
-
----
+- `crates/` contains Astra's Rust application, browser, storage and work logic
+- `desktop/` contains the Tauri desktop shell and native platform integrations
+- `frame/` contains the Svelte interface
+- `scripts/` contains build, run and maintenance scripts
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Astra is licensed under the Mozilla Public License 2.0. See [LICENSE](LICENSE). Bundled third party assets and filter lists may have additional licenses. See the notices included with the application.
