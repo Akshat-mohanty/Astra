@@ -1,10 +1,29 @@
-# Astra
+<p align="center">
+  <img src="frame/public/astra-icon.png" alt="Astra app icon" width="112" />
+</p>
 
-A browser with a built in workspace for tasks, notes, focus and AI assisted work.
+<h1 align="center">Astra</h1>
 
-[Website](https://astra.app) · [Source](https://github.com/Akshat-mohanty/Astra)
+<hr />
 
-![Astra browser](website/images/astra-sunset-swimmers.png)
+<p align="center"><strong>A fast, lightweight browser with a built in workspace for tasks, notes, focus and AI assisted work.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/Akshat-mohanty/Astra/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.0.3-blue" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MPL--2.0-blue" /></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey" />
+</p>
+
+<p align="center">
+  <a href="https://astra.app">Website</a> ·
+  <a href="https://astra.app/docs">Docs</a> ·
+  <a href="https://github.com/Akshat-mohanty/Astra/releases">Download</a> ·
+  <a href="https://github.com/Akshat-mohanty/Astra">Source</a>
+</p>
+
+<p align="center">
+  <img src="website/images/astra-sunset-swimmers.png" alt="Astra Sunset Swimmers" />
+</p>
 
 Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
 
