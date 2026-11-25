@@ -6,10 +6,9 @@
 
 <p align="center"><strong>A fast, lightweight browser with a built in workspace for tasks, notes, focus and AI assisted work.</strong></p>
 
-<p align="center">
-  <a href="https://github.com/Akshat-mohanty/Astra/releases"><img alt="Release" src="https://img.shields.io/badge/release-v1.0.3-blue" /></a>
+<p>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MPL--2.0-blue" /></a>
-  <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey" />
+  <img align="right" alt="Platform: macOS" src="https://img.shields.io/badge/platform-macOS-lightgrey" />
 </p>
 
 <p align="center">
