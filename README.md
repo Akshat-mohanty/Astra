@@ -2,8 +2,6 @@
   <img src="website/images/astra-starburst-logo.png" alt="Astra Starburst logo" width="360" />
 </p>
 
-<h1 align="center">Astra</h1>
-
 <hr />
 
 <p align="center"><strong>A fast, lightweight browser with a built in workspace for tasks, notes, focus and AI assisted work.</strong></p>
