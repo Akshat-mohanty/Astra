@@ -15,7 +15,7 @@
   <img src="readme-assets/astra-starburst-over-sunset-sea.png" alt="Astra Starburst Over Sunset Sea" />
 </p>
 
-Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS and WebView2 on Windows. Browser state, settings and workspaces are managed by Astra's Rust core.
+Astra is an open source desktop browser built with Rust, Tauri and Svelte. It uses the web engine provided by the operating system, with WebKit on macOS. Browser state, settings and workspaces are managed by Astra's Rust core.
 
 ## Browser features
 
@@ -40,13 +40,6 @@ You can manage website permissions, choose privacy options such as clearing sele
 ## Privacy
 
 Astra stores browsing data and app settings locally. Private windows clear their session when closed, and credentials are protected by the operating system's secure storage. Site permission controls and privacy settings let you choose how the browser handles access and data.
-
-## Project structure
-
-- `crates/` contains Astra's Rust application, browser, storage and work logic
-- `desktop/` contains the Tauri desktop shell and native platform integrations
-- `frame/` contains the Svelte interface
-- `scripts/` contains build, run and maintenance scripts
 
 ## License
 
