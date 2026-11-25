@@ -6,9 +6,9 @@
 
 <p align="center"><strong>A fast, lightweight browser with a built in workspace for tasks, notes, focus and AI assisted work.</strong></p>
 
-<p>
+<p align="center">
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MPL--2.0-blue" /></a>
-  <img align="right" alt="Platform: macOS" src="https://img.shields.io/badge/platform-macOS-lightgrey" />
+  <img alt="Platform: macOS" src="https://img.shields.io/badge/platform-macOS-lightgrey" />
 </p>
 
 <p align="center">
