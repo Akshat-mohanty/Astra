@@ -86,7 +86,10 @@
         observedResizeSettlement = settlement;
         resizeSettling = true;
         queueMicrotask(() => {
-          if (observedResizeSettlement === settlement) resizeSettling = false;
+          if (observedResizeSettlement !== settlement) return;
+          // Commit the width before the browser coalesces away the transition override.
+          void columns?.offsetWidth;
+          resizeSettling = false;
         });
         morph = null;
         reshaping = false;
