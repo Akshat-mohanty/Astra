@@ -46,28 +46,6 @@ Astra is an open source desktop browser built with Rust, Tauri and Svelte. It us
 - Private windows clear their session when closed.
 - Credentials are protected by the operating system's secure storage.
 
-## Contributing
-
-Contributions are welcome. To work on Astra locally, install the requirements below and follow the build steps.
-
-### Contributor requirements
-
-- Rust via `rustup`
-- Node.js 24.18 or newer in the 24.x series
-- pnpm
-- Tauri platform prerequisites
-
-### Build from source
-
-```sh
-git clone https://github.com/Akshat-mohanty/Astra.git
-cd Astra
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-On macOS, use `./scripts/build.sh` to build, sign and install the desktop app. The script stores compilation artifacts on the configured external build volume when it is mounted.
-
 ## Project structure
 
 - `crates/` contains Astra's Rust application, browser, storage and work logic
