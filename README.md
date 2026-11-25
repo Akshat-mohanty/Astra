@@ -12,13 +12,6 @@
 </p>
 
 <p align="center">
-  <a href="https://astra.app">Website</a> ·
-  <a href="https://astra.app/docs">Docs</a> ·
-  <a href="https://github.com/Akshat-mohanty/Astra/releases">Download</a> ·
-  <a href="https://github.com/Akshat-mohanty/Astra">Source</a>
-</p>
-
-<p align="center">
   <img src="website/images/astra-starburst-over-sunset-sea.png" alt="Astra Starburst Over Sunset Sea" />
 </p>
 
