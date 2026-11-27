@@ -339,7 +339,7 @@ import {
           compact
         />{:else if compact}{#if tabs.profile()?.id && !inWork}<DownloadPulse
             profile={tabs.profile()?.id ?? ""}
-        />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock compact /><SidebarChats compact />{:else if incognito}
+        />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock compact tools={!inWork} /><SidebarChats compact />{:else if incognito}
         <!-- A private window keeps nothing, so it has no tools or kept sites;
              its foot names the scope and closes it. -->
         <PrivateBar />{:else}<Dock /><SidebarChats />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView

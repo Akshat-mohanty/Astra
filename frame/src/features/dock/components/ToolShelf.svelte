@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as m from "$shared/i18n/messages";
   import { onMount } from "svelte";
-  import { IncognitoIcon, Settings02Icon, UserIcon } from "@hugeicons/core-free-icons";
+  import { IncognitoIcon, LayoutGridIcon, Settings02Icon, UserIcon } from "@hugeicons/core-free-icons";
   import { commands } from "$shared/ipc/bindings";
   import * as tools from "$session/tools.svelte";
   import type { ToolKind } from "$session/tools.svelte";
@@ -112,22 +112,12 @@
   >
     {#snippet trigger()}
       {#if compact}
-        {#if foot.face}
-          <ProfileAvatar view={foot.face} size={36} />
-        {:else}
-          <Icon icon={UserIcon} size={16} strokeWidth={1.7} />
-        {/if}
+        <Icon icon={LayoutGridIcon} size={16} strokeWidth={1.7} />
         <NoticePip />
       {:else}
         <div class="profile-trigger-inner">
-          {#if foot.face}
-            <ProfileAvatar view={foot.face} size={22} />
-          {:else}
-            <span class="profile-avatar-placeholder">
-              <Icon icon={UserIcon} size={14} strokeWidth={1.8} />
-            </span>
-          {/if}
-          <span class="profile-trigger-name">{name || "Profile"}</span>
+          <Icon icon={LayoutGridIcon} size={16} strokeWidth={1.7} />
+          <span class="profile-trigger-name">{m.dock_tools()}</span>
         </div>
       {/if}
     {/snippet}

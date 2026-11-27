@@ -1,15 +1,18 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import ToolShelf from "./ToolShelf.svelte";
 
   let {
     sites,
     above,
     compact = false,
+    tools = true,
   }: {
     sites?: Snippet;
     /** Kept sites that did not fit beside the shelf, in rows over it. */
     above?: Snippet;
     compact?: boolean;
+    tools?: boolean;
   } = $props();
 </script>
 
@@ -23,6 +26,7 @@
 <footer class="dock" data-compact={compact}>
   {#if above}<div class="dock-above" data-under-panel>{@render above()}</div>{/if}
   <div class="dock-base">
+    {#if tools}<ToolShelf {compact} />{/if}
     {#if sites}<div class="dock-sites-slot" data-under-panel={compact || undefined}>
         {@render sites()}
       </div>{/if}
