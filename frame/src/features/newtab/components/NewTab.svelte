@@ -1,7 +1,6 @@
 <script lang="ts">
   import { type Snippet } from "svelte";
   import * as m from "$shared/i18n/messages";
-  import KineticGrid from "./KineticGrid.svelte";
 
   let {
     fromEmpty = false,
@@ -26,10 +25,8 @@
   class:animate-from-empty={fromEmpty}
   aria-label={m.new_tab()}
 >
-  <!-- Background: Interactive Kinetic Grid canvas covering the whole surface -->
-  <div class="page" aria-hidden="true">
-    <KineticGrid globalColor="default" />
-  </div>
+  <!-- Background artwork; the welcome and search controls remain above it. -->
+  <div class="page" aria-hidden="true"></div>
 
   <!-- Centered Search Field -->
   <div class="search-container">
@@ -57,7 +54,11 @@
     inset: 0;
     inline-size: 100%;
     block-size: 100%;
-    background: #161618;
+    background-color: #161618;
+    background-image: url("/newtab-seascape.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 
   .search-container {
