@@ -43,7 +43,7 @@
   title={label}
   aria-pressed={active || undefined}
   aria-haspopup={haspopup === true ? "menu" : haspopup || undefined}
-  aria-expanded={haspopup ? expanded : undefined}
+  aria-expanded={expanded}
   aria-controls={controls}
   disabled={disabled || pending}
   aria-busy={pending || undefined}

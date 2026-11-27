@@ -28,10 +28,11 @@
   function place() {
     const rect = anchor.getBoundingClientRect();
     const width = Math.min(320, window.innerWidth - 24);
-    const height = panel?.getBoundingClientRect().height ?? 300;
+    const maxHeight = Math.max(0, window.innerHeight - 24);
+    const height = Math.min(panel?.getBoundingClientRect().height ?? 300, maxHeight);
     const below = window.innerHeight - rect.bottom - 8;
-    const top =
-      below >= Math.min(height, 420) ? rect.bottom + 8 : Math.max(12, rect.top - height - 8);
+    const candidate = below >= height ? rect.bottom + 8 : rect.top - height - 8;
+    const top = Math.min(Math.max(12, candidate), window.innerHeight - height - 12);
     position = {
       top,
       left: Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)),

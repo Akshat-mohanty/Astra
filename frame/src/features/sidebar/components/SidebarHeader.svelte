@@ -175,7 +175,6 @@
         label={m.browser_downloads_title()}
         size={16}
         buttonSize={28}
-        haspopup="menu"
         expanded={downloadsOpen}
         controls="sidebar-downloads-preview"
         onclick={() => (downloadsOpen = !downloadsOpen)}
