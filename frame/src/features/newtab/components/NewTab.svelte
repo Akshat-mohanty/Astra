@@ -79,10 +79,10 @@
 
   .brand-logo {
     position: absolute;
-    inset-block-start: clamp(18px, 3vh, 36px);
+    inset-block-end: clamp(18px, 3vh, 36px);
     inset-inline-start: 50%;
     z-index: 10;
-    inline-size: min(230px, calc(100% - 48px));
+    inline-size: min(190px, calc(100% - 48px));
     block-size: auto;
     transform: translateX(-50%);
     filter: brightness(0);
