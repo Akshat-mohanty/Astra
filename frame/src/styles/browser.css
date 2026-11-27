@@ -172,8 +172,8 @@
   --text-body: var(--text-page-body);
   --text-label: 12px;
 
-  max-width: 850px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
   padding: 52px clamp(22px, 5cqi, 60px) 64px;
 }
 .settings-page-heading {
