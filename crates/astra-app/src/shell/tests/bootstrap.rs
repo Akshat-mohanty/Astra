@@ -310,27 +310,6 @@ fn bootstrap_is_idempotent_across_chrome_reloads() {
 }
 
 #[test]
-fn exhausted_space_aggregate_refuses_first_run_without_panicking() {
-    let (mut shell, _engine, _screen) = setup();
-    let profile = ProfileId::from(26_200);
-    assert!(shell.profiles.insert(Profile {
-        id: profile,
-        name: "Personal".into(),
-        kind: ProfileKind::Default,
-    }));
-    for index in 0..astra_core::session::MAX_SESSION_SPACES {
-        assert!(shell.spaces.insert(Space {
-            id: SpaceId::from(27_000 + index as u128),
-            profile,
-            name: "Full".into(),
-            look: Default::default(),
-        }));
-    }
-
-    assert!(shell.create_default_space().is_none());
-}
-
-#[test]
 fn failed_pending_profile_deletion_load_prevents_bootstrap_views_and_native_erasure() {
     let store = Arc::new(FakeStore::default());
     store

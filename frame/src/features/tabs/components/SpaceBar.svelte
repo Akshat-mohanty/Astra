@@ -109,7 +109,7 @@
     flex: none;
     align-items: center;
     gap: 4px;
-    padding-inline: var(--sidebar-inset);
+    padding-inline: var(--sidebar-inset) 10px;
     padding-block: 2px calc(var(--sidebar-row-gap) + 2px);
   }
 
