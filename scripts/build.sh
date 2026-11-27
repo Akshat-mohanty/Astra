@@ -32,7 +32,8 @@ export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-1}"
 echo "==> Building Astra app bundle..."
 pnpm run bundle:app
 
-APP_BUNDLE="$REPO_ROOT/target/debug/bundle/macos/Astra.app"
+BUILD_TARGET_DIR="${CARGO_TARGET_DIR:-$REPO_ROOT/target}"
+APP_BUNDLE="$BUILD_TARGET_DIR/debug/bundle/macos/Astra.app"
 
 if [ -d "$APP_BUNDLE" ]; then
     IDENTITY="${APPLE_SIGNING_IDENTITY:-}"
