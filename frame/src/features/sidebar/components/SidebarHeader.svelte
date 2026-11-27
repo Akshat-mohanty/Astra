@@ -41,8 +41,8 @@
   // In fullscreen the lights are gone, and so is the room kept for them.
   let lights = $derived(IS_MAC && !fullscreen());
   let downloadsOpen = $state(false);
-  let downloadsAnchor: HTMLElement | undefined;
-  let downloadsPanel: HTMLElement | undefined;
+  let downloadsAnchor = $state<HTMLElement>();
+  let downloadsPanel = $state<HTMLElement>();
 
   $effect(() => {
     if (!downloadsOpen) return;

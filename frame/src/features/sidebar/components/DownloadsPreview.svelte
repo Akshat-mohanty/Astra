@@ -21,12 +21,11 @@
     panel?: HTMLElement;
   } = $props();
 
-  let session = $state.raw(new DownloadSession(profile));
+  let session = $derived(new DownloadSession(profile));
   $effect(() => {
-    const next = new DownloadSession(profile);
-    session = next;
-    void next.start();
-    return () => next.stop();
+    const current = session;
+    void current.start();
+    return () => current.stop();
   });
 
   const labels: Record<DownloadState, () => string> = {
@@ -56,11 +55,12 @@
   }
 </script>
 
-<section
+<div
   bind:this={panel}
   class="preview"
   {id}
   role="dialog"
+  tabindex="-1"
   aria-label={m.browser_downloads_title()}
 >
   <header>
@@ -107,7 +107,7 @@
   {/if}
 
   <button class="show-all" type="button" onclick={onshowall}>{m.browser_downloads_title()}</button>
-</section>
+</div>
 
 <style>
   .preview {
