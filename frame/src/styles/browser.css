@@ -20,6 +20,10 @@
 [data-astra-new-tab] {
   position: relative;
   z-index: 1;
+  /* The shell keeps an 8px drag gutter around its contents. Let the new-tab
+     artwork extend through that gutter so it meets the window frame. */
+  margin-inline: -8px;
+  margin-block-end: -8px;
 }
 .stage-page {
   height: 100%;
