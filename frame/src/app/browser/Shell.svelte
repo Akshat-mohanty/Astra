@@ -49,7 +49,6 @@ import {
   ModeTabs,
   PrivateBar,
   Sidebar,
-  SidebarChats,
   SidebarSearch,
   SidebarNotice,
 } from "$features/sidebar";
@@ -339,10 +338,10 @@ import {
           compact
         />{:else if compact}{#if tabs.profile()?.id && !inWork}<DownloadPulse
             profile={tabs.profile()?.id ?? ""}
-        />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock compact tools={!inWork} /><SidebarChats compact />{:else if incognito}
+        />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock compact tools={false} />{:else if incognito}
         <!-- A private window keeps nothing, so it has no tools or kept sites;
              its foot names the scope and closes it. -->
-        <PrivateBar />{:else}<Dock /><SidebarChats />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView
+        <PrivateBar />{:else}<Dock tools={false} />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView
         loader={loadToolSlot}
         loadingLabel={m.surface_loading()}
         failureLabel={m.surface_render_failed()}

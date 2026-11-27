@@ -219,7 +219,6 @@
   :global(.browser-sidebar) {
     border: 1px solid var(--color-border-strong);
     border-radius: 24px;
-    background: var(--color-sidebar-ground);
     transition:
       width var(--motion-page) var(--ease-emphasized),
       opacity var(--motion-slow) var(--ease-emphasized),
