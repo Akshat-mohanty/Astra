@@ -467,11 +467,9 @@ import {
       <!--
       A tab opened straight to an address is loading before it has a URL; it
       goes to its page rather than flashing the new tab first.
-      Occupies exactly the rect a content WebView would, so moving between a
-      page and the new tab never changes the window's shape. The inline start
-      inset matches the core layout gap between chrome and content.
+      Occupies the full content rect so the page artwork reaches the frame.
     -->
-      <main class="min-w-0 flex-1 ps-2" data-astra-new-tab>
+      <main class="min-w-0 flex-1" data-astra-new-tab>
         <!-- New Tab paints its own ground, so its dock can open onto the frame. -->
         <div class="content-pane h-full w-full overflow-hidden" data-ground="own">
           <LazyView
