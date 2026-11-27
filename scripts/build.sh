@@ -4,6 +4,13 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Serialize builds and cache cleanup across all Astra sessions on this Mac.
+if [ "${ASTRA_BUILD_CACHE_LOCK_HELD:-}" != "1" ]; then
+    echo "==> Acquiring shared Astra build/cache lock..."
+    exec /usr/bin/lockf -k -w /tmp/astra-build-cache.lock \
+        /usr/bin/env ASTRA_BUILD_CACHE_LOCK_HELD=1 "$REPO_ROOT/scripts/build.sh" "$@"
+fi
+
 # 1. Mount external storage build workspace if available
 SPARSE_IMAGE="/Volumes/android/Astra build material/AstraBuild.sparseimage"
 if [ ! -d "/Volumes/AstraBuild" ] && [ -f "$SPARSE_IMAGE" ]; then

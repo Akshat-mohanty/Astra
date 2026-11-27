@@ -4,6 +4,13 @@ set -e
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SPARSE_IMAGE="/Volumes/android/Astra build material/AstraBuild.sparseimage"
 
+# Use the same OS lock as build.sh so cleanup cannot remove active build files.
+if [ "${ASTRA_BUILD_CACHE_LOCK_HELD:-}" != "1" ]; then
+    echo "==> Acquiring shared Astra build/cache lock..."
+    exec /usr/bin/lockf -k -w /tmp/astra-build-cache.lock \
+        /usr/bin/env ASTRA_BUILD_CACHE_LOCK_HELD=1 "$REPO_ROOT/scripts/clean-cache.sh" "$@"
+fi
+
 echo "==> Cleaning Astra build cache..."
 
 # 1. Mount if needed to clean

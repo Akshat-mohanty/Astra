@@ -31,6 +31,12 @@ This document provides mandatory operational rules for any AI agent (Kilo, Claud
 ./scripts/build.sh
 ```
 
+### Cross-session build and cleanup lock
+
+- `./scripts/build.sh` and `./scripts/clean-cache.sh` acquire the same macOS file lock at `/tmp/astra-build-cache.lock` and wait while another Astra session is building or cleaning.
+- Keep build and cache operations inside these scripts. Do not delete the lock file or remove target artifacts manually while another operation may be running.
+- The lock file intentionally remains on disk after use; the operating system releases the lock when the owning process exits.
+
 ### What `./scripts/build.sh` does automatically:
 1. **Workspace Check**: Checks if `/Volumes/AstraBuild` is mounted; if not, attaches `/Volumes/android/Astra build material/AstraBuild.sparseimage` without cluttering the Desktop.
 2. **Build Redirection**: Directs Cargo and Tauri build artifacts to `/Volumes/AstraBuild/target` to prevent eating local disk space.
