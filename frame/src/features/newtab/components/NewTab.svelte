@@ -28,6 +28,12 @@
 >
   <!-- Background artwork; the welcome and search controls remain above it. -->
   <div class="page" aria-hidden="true"><SilkBackground /></div>
+  <img
+    class="brand-logo"
+    src="/astra-starburst-logo.png"
+    alt="Astra"
+    draggable="false"
+  />
 
   <!-- Centered Search Field -->
   <div class="search-container">
@@ -69,6 +75,19 @@
     padding-inline: 24px;
     pointer-events: none;
     z-index: 20;
+  }
+
+  .brand-logo {
+    position: absolute;
+    inset-block-start: clamp(18px, 3vh, 36px);
+    inset-inline-start: 50%;
+    z-index: 10;
+    inline-size: min(230px, calc(100% - 48px));
+    block-size: auto;
+    transform: translateX(-50%);
+    filter: brightness(0);
+    pointer-events: none;
+    user-select: none;
   }
 
   .welcome-heading {
