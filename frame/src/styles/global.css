@@ -126,7 +126,7 @@ button {
 .content-pane[data-ground="own"]:has(.newtab) {
   background: transparent;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--radius-card);
 }
 
 ::selection {
