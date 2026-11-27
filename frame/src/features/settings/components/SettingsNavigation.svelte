@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as m from "$shared/i18n/messages";
+  import { IS_MAC } from "$shared/platform";
   import { surface as browser } from "$domain/surface";
   import * as settings from "../lib/settings-state.svelte";
   import { groups, shownSections } from "../lib/settings-model";
@@ -35,6 +36,7 @@
 </script>
 
 <nav bind:this={nav} class="settings-navigation" data-glide-host aria-label={m.settings_title()}>
+  {#if IS_MAC}<div class="settings-titlebar-spacer" aria-hidden="true"></div>{/if}
   <header class="settings-panel-header">
     <h2>{m.settings_title()}</h2>
     <IconButton

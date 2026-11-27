@@ -90,6 +90,12 @@ Whenever you make a code change and run `./scripts/build.sh`:
    - Cleanly ejects `/Volumes/AstraBuild` so no disk icons linger on the Desktop.
    - Leaves `/Applications/Astra.app` intact and fully usable on the Mac.
 
+### Follow-up work after testing
+
+- When the user has tested the installed build and then sends a new prompt, reports an issue, or requests another fix, treat that as the end of the previous test cycle. Before starting the next build, run `./scripts/clean-cache.sh` so the next build starts without the previous cache.
+- If the previous build used a temporary local Cargo target (for example, under `/tmp/astra-local-target.*`), also remove that exact task-specific directory before starting the next build. `clean-cache.sh` does not remove temporary directories outside the repository.
+- Preserve `/Applications/Astra.app` and unrelated files while cleaning build caches.
+
 ---
 
 ## 6. Emergency Recovery

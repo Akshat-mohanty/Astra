@@ -383,6 +383,9 @@
   margin-block: 4px 6px;
   padding-inline: 4px 0;
 }
+.settings-titlebar-spacer {
+  flex: 0 0 var(--titlebar-height);
+}
 .settings-panel-header h2 {
   flex: 1;
   margin: 0;
