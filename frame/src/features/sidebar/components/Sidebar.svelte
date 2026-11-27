@@ -217,12 +217,20 @@
 
 <style>
   :global(.browser-sidebar) {
+    border: 1px solid var(--color-border-strong);
+    border-radius: 24px;
+    background: var(--color-sidebar-ground);
     transition:
       width var(--motion-page) var(--ease-emphasized),
       opacity var(--motion-slow) var(--ease-emphasized),
       visibility 0s linear;
     overflow: hidden !important;
     will-change: width, opacity;
+    --row-active: color-mix(in srgb, var(--color-text) 18%, transparent);
+  }
+
+  :global(:root[data-theme="light"] .browser-sidebar) {
+    --row-active: var(--row-active-ink);
   }
 
   :global(.browser-sidebar.hidden-sidebar) {

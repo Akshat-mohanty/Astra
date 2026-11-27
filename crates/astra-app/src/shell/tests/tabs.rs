@@ -112,6 +112,22 @@ fn legacy_closed_tab_without_identity_still_reopens() {
 }
 
 #[test]
+fn closing_the_last_normal_tab_creates_a_fresh_blank_tab() {
+    let (mut shell, _, screen) = setup();
+    shell.handle(Command::Bootstrap);
+    let closed = active_id(&screen);
+    navigate_and_commit(&mut shell, closed, "last.example");
+
+    shell.handle(Command::Close(closed));
+
+    let replacement = active_id(&screen);
+    assert_ne!(replacement, closed);
+    assert!(shell.items.tab(replacement).is_some_and(|tab| tab.url.is_none()));
+    let space = shell.windows.focused().unwrap().space;
+    assert_eq!(today_of(&shell, space), vec![replacement]);
+}
+
+#[test]
 fn forged_runtime_ids_cannot_cross_the_focused_space_or_profile() {
     let (mut shell, engine, screen) = setup();
     shell.handle(Command::Bootstrap);

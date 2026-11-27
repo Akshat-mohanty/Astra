@@ -72,13 +72,7 @@
   "these stay" without spending a row on a word, and the rows themselves carry
   the difference by having no close control.
 -->
-<!-- Opening a tab never scrolls away with the tabs it adds to. -->
-{#if spaced}<SpaceBar />{:else}<div class="new-tab-slot">
-    <button type="button" class="new-tab" onclick={tabs.open}>
-      <Icon icon={Add01Icon} size={16} />
-      <span>{m.new_tab()}</span>
-    </button>
-  </div>{/if}
+{#if spaced}<SpaceBar />{/if}
 
 <div
   bind:this={stage}
@@ -104,6 +98,13 @@
       <TabList entries={today} section="today" label={m.open_tabs()} {splitting} {onSelect} />
 
       {#if empty && spaced}<SpaceEmpty space={tabs.activeSpace()!} onopen={tabs.open} />{/if}
+      <!-- Keep the create action after the final tab in the scrollable list. -->
+      <div class="new-tab-slot">
+        <button type="button" class="new-tab" onclick={tabs.open}>
+          <Icon icon={Add01Icon} size={16} />
+          <span>{m.new_tab()}</span>
+        </button>
+      </div>
     </div>
     {#if peeking && after}<SpacePeek space={after} side="next" />{/if}
   </div>

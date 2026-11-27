@@ -516,6 +516,12 @@ impl Shell {
         if !self.item_in_focused_scope(id) {
             return operation_result(OperationOutcome::Rejected, OperationReason::InvalidScope);
         }
+        let replenish = self.windows.focused().and_then(|window| {
+            self.profiles
+                .get(window.profile)
+                .filter(|profile| profile.kind != ProfileKind::Incognito)
+                .map(|_| (window.profile, window.space))
+        });
         if !self.browser_return_ready
             && self
                 .windows
@@ -533,7 +539,19 @@ impl Shell {
             self.residency.discard_probes.get(&id),
             Some(PendingDiscardProbe::Closing { .. })
         );
-        let native = self.close(id);
+        let mut native = self.close(id);
+        if !native.rejected {
+            if let Some((profile, space)) = replenish {
+                let still_focused = self
+                    .windows
+                    .focused()
+                    .is_some_and(|window| window.profile == profile && window.space == space);
+                if still_focused && self.keyboard_tabs(profile, space).is_empty() {
+                    let effects = self.open_tab();
+                    native.merge(self.commit(effects));
+                }
+            }
+        }
         if discard_closing && !native.rejected {
             operation_result(
                 OperationOutcome::Deferred,

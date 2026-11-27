@@ -16,6 +16,7 @@
   --color-chrome: #1f1f22;
   --color-surface: #26262a;
   --color-raised: #2c2c30;
+  --color-sidebar-ground: color-mix(in srgb, var(--color-canvas) 66%, black);
 
   /* The menu's own ground, and deliberately not the raised rung. Glass is only
      visible as the difference between the sheet and what is under it, so a
@@ -619,6 +620,7 @@
   --color-chrome: var(--gray-150);
   --color-surface: var(--gray-0);
   --color-raised: var(--gray-0);
+  --color-sidebar-ground: var(--color-canvas);
   --color-float: var(--gray-0);
   --color-menu: color-mix(in srgb, var(--color-float) var(--wash-raised), transparent);
   --color-menu-separator: rgb(24 24 27 / 0.09);

@@ -4,3 +4,4 @@ export { default as ModeTabs } from "./components/ModeTabs.svelte";
 export { default as PrivateBar } from "./components/PrivateBar.svelte";
 export { default as UtilityTray } from "./components/UtilityTray.svelte";
 export { default as SidebarNotice } from "./components/SidebarNotice.svelte";
+export { default as SidebarChats } from "./components/SidebarChats.svelte";
