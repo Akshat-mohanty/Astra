@@ -64,7 +64,7 @@
           onclick={() => void commands.loginItemOpenSettings().catch(() => false)}
           >{m.general_login_approve()}</Button
         >{/if}
-      <Switch
+      <Switch variant="ios"
         label={m.general_login_title()}
         labelHidden
         checked={on}

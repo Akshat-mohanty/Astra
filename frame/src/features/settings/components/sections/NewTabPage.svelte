@@ -17,7 +17,7 @@
     settingId="ntp.greeting"
     title={m.pref_ntp_greeting()}
     description={m.pref_ntp_greeting_help()}
-    ><Switch
+    ><Switch variant="ios"
       label={m.pref_ntp_greeting()}
       labelHidden
       checked={greeting}
@@ -29,7 +29,7 @@
     settingId="ntp.personalize"
     title={m.pref_ntp_personalize()}
     description={m.pref_ntp_personalize_help()}
-    ><Switch
+    ><Switch variant="ios"
       label={m.pref_ntp_personalize()}
       labelHidden
       checked={preferences.value("ui.newtab-name") === "true"}
@@ -41,7 +41,7 @@
     settingId="ntp.clock"
     title={m.pref_ntp_clock()}
     description={m.pref_ntp_clock_help()}
-    ><Switch
+    ><Switch variant="ios"
       label={m.pref_ntp_clock()}
       labelHidden
       checked={clock}
@@ -70,7 +70,7 @@
       settingId="ntp.tasks"
       title={m.pref_ntp_tasks()}
       description={m.pref_ntp_tasks_help()}
-      ><Switch
+      ><Switch variant="ios"
         label={m.pref_ntp_tasks()}
         labelHidden
         checked={preferences.value("ui.newtab-tasks") === "true"}

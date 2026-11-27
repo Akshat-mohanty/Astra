@@ -44,7 +44,7 @@
       ? m.download_windows_confirmation_help()
       : m.pref_downloads_ask_help()}
   >
-    <Switch
+    <Switch variant="ios"
       label={m.pref_downloads_ask()}
       labelHidden
       checked={session.siteDownloadsRequireConfirmation ||

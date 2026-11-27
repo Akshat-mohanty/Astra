@@ -211,7 +211,7 @@
     settingId="appearance.motion"
     title={m.settings_reduce_motion()}
     description={m.settings_reduce_motion_desc()}
-    ><Switch
+    ><Switch variant="ios"
       label={m.settings_reduce_motion()}
       labelHidden
       checked={preferences.value("ui.reduce-motion") === "true"}

@@ -6,6 +6,7 @@
     labelHidden = false,
     checked = false,
     disabled = false,
+    variant = "default",
     onchange,
   }: {
     label: string;
@@ -13,16 +14,23 @@
     labelHidden?: boolean;
     checked?: boolean;
     disabled?: boolean;
+    variant?: "default" | "ios";
     onchange?: (checked: boolean) => void;
   } = $props();
   const uid = $props.id();
 
-  // Apple's proportions: a long, low track with the thumb at four fifths of
-  // its height and half again as wide as it is tall. Ours was too square in
-  // both places, which is what made it read as a web toggle.
-  const track = { width: 45, height: 20, padding: 2 };
-  const thumb = { width: 26, height: 16, stretchX: 6, stretchY: 0 };
-  const travel = track.width - thumb.width - track.padding * 2;
+  // The iOS variant uses a compact capsule with a nearly track-height thumb.
+  let track = $derived(
+    variant === "ios"
+      ? { width: 51, height: 31, padding: 2 }
+      : { width: 45, height: 20, padding: 2 },
+  );
+  let thumb = $derived(
+    variant === "ios"
+      ? { width: 27, height: 27, stretchX: 4, stretchY: 0 }
+      : { width: 26, height: 16, stretchX: 6, stretchY: 0 },
+  );
+  let travel = $derived(track.width - thumb.width - track.padding * 2);
 
   // Two springs: where the thumb is, and how hard it is being held. Both
   // only tick while the user is interacting, then settle and go idle.
@@ -127,7 +135,7 @@
     onlostpointercapture={cancel}
     onclick={click}
   >
-    <span class="on" aria-hidden="true"></span>
+    <span class="on" class:ios={variant === "ios"} aria-hidden="true"></span>
     <span
       class="thumb"
       aria-hidden="true"
@@ -208,6 +216,10 @@
     border-radius: inherit;
     background: var(--color-track-on);
     opacity: var(--progress);
+  }
+
+  .on.ios {
+    background: var(--color-switch-track-on);
   }
 
   /* The thumb is a light capsule at rest. While held it turns to glass: the

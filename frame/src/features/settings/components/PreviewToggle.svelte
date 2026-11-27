@@ -9,7 +9,7 @@
 
 <div data-setting={id}>
   <SettingsRow title={field.label()} description={field.description()}
-    ><Switch
+    ><Switch variant="ios"
       label={field.label()}
       labelHidden
       checked={Boolean(preview.get(id, field.initial))}

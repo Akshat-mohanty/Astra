@@ -20,7 +20,7 @@
       settingId="work.screenshots"
       title={m.settings_work_screenshots()}
       description={m.settings_work_screenshots_desc()}
-      ><Switch
+      ><Switch variant="ios"
         label={m.settings_work_screenshots()}
         labelHidden
         checked={preferences.value("work.screenshots") !== "false"}

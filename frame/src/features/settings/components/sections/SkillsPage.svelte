@@ -136,7 +136,7 @@
           >
           <span class="description">{skill.description}</span>
         </button>
-        <Switch
+        <Switch variant="ios"
           label={m.settings_skills_use({ name: skillTitle(skill.name) })}
           labelHidden
           checked={skill.enabled}

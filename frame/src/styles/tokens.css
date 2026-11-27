@@ -125,6 +125,7 @@
   --color-track-on: var(--gray-400);
   --color-switch-thumb: var(--gray-0);
   --color-switch-thumb-off: var(--gray-200);
+  --color-switch-track-on: #3478f6;
   --color-switch-glass: rgb(255 255 255 / 0.1);
   --color-switch-rim: rgb(255 255 255 / 0.85);
 
@@ -693,6 +694,7 @@
   --color-track-on: var(--gray-500);
   --color-switch-thumb: var(--gray-0);
   --color-switch-thumb-off: var(--gray-0);
+  --color-switch-track-on: #3478f6;
   --color-switch-glass: rgb(255 255 255 / 0.3);
   --color-switch-rim: rgb(255 255 255 / 0.95);
 

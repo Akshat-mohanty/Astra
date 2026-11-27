@@ -67,7 +67,7 @@
       ? m.search_suggestions_description()
       : m.search_suggestions_unavailable()}
   >
-    <Switch
+    <Switch variant="ios"
       label={m.search_suggestions_label()}
       labelHidden
       checked={preferences.value("search.suggestions") === "true"}

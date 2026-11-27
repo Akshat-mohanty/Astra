@@ -44,7 +44,7 @@
   description="These controls change live protection for this profile. Site pauses and saved element hides are available from the page’s quick menu."
 >
   <SettingsRow title="Block ads and trackers" description={standing} settingId="privacy.blocking">
-    <Switch
+    <Switch variant="ios"
       label="Block ads and trackers"
       labelHidden
       checked={status.desired_enabled === true}

@@ -103,7 +103,7 @@
     <h3>{item.title()}</h3>
     <p>{on ? item.on() : item.off()}</p>
   </div>
-  <Switch
+  <Switch variant="ios"
     label={item.title()}
     labelHidden
     checked={on && !asking && !leaving}

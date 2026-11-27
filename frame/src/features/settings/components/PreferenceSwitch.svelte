@@ -10,7 +10,7 @@
 </script>
 
 <SettingsRow settingId={id} title={field.label()} description={field.description()}
-  ><Switch
+  ><Switch variant="ios"
     label={field.label()}
     labelHidden
     checked={preferences.value(preference) === "true"}
