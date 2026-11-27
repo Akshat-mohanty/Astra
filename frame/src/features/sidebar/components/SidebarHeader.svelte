@@ -175,7 +175,7 @@
         label={m.browser_downloads_title()}
         size={16}
         buttonSize={28}
-        haspopup="dialog"
+        haspopup="menu"
         expanded={downloadsOpen}
         controls="sidebar-downloads-preview"
         onclick={() => (downloadsOpen = !downloadsOpen)}
@@ -184,6 +184,7 @@
           bind:panel={downloadsPanel}
           id="sidebar-downloads-preview"
           profile={tabs.profile()!.id}
+          anchor={downloadsAnchor!}
           onclose={() => (downloadsOpen = false)}
           onshowall={() => {
             downloadsOpen = false;

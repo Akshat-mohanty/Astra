@@ -6,20 +6,55 @@
   import Icon from "$shared/ui/Icon";
   import { Cancel01Icon, Download04Icon } from "@hugeicons/core-free-icons";
   import FileGlyph from "$features/downloads/components/FileGlyph.svelte";
+  import { scale } from "svelte/transition";
 
   let {
     id,
     profile,
+    anchor,
     onclose,
     onshowall,
     panel = $bindable(),
   }: {
     id: string;
     profile: string;
+    anchor: HTMLElement;
     onclose: () => void;
     onshowall: () => void;
     panel?: HTMLElement;
   } = $props();
+
+  let position = $state({ top: 0, left: 0 });
+  function place() {
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.min(320, window.innerWidth - 24);
+    const height = panel?.getBoundingClientRect().height ?? 300;
+    const below = window.innerHeight - rect.bottom - 8;
+    const top =
+      below >= Math.min(height, 420) ? rect.bottom + 8 : Math.max(12, rect.top - height - 8);
+    position = {
+      top,
+      left: Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)),
+    };
+  }
+
+  function portal(node: HTMLElement) {
+    document.body.append(node);
+    return { destroy: () => node.remove() };
+  }
+
+  $effect(() => {
+    place();
+    const observer = panel ? new ResizeObserver(place) : null;
+    if (panel) observer?.observe(panel);
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  });
 
   let session = $derived(new DownloadSession(profile));
   $effect(() => {
@@ -56,12 +91,15 @@
 </script>
 
 <div
+  use:portal
   bind:this={panel}
   class="preview"
   {id}
-  role="dialog"
-  tabindex="-1"
+  role="region"
   aria-label={m.browser_downloads_title()}
+  style:top={`${position.top}px`}
+  style:left={`${position.left}px`}
+  transition:scale={{ duration: 160, start: 0.96 }}
 >
   <header>
     <div class="heading">
@@ -111,11 +149,11 @@
 
 <style>
   .preview {
-    position: absolute;
-    z-index: 80;
-    inset-block-start: calc(100% + 7px);
-    inset-inline-end: -4px;
-    width: min(320px, calc(var(--sidebar-expanded-width) - 20px));
+    position: fixed;
+    z-index: 10000;
+    width: min(320px, calc(100vw - 24px));
+    max-height: min(480px, calc(100vh - 24px));
+    overflow: auto;
     padding: 10px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
