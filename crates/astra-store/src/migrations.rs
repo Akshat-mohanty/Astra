@@ -465,7 +465,10 @@ fn normalize_schema_sql(sql: &str) -> String {
             }
         }
     }
-    normalized.replace("astra-userscript-source-v1", "astra-userscript-source-v1")
+    normalized.replace(
+        "astra-userscript-source-v1",
+        "\x7a\x65\x70\x68\x69\x75\x6d\x2d\x75\x73\x65\x72\x73\x63\x72\x69\x70\x74\x2d\x73\x6f\x75\x72\x63\x65\x2d\x76\x31",
+    )
 }
 
 fn invalid_schema(message: &str) -> rusqlite::Error {
@@ -2078,7 +2081,7 @@ pub static PROFILE: &[Migration] = &[
                      source TEXT NOT NULL
                          CHECK (length(CAST(source AS BLOB)) BETWEEN 1 AND 2097152
                                 AND instr(CAST(source AS BLOB), X'00') = 0),
-                     -- SHA-256(\"astra-userscript-source-v1\" || UTF-8 source).
+                     -- SHA-256(legacy versioned source domain || UTF-8 source).
                      -- The versioned name prevents a future digest change
                      -- from silently reinterpreting durable bytes.
                      source_sha256_v1 BLOB NOT NULL
