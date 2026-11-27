@@ -3,6 +3,7 @@
   import {
     ArrowLeft02Icon,
     ArrowRight02Icon,
+    Download04Icon,
     EllipsisIcon,
     Refresh01Icon,
     SidebarLeftIcon,
@@ -16,9 +17,11 @@
   import { commands } from "$shared/ipc/bindings";
   import { IS_MAC, IS_WINDOWS } from "$shared/platform";
   import { fullscreen } from "$shared/lib/fullscreen.svelte";
+  import * as tools from "$session/tools.svelte";
   import IconButton from "$shared/ui/IconButton";
   import ModeTabs from "./ModeTabs.svelte";
   import WindowControls from "$shared/ui/WindowControls";
+  import DownloadsPreview from "./DownloadsPreview.svelte";
 
   let {
     compact,
@@ -37,6 +40,30 @@
   let active = $derived(tabs.activeTab());
   // In fullscreen the lights are gone, and so is the room kept for them.
   let lights = $derived(IS_MAC && !fullscreen());
+  let downloadsOpen = $state(false);
+  let downloadsAnchor: HTMLElement | undefined;
+  let downloadsPanel: HTMLElement | undefined;
+
+  $effect(() => {
+    if (!downloadsOpen) return;
+    const outside = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        !(target instanceof Node) ||
+        !(downloadsAnchor?.contains(target) || downloadsPanel?.contains(target))
+      )
+        downloadsOpen = false;
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.isComposing) downloadsOpen = false;
+    };
+    window.addEventListener("pointerdown", outside, true);
+    window.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("pointerdown", outside, true);
+      window.removeEventListener("keydown", escape);
+    };
+  });
 
   // At rail width the extensions' buttons live in this menu; a popup chosen
   // there hangs from the button that opened it.
@@ -126,7 +153,7 @@
   </header>
 {:else}
   <header
-    class="flex shrink-0 items-center gap-px pe-1.5"
+    class="relative z-30 flex shrink-0 items-center gap-px pe-1.5"
     style:height="var(--titlebar-height)"
     style:padding-inline-start={lights
       ? "var(--traffic-light-inset)"
@@ -141,6 +168,29 @@
     {#if launcher && IS_WINDOWS}<span class="flex w-14 shrink-0 justify-center"
         ><ModeTabs compact /></span
       >{/if}<span class="flex-1" aria-hidden="true"></span>
+
+    <div class="relative" bind:this={downloadsAnchor}>
+      <IconButton
+        icon={Download04Icon}
+        label={m.browser_downloads_title()}
+        size={16}
+        buttonSize={28}
+        haspopup="dialog"
+        expanded={downloadsOpen}
+        controls="sidebar-downloads-preview"
+        onclick={() => (downloadsOpen = !downloadsOpen)}
+      />
+      {#if downloadsOpen && tabs.profile()?.id}<DownloadsPreview
+          bind:panel={downloadsPanel}
+          id="sidebar-downloads-preview"
+          profile={tabs.profile()!.id}
+          onclose={() => (downloadsOpen = false)}
+          onshowall={() => {
+            downloadsOpen = false;
+            tools.open("downloads");
+          }}
+        />{/if}
+    </div>
 
     {#if pageControls}<div
         class="flex items-center gap-0.5"
