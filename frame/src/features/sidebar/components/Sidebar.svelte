@@ -137,13 +137,22 @@
   // own view can leave standing; leaving the document or the window losing
   // focus ends it too.
   let pointerIn = $state(false);
+  let edgeRevealed = $state(false);
   $effect(() => {
-    const out = () => (pointerIn = false);
+    const out = () => {
+      pointerIn = false;
+      edgeRevealed = false;
+    };
+    const revealAtEdge = (event: PointerEvent) => {
+      if (width <= 0 && event.clientX <= 16) edgeRevealed = true;
+    };
     document.documentElement.addEventListener("mouseleave", out);
     window.addEventListener("blur", out);
+    document.addEventListener("pointermove", revealAtEdge);
     return () => {
       document.documentElement.removeEventListener("mouseleave", out);
       window.removeEventListener("blur", out);
+      document.removeEventListener("pointermove", revealAtEdge);
     };
   });
 
@@ -177,8 +186,14 @@
   data-sidebar-resize-settling={resizeSettling}
   data-header-fresh={headerFresh}
   data-pointer-in={pointerIn}
-  onpointerenter={() => (pointerIn = true)}
-  onpointerleave={() => (pointerIn = false)}
+  data-edge-revealed={edgeRevealed}
+  onpointerenter={() => {
+    pointerIn = true;
+  }}
+  onpointerleave={() => {
+    pointerIn = false;
+    edgeRevealed = false;
+  }}
   class="browser-sidebar relative flex shrink-0 flex-col text-text select-none"
   class:hidden-sidebar={width <= 0}
 >
@@ -215,6 +230,27 @@
     pointer-events: none;
     visibility: hidden;
     transition-delay: 0s, 0s, var(--motion-page);
+  }
+
+  /* The collapsed rail keeps its zero-width layout. Moving to the left edge
+     temporarily brings the full sidebar over the page without shifting it. */
+  :global(.browser-sidebar.hidden-sidebar[data-edge-revealed="true"]) {
+    position: fixed;
+    z-index: 40;
+    inset-block: 8px;
+    inset-inline-start: 8px;
+    width: var(--sidebar-expanded-width) !important;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transition-delay: 0s;
+    box-shadow: var(--shadow-popover);
+  }
+
+  :global(.browser-sidebar.hidden-sidebar[data-edge-revealed="true"] > header),
+  :global(.browser-sidebar.hidden-sidebar[data-edge-revealed="true"] > .sidebar-columns) {
+    transform: none;
+    opacity: 1;
   }
 
   :global(.browser-sidebar > header),
