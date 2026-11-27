@@ -22,12 +22,12 @@
   // The iOS variant uses a compact capsule with a nearly track-height thumb.
   let track = $derived(
     variant === "ios"
-      ? { width: 51, height: 31, padding: 2 }
+      ? { width: 46, height: 28, padding: 2 }
       : { width: 45, height: 20, padding: 2 },
   );
   let thumb = $derived(
     variant === "ios"
-      ? { width: 27, height: 27, stretchX: 4, stretchY: 0 }
+      ? { width: 24, height: 24, stretchX: 3, stretchY: 0 }
       : { width: 26, height: 16, stretchX: 6, stretchY: 0 },
   );
   let travel = $derived(track.width - thumb.width - track.padding * 2);
