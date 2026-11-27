@@ -1,22 +1,15 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import ToolShelf from "./ToolShelf.svelte";
 
   let {
     sites,
     above,
     compact = false,
-    tools = true,
-    foot,
   }: {
     sites?: Snippet;
     /** Kept sites that did not fit beside the shelf, in rows over it. */
     above?: Snippet;
     compact?: boolean;
-    /** The profile and its tools; Work keeps its own on the canvas. */
-    tools?: boolean;
-    /** What closes the rail at its very foot, below the kept sites. */
-    foot?: Snippet;
   } = $props();
 </script>
 
@@ -27,16 +20,12 @@
   gives up a row when a whole row has been filled.
 -->
 <!-- The base of the column settles last, once the list above it has. -->
-<footer class="dock" data-compact={compact} data-foot={foot ? "" : undefined}>
+<footer class="dock" data-compact={compact}>
   {#if above}<div class="dock-above" data-under-panel>{@render above()}</div>{/if}
-  <!-- In the row the profile leads; down the rail it closes the column. -->
   <div class="dock-base">
-    {#if tools && !compact}<ToolShelf />{/if}
     {#if sites}<div class="dock-sites-slot" data-under-panel={compact || undefined}>
         {@render sites()}
       </div>{/if}
-    {#if tools && compact}<ToolShelf compact />{/if}
-    {#if foot}{@render foot()}{/if}
   </div>
 </footer>
 
@@ -78,11 +67,6 @@
     align-items: center;
     gap: 8px;
     padding-block-end: 8px;
-  }
-
-  /* Work's window has no bottom gutter of its own, so its foot brings Browse's: the profile stands where it does there. */
-  .dock[data-compact="true"][data-foot] {
-    padding-block-end: 16px;
   }
 
   .dock[data-compact="true"] .dock-base {

@@ -1,11 +1,5 @@
 <script lang="ts">
   const loadWorkWorkspace = () => import("./WorkWorkspace.svelte");
-  // Loaded on the first visit to Work, the only place it shows.
-  let accountButton: ReturnType<typeof importAccountButton> | null = null;
-  function importAccountButton() {
-    return import("$features/account").then((account) => account.loadAccountButton());
-  }
-  const loadAccountButton = () => (accountButton ??= importAccountButton());
   // Dynamic like the panel's own path to Notes, so the feature's entry is
   // never a startup request.
   const loadNotesPage = () => import("$features/notes").then((notes) => notes.loadNotesPage());
@@ -55,6 +49,7 @@ import {
   ModeTabs,
   PrivateBar,
   Sidebar,
+  SidebarChats,
   SidebarSearch,
   SidebarNotice,
 } from "$features/sidebar";
@@ -340,20 +335,14 @@ import {
         </div>{/key}
     {/snippet}{#snippet dock(
       compact,
-    )}{#snippet accountFoot()}{#await loadAccountButton() then { default: AccountButton }}<AccountButton
-            name={tabs.profile()?.name ?? ""}
-          />{/await}{/snippet}{#if compact && incognito}<PrivateBar
+    )}{#if compact && incognito}<PrivateBar
           compact
         />{:else if compact}{#if tabs.profile()?.id && !inWork}<DownloadPulse
             profile={tabs.profile()?.id ?? ""}
-          />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock
-          compact
-          tools={!inWork}
-          foot={inWork ? accountFoot : undefined}
-        />{:else if incognito}
+        />{/if}<UpdateNotice view="glyph" onabout={openAbout} /><Dock compact /><SidebarChats compact />{:else if incognito}
         <!-- A private window keeps nothing, so it has no tools or kept sites;
              its foot names the scope and closes it. -->
-        <PrivateBar />{:else}<Dock />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView
+        <PrivateBar />{:else}<Dock /><SidebarChats />{/if}{/snippet}{#snippet toolPanel(kind)}<LazyView
         loader={loadToolSlot}
         loadingLabel={m.surface_loading()}
         failureLabel={m.surface_render_failed()}
