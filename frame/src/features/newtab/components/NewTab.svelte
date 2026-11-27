@@ -73,7 +73,7 @@
 
   .welcome-heading {
     margin: 0 0 36px 0;
-    color: #fff;
+    color: #000;
     font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
     font-size: 32px;
     font-weight: 500;
