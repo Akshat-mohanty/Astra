@@ -217,7 +217,6 @@
 
 <style>
   :global(.browser-sidebar) {
-    border: 1px solid var(--color-border-strong);
     border-radius: 24px;
     transition:
       width var(--motion-page) var(--ease-emphasized),
